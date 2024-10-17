@@ -89,19 +89,19 @@
 	}
 
 	.card button {
-	    background-color: #0066cc; /* Button background color */
-	    color: white; /* Text color */
-	    padding: 10px 15px; /* Padding inside the button */
-	    border: none; /* No border */
-	    border-radius: 5px; /* Rounded corners */
-	    cursor: pointer; /* Pointer cursor on hover */
-	    font-size: 16px; /* Font size for button text */
-	    transition: background-color 0.3s; /* Smooth transition for hover effect */
-	    margin-top: 10px; /* Space above the button */
+	    background-color: #0066cc;
+	    color: white; 
+	    padding: 10px 15px; 
+	    border: none; 
+	    border-radius: 5px; 
+	    cursor: pointer; 
+	    font-size: 16px;
+	    transition: background-color 0.3s; 
+	    margin-top: 10px;
 	}
 
 	.card button:hover {
-	    background-color: #4CAF50; /* Darker shade on hover */
+	    background-color: #4CAF50; 
 	}
 
 	footer {
@@ -242,7 +242,7 @@
         function showStoredPatients() {
             const input = document.getElementById('search-patient').value.toLowerCase();
             const storedPatientsDiv = document.getElementById('storedPatients');
-            const patients = JSON.parse(localStorage.getItem('patients')) || []; // Get patients from localStorage
+            const patients = JSON.parse(localStorage.getItem('patients')) || []; 
 
             const filteredPatients = patients.filter(patient => patient.toLowerCase().includes(input));
 
@@ -258,6 +258,34 @@
                 storedPatientsDiv.innerHTML = 'No matching patients found.';
             }
         }
+	           function checkUserLogin() {
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+
+        window.location.href = 'sign-up.html';
+    } else {
+        loadUserData();
+    }
+}
+
+let inactivityTime = function () {
+    let timeout;
+
+    const resetTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }, 3600000);
+    };
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+};
+
+inactivityTime();
+
     </script>
 </body>
 </html>
