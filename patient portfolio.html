@@ -204,13 +204,34 @@
         </section>
     </main>
 
-<footer>
-    <a href="Privacy Policy.html">Privacy Policy</a> | 
-    <a href="Terms of Service.html">Terms of Service</a> | 
-    <a href="Help_Contact.html">Help/Contact</a>
-</footer>
+    <footer>
+        <a href="Privacy Policy.html">Privacy Policy</a> | 
+        <a href="Terms of Service.html">Terms of Service</a> | 
+        <a href="Help_Contact.html">Help/Contact</a>
+    </footer>
 
     <script>
+        let timeout; 
+
+      
+        function logout() {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }
+
+        
+        function resetTimer() {
+            clearTimeout(timeout);
+            timeout = setTimeout(logout, 3600000);
+        }
+
+        
+        window.onload = resetTimer; 
+        window.onmousemove = resetTimer; 
+        window.onkeypress = resetTimer; 
+        window.onclick = resetTimer;
+        window.onscroll = resetTimer;
+
         function changeProfilePicture(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -229,14 +250,22 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
+            checkUserLogin();
             loadUpcomingAppointments();
         });
 
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+               
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
+
         function loadUserData() {
             const userId = localStorage.getItem('currentUserId');
-            if (!userId) return;
-
             const userData = JSON.parse(localStorage.getItem('users')) || {};
             const user = userData[userId] || {};
 
@@ -261,27 +290,27 @@
             const currentMonth = today.getMonth();
             const currentYear = today.getFullYear();
 
-            // Clear previous calendar view
+           
             calendarView.innerHTML = '';
 
-            // Create calendar for the current month
+            
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
 
-            // Add empty cells for days before the first day of the month
+           
             for (let i = 0; i < firstDay; i++) {
                 const emptyCell = document.createElement('div');
                 emptyCell.className = 'calendar-day';
                 calendarView.appendChild(emptyCell);
             }
 
-            // Populate the calendar with the days of the month
+            
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayCell = document.createElement('div');
                 dayCell.className = 'calendar-day';
                 dayCell.textContent = day;
 
-                // Check for appointments on this day
+               
                 const dateString = `${currentYear}-${currentMonth + 1}-${day}`;
                 const dailyAppointments = appointments.filter(appointment => {
                     const appointmentDate = new Date(appointment.date);
@@ -289,8 +318,8 @@
                 });
 
                 if (dailyAppointments.length > 0) {
-                    dayCell.style.backgroundColor = '#dff0d8'; // Highlight days with appointments
-                    dayCell.title = dailyAppointments.map(app => app.details).join(', '); // Show appointment details on hover
+                    dayCell.style.backgroundColor = '#dff0d8'; 
+                    dayCell.title = dailyAppointments.map(app => app.details).join(', ');
                 }
 
                 calendarView.appendChild(dayCell);
