@@ -211,7 +211,7 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Claims data will be populated here -->
+            
             </tbody>
         </table>
     </div>
@@ -223,19 +223,47 @@
             claimsData.forEach((claim) => {
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = claim.date;
-                row.insertCell(1).textContent = 'User Name'; // Replace with actual user name
+                row.insertCell(1).textContent = 'User Name';
                 row.insertCell(2).textContent = claim.fullname;
                 const downloadCell = row.insertCell(3);
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = 'Download';
                 downloadButton.onclick = function() {
-                    // Logic to download the document
+                   
                 };
                 downloadCell.appendChild(downloadButton);
             });
         }
 
         document.addEventListener('DOMContentLoaded', loadClaims);
+	           function checkUserLogin() {
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+
+        window.location.href = 'sign-up.html';
+    } else {
+        loadUserData();
+    }
+}
+
+let inactivityTime = function () {
+    let timeout;
+
+    const resetTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }, 3600000);
+    };
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+};
+
+inactivityTime();
+
     </script>
 </body>
 </html>
