@@ -253,7 +253,7 @@
         function showStoredPatients() {
             const input = document.getElementById('search-patient').value.toLowerCase();
             const storedPatientsDiv = document.getElementById('storedPatients');
-            const patients = JSON.parse(localStorage.getItem('patients')) || []; // Get patients from localStorage
+            const patients = JSON.parse(localStorage.getItem('patients')) || [];
 
             const filteredPatients = patients.filter(patient => patient.toLowerCase().includes(input));
 
@@ -269,6 +269,34 @@
                 storedPatientsDiv.innerHTML = 'No matching patients found.';
             }
         }
+               function checkUserLogin() {
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+
+        window.location.href = 'sign-up.html';
+    } else {
+        loadUserData();
+    }
+}
+
+let inactivityTime = function () {
+    let timeout;
+
+    const resetTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }, 3600000);
+    };
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+};
+
+inactivityTime();
+
     </script>
 </body>
 </html>
