@@ -44,6 +44,7 @@
             color: #0066cc;
             text-decoration: none;
             transition: color 0.3s;
+            cursor: pointer;
         }
 
         a:hover {
@@ -67,64 +68,69 @@
             color: #4CAF50;
         }
     </style>
+    <script>
+        function redirectTo(page) {
+            window.location.href = page;
+        }
+    </script>
 </head>
 <body>
 
     <div class="container">
         <h1>Index of Health Services</h1>
         <ul>
-            <li><a href="1.html">1.html</a></li>
-            <li><a href="Desert Scope.jpeg">Desert Scope.jpeg</a></li>
-            <li><a href="med staff add patient.html">med staff add patient.html</a></li>
-            <li><a href="med staff appointment.html">med staff appointment.html</a></li>
-            <li><a href="med staff check in patient.html">med staff check in patient.html</a></li>
-            <li><a href="med staff doc lib.html">med staff doc lib.html</a></li>
-            <li><a href="med staff doc upload.html">med staff doc upload.html</a></li>
-            <li><a href="med staff log in.html">med staff log in.html</a></li>
-            <li><a href="med staff med inventory.html">med staff med inventory.html</a></li>
-            <li><a href="med staff portfolio.html">med staff portfolio.html</a></li>
-            <li><a href="med staff rec med admin.html">med staff rec med admin.html</a></li>
-            <li><a href="med staff reminder.html">med staff reminder.html</a></li>
-            <li><a href="med staff schedule appointment.html">med staff schedule appointment.html</a></li>
-            <li><a href="med staff task.html">med staff task.html</a></li>
-            <li><a href="medi staff sign-up.html">medi staff sign-up.html</a></li>
-            <li><a href="Nam heart.jpeg">Nam heart.jpeg</a></li>
-            <li><a href="patient ailments and treatments.html">patient ailments and treatments.html</a></li>
-            <li><a href="patient appointment.html">patient appointment.html</a></li>
-            <li><a href="patient institutes.html">patient institutes.html</a></li>
-            <li><a href="patient log in.html">patient log in.html</a></li>
-            <li><a href="patient med history.html">patient med history.html</a></li>
-            <li><a href="patient portfolio.html">patient portfolio.html</a></li>
-            <li><a href="patient prescriptions.html">patient prescriptions.html</a></li>
-            <li><a href="patient reports.html">patient reports.html</a></li>
-            <li><a href="patient schedule appointment.html">patient schedule appointment.html</a></li>
-            <li><a href="patient sign-up.html">patient sign-up.html</a></li>
-            <li><a href="Privacy Policy.html">Privacy Policy.html</a></li>
-            <li><a href="receptionist add patient.html">receptionist add patient.html</a></li>
-            <li><a href="receptionist appointment.html">receptionist appointment.html</a></li>
-            <li><a href="receptionist check in.html">receptionist check in.html</a></li>
-            <li><a href="receptionist claims.html">receptionist claims.html</a></li>
-            <li><a href="receptionist invoice.html">receptionist invoice.html</a></li>
-            <li><a href="receptionist log in.html">receptionist log in.html</a></li>
-            <li><a href="receptionist payment.html">receptionist payment.html</a></li>
-            <li><a href="receptionist portfolio.html">receptionist portfolio.html</a></li>
-            <li><a href="recceptionist reports.html">recceptionist reports.html</a></li>
-            <li><a href="receptionist schedule appointment.html">receptionist schedule appointment.html</a></li>
-            <li><a href="receptionist sign-up.html">receptionist sign-up.html</a></li>
-            <li><a href="receptionist verify insurance.html">receptionist verify insurance.html</a></li>
-            <li><a href="request refill.html">request refill.html</a></li>
-            <li><a href="sign-up.html">sign-up.html</a></li>
-            <li><a href="specialist add patient.html">specialist add patient.html</a></li>
-            <li><a href="specialist add prescription.html">specialist add prescription.html</a></li>
-            <li><a href="specialist appointment.html">specialist appointment.html</a></li>
-            <li><a href="specialist log in.html">specialist log in.html</a></li>
-            <li><a href="specialist portfolio.html">specialist portfolio.html</a></li>
-            <li><a href="specialist prescription.html">specialist prescription.html</a></li>
-            <li><a href="specialist schedule appointment.html">specialist schedule appointment.html</a></li>
-            <li><a href="specialist sign-up.html">specialist sign-up.html</a></li>
-            <li><a href="Terms of Service.html">Terms of Service.html</a></li>
-            <li><a href="terms-and-cons.html">terms-and-cons.html</a></li>
-            <li><a href="Help_Contact.html">Help_Contact.html</a></li>
+            <li><a onclick="redirectTo('1.html')">1.html</a></li>
+            <li><a onclick="redirectTo('Desert Scope.jpeg')">Desert Scope.jpeg</a></li>
+            <li><a onclick="redirectTo('med staff add patient.html')">med staff add patient.html</a></li>
+            <li><a onclick="redirectTo('med staff appointment.html')">med staff appointment.html</a></li>
+            <li><a onclick="redirectTo('med staff check in patient.html')">med staff check in patient.html</a></li>
+            <li><a onclick="redirectTo('med staff doc lib.html')">med staff doc lib.html</a></li>
+            <li><a onclick="redirectTo('med staff doc upload.html')">med staff doc upload.html</a></li>
+            <li><a onclick="redirectTo('med staff log in.html')">med staff log in.html</a></li>
+            <li><a onclick="redirectTo('med staff med inventory.html')">med staff med inventory.html</a></li>
+            <li><a onclick="redirectTo('med staff portfolio.html')">med staff portfolio.html</a></li>
+            <li><a onclick="redirectTo('med staff rec med admin.html')">med staff rec med admin.html</a></li>
+            <li><a onclick="redirectTo('med staff reminder.html')">med staff reminder.html</a></li>
+            <li><a onclick="redirectTo('med staff schedule appointment.html')">med staff schedule appointment.html</a></li>
+            <li><a onclick="redirectTo('med staff task.html')">med staff task.html</a></li>
+            <li><a onclick="redirectTo('medi staff sign-up.html')">medi staff sign-up.html</a></li>
+            <li><a onclick="redirectTo('Nam heart.jpeg')">Nam heart.jpeg</a></li>
+            <li><a onclick="redirectTo('patient ailments and treatments.html')">patient ailments and treatments.html</a></li>
+            <li><a onclick="redirectTo('patient appointment.html')">patient appointment.html</a></li>
+            <li><a onclick="redirectTo('patient institutes.html')">patient institutes.html</a></li>
+            <li><a onclick="redirectTo('patient log in.html')">patient log in.html</a></li>
+            <li><a onclick="redirectTo('patient med history.html')">patient med history.html</a></li>
+            <li><a onclick="redirectTo('patient portfolio.html')">patient portfolio.html</a></li>
+            <li><a onclick="redirectTo('patient prescriptions.html')">patient prescriptions.html</a></li>
+            <li><a onclick="redirectTo('patient reports.html')">patient reports.html</a></li>
+            <li><a onclick="redirectTo('patient schedule appointment.html')">patient schedule appointment.html</a></li>
+            <li><a onclick="redirectTo('patient sign-up.html')">patient sign-up.html</a></li>
+            <li><a onclick="redirectTo('Privacy Policy.html')">Privacy Policy.html</a></li>
+            <li><a onclick="redirectTo('receptionist add patient.html')">receptionist add patient.html</a></li>
+            <li><a onclick="redirectTo('receptionist appointment.html')">receptionist appointment.html</a></li>
+            <li><a onclick="redirectTo('receptionist check in.html')">receptionist check in.html</a></li>
+            <li><a onclick="redirectTo('receptionist claims.html')">receptionist claims.html</a></li>
+            <li><a onclick="redirectTo('receptionist invoice.html')">receptionist invoice.html</a></li>
+            <li><a onclick="redirectTo('receptionist log in.html')">receptionist log in.html</a></li>
+            <li><a onclick="redirectTo('receptionist payment.html')">receptionist payment.html</a></li>
+            <li><a onclick="redirectTo('receptionist portfolio.html')">receptionist portfolio.html</a></li>
+            <li><a onclick="redirectTo('recceptionist reports.html')">recceptionist reports.html</a></li>
+            <li><a onclick="redirectTo('receptionist schedule appointment.html')">receptionist schedule appointment.html</a></li>
+            <li><a onclick="redirectTo('receptionist sign-up.html')">receptionist sign-up.html</a></li>
+            <li><a onclick="redirectTo('receptionist verify insurance.html')">receptionist verify insurance.html</a></li>
+            <li><a onclick="redirectTo('request refill.html')">request refill.html</a></li>
+            <li><a onclick="redirectTo('sign-up.html')">sign-up.html</a></li>
+            <li><a onclick="redirectTo('specialist add patient.html')">specialist add patient.html</a></li>
+            <li><a onclick="redirectTo('specialist add prescription.html')">specialist add prescription.html</a></li>
+            <li><a onclick="redirectTo('specialist appointment.html')">specialist appointment.html</a></li>
+            <li><a onclick="redirectTo('specialist log in.html')">specialist log in.html</a></li>
+            <li><a onclick="redirectTo('specialist portfolio.html')">specialist portfolio.html</a></li>
+            <li><a onclick="redirectTo('specialist prescription.html')">specialist prescription.html</a></li>
+            <li><a onclick="redirectTo('specialist schedule appointment.html')">specialist schedule appointment.html</a></li>
+            <li><a onclick="redirectTo('specialist sign-up.html')">specialist sign-up.html</a></li>
+            <li><a onclick="redirectTo('Terms of Service.html')">Terms of Service.html</a></li>
+            <li><a onclick="redirectTo('terms-and-cons.html')">terms-and-cons.html</a></li>
+            <li><a onclick="redirectTo('Help_Contact.html')">Help_Contact.html</a></li>
         </ul>
     </div>
 
