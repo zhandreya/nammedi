@@ -218,14 +218,42 @@
                 prescription: document.getElementById('prescription').value
             };
 
-            // Logic to generate PDF and save to localStorage
+          
             const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
             prescriptions.push(prescriptionData);
             localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
 
-            // Redirect to portfolio
+           
             window.location.href = 'receptionist portfolio.html';
         }
+	           function checkUserLogin() {
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+
+        window.location.href = 'sign-up.html';
+    } else {
+        loadUserData();
+    }
+}
+
+let inactivityTime = function () {
+    let timeout;
+
+    const resetTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }, 3600000);
+    };
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+};
+
+inactivityTime();
+
     </script>
 </body>
 </html>
