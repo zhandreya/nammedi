@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical History</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    color: #000000;
+	    margin: 0;
+	    padding: 20px;
+	}
+
+	h1 {
+	    text-align: center;
+	    color: #000000;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ccc;
+	    padding: 10px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: rgba(120, 120, 128, 0.30);
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Medical History</h1>
+    <table id="medical-history-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Appointment</th>
+                <th>Prescription</th>
+                <th>Doctor's Report</th>
+                <th>Ailment/Treatment</th>
+            </tr>
+        </thead>
+        <tbody id="medical-history-body"></tbody>
+    </table>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', loadMedicalHistory);
+
+        function loadMedicalHistory() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const medicalHistory = userData[userId]?.medicalHistory || [];
+
+            const tableBody = document.getElementById('medical-history-body');
+            medicalHistory.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.appointment}</td>
+                    <td>${entry.prescription}</td>
+                    <td>${entry.report}</td>
+                    <td>${entry.ailment}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>

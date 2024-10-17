@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check-In Patient</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    line-height: 1.6;
+	    color: #000000;
+	    margin: 0;
+	    padding: 0;
+	}
+
+	.container {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    border-radius: 5px;
+	    margin: 50px auto;
+	    padding: 20px;
+	}
+
+	h2 {
+	    color: #000000;
+	    margin-bottom: 20px;
+	}	
+
+	button {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    margin: 5px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+	
+	button:hover {
+	    background-color: #4CAF50;
+	}
+	
+	input[type="text"],
+	input[type="date"],
+	input[type="number"],
+	input[type="file"],
+	input[type="time"],
+	textarea,
+	select {
+	    width: 100%;
+	    padding: 10px;
+	    margin: 10px 0;
+	    border: 1px solid #ccc;
+	    border-radius: 5px;
+	}
+	
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ddd;
+	    padding: 8px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: #f2f2f2;
+	}
+
+	textarea {
+	    height: 60px;
+	}
+
+	#backBtn {
+	    position: absolute;
+	    top: 10px;
+	    left: 10px;
+	    padding: 5px 10px;
+	    background-color: transparent;
+	    border: 1px solid #333;
+	    cursor: pointer;
+	    color: #000000;
+	    border-radius: 5px;
+	}
+
+	@media (max-width: 768px) {
+	    .container {
+	        padding: 10px;
+	    }
+
+	    button {
+	        padding: 8px 10px;
+	    }
+
+	    input[type="text"],
+	    input[type="date"],
+	    input[type="number"],
+	    input[type="file"],
+	    input[type="time"],
+	    textarea,
+	    select {
+	        padding: 8px;
+	    }
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <div class="container">
+        <h2>Check-In Patient</h2>
+        <form id="checkInForm">
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            <input type="text" id="surname" placeholder="Surname" required>
+            <input type="date" id="dob" required>
+            <input type="number" id="age" placeholder="Age" required>
+            <select id="gender" required>
+                <option value="" disabled selected>Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="idPassport" placeholder="ID/Passport Number" required>
+            <input type="tel" id="cellphone" placeholder="Cellphone Number" required>
+            <select id="insurance" required>
+                <option value="" disabled selected>Medical Insurance</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+            <input type="text" id="institution" placeholder="Institution Name" required>
+            <select id="reason" required>
+                <option value="" disabled selected>Reason for Visit</option>
+                <option value="General Check-Up">General Check-Up</option>
+                <option value="Follow-Up">Follow-Up</option>
+                <option value="Specific Ailment">Specific Ailment</option>
+                <option value="Surgery">Surgery</option>
+            </select>
+            <select id="paid" required>
+                <option value="" disabled selected>Paid</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('checkInForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const checkInData = {
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                dob: document.getElementById('dob').value,
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                idPassport: document.getElementById('idPassport').value,
+                cellphone: document.getElementById('cellphone').value,
+                insurance: document.getElementById('insurance').value,
+                institution: document.getElementById('institution').value,
+                reason: document.getElementById('reason').value,
+                paid: document.getElementById('paid').value
+            };
+            const checkIns = JSON.parse(localStorage.getItem('checkIns')) || [];
+            checkIns.push(checkInData);
+            localStorage.setItem('checkIns', JSON.stringify(checkIns));
+            window.location.href = 'med staff portfolio.html';
+        });
+    </script>
+</body>
+</html>

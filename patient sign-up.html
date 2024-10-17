@@ -1,0 +1,223 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Sign-up</title>
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000000;
+            font-family: Lato, sans-serif;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            font-family: Lato, sans-serif;
+            color: #000000;
+            border-radius: 5px;
+        }
+
+        form {
+            background-color: rgba(120,120,128,0.30);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-columns {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .column {
+            width: 48%;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .terms-container {
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        #confirmBtn {
+            display: block;
+            width: 200px;
+            margin: 20px auto 0;
+            padding: 10px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #confirmBtn:hover {
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>NAMIBIAN MEDICAL RECORDS</h1>
+    <form id="signupForm" onsubmit="return validateSignupForm();">
+        <div class="form-columns">
+            <div class="column">
+                <label for="firstName">First Name(s)</label>
+                <input type="text" id="firstName" name="firstName" required>
+                <label for="surname">Surname</label>
+                <input type="text" id="surname" name="surname" required>
+                <label for="placeOfBirth">Place of Birth</label>
+                <input type="text" id="placeOfBirth" name="placeOfBirth" required>
+                <label for="dateOfBirth">Date of Birth</label>
+                <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+                <label for="idPassport">ID/Passport No.</label>
+                <input type="text" id="idPassport" name="idPassport" required>
+                <label for="cellPhone">Cell Phone No.</label>
+                <input type="tel" id="cellPhone" name="cellPhone" required>
+            </div>
+            <div class="column">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <div id="passwordError" style="color: red; display: none;">Passwords do not match.</div>
+                <div class="terms-container">
+                    <input type="checkbox" id="termsCheck" name="termsCheck" required>
+                    <label for="termsCheck">I agree to the <a href="terms-and-cons.html">Terms & Conditions</a></label>
+                </div>
+                <label for="profilePicture">Profile Picture</label>
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
+                <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview" style="display: none; width: 100px; height: 100px;"/>
+            </div>
+        </div>
+        <div class="info-box">
+            <p>The information you provide will be used for medical purposes only and will not be shared without your consent.</p>
+        </div>
+        <button type="submit" id="confirmBtn">I Confirm</button>
+    </form>
+
+    <script>
+        function previewProfilePicture(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profilePicPreview').src = e.target.result;
+                document.getElementById('profilePicPreview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function saveToLocalStorage(userData) {
+            const users = JSON.parse(localStorage.getItem('users')) || {};
+            const email = userData.email;
+
+            users[email] = userData;
+            localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('currentUserId', email);
+        }
+
+        function validatePasswords() {
+            var password = document.getElementById("password").value;
+            var confirmPassword = document.getElementById("confirmPassword").value;
+            var passwordError = document.getElementById("passwordError");
+
+            if (password !== confirmPassword) {
+                passwordError.style.display = "block";
+                return false;
+            } else {
+                passwordError.style.display = "none";
+                return true;
+            }
+        }
+
+        function validateSignupForm() {
+            if (validatePasswords()) {
+                const userData = {
+                    firstName: document.getElementById("firstName").value,
+                    surname: document.getElementById("surname").value,
+                    placeOfBirth: document.getElementById("placeOfBirth").value,
+                    dateOfBirth: document.getElementById("dateOfBirth").value,
+                    gender: document.getElementById("gender").value,
+                    idPassport: document.getElementById("idPassport").value,
+                    cellPhone: document.getElementById("cellPhone").value,
+                    email: document.getElementById("email").value,
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("password").value,
+                };
+
+                const profilePicture = document.getElementById("profilePicture").files[0];
+                if (profilePicture) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        userData.profilePicture = e.target.result; 
+                        saveToLocalStorage(userData);
+                        window.location.href = "patient log in.html"; 
+                    };
+                    reader.readAsDataURL(profilePicture);
+                } else {
+                    saveToLocalStorage(userData); 
+                    window.location.href = "patient log in.html";
+                }
+
+                return false;
+            } else {
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

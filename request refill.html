@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Refill</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Request Refill</h1>
+    <table id="refill-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Prescription</th>
+                <th>Duration</th>
+                <th>Next Available Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="refill-body"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadRefillRequests);
+
+        function loadRefillRequests() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const refills = userData[userId]?.refillRequests || [];
+
+            const tableBody = document.getElementById('refill-body');
+            refills.forEach(entry => {
+                const row = document.createElement('tr');
+                const isAvailable = new Date(entry.nextAvailableDate) <= new Date();
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.prescription}</td>
+                    <td>${entry.duration}</td>
+                    <td>${entry.nextAvailableDate}</td>
+                    <td>${isAvailable ? `<button onclick="submitRefill('${entry.id}')">Submit</button>` : 'Unavailable'}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function submitRefill(refillId) {
+            // Implement refill submission logic here
+            alert(`Refill request for ${refillId} submitted.`);
+        }
+    </script>
+</body>
+</html>

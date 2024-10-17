@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Upload</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    line-height: 1.6;
+	    color: #000000;
+	    margin: 0;
+	    padding: 0;
+	}
+
+	.container {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    border-radius: 5px;
+	    margin: 50px auto;
+	    padding: 20px;
+	}
+
+	h2 {
+	    color: #000000;
+	    margin-bottom: 20px;
+	}	
+
+	button {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    margin: 5px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+	
+	button:hover {
+	    background-color: #4CAF50;
+	}
+	
+	input[type="text"],
+	input[type="date"],
+	input[type="number"],
+	input[type="file"],
+	input[type="time"],
+	textarea,
+	select {
+	    width: 100%;
+	    padding: 10px;
+	    margin: 10px 0;
+	    border: 1px solid #ccc;
+	    border-radius: 5px;
+	}
+	
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ddd;
+	    padding: 8px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: #f2f2f2;
+	}
+
+	textarea {
+	    height: 60px;
+	}
+
+	#backBtn {
+	    position: absolute;
+	    top: 10px;
+	    left: 10px;
+	    padding: 5px 10px;
+	    background-color: transparent;
+	    border: 1px solid #333;
+	    cursor: pointer;
+	    color: #000000;
+	    border-radius: 5px;
+	}
+
+	@media (max-width: 768px) {
+	    .container {
+	        padding: 10px;
+	    }
+
+	    button {
+	        padding: 8px 10px;
+	    }
+
+	    input[type="text"],
+	    input[type="date"],
+	    input[type="number"],
+	    input[type="file"],
+	    input[type="time"],
+	    textarea,
+	    select {
+	        padding: 8px;
+	    }
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <div class="container">
+        <h2>Document Upload</h2>
+        <form id="uploadForm">
+            <input type="date" id="date" required>
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            <input type="text" id="surname" placeholder="Surname" required>
+            <select id="medicalAid" required>
+                <option value="" disabled selected>Medical Aid</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+            <select id="payment" required>
+                <option value="" disabled selected>Payment</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+            <input type="file" id="document" required>
+            <button type="submit">Upload Document</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const uploadData = {
+                date: document.getElementById('date').value,
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                medicalAid: document.getElementById('medicalAid').value,
+                payment: document.getElementById('payment').value,
+                document: document.getElementById('document').files[0].name // Storing file name only
+            };
+            const uploads = JSON.parse(localStorage.getItem('uploads')) || [];
+            uploads.push(uploadData);
+            localStorage.setItem('uploads', JSON.stringify(uploads));
+            window.location.href = 'med staff portfolio.html';
+        });
+    </script>
+</body>
+</html>

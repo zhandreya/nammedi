@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Staff Dashboard</title>
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
+
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 10px auto;
+        }
+
+        header button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        header button:hover {
+            background-color: #4CAF50;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #000000;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .card button {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: background-color 0.3s; 
+            margin-top: 10px;
+        }
+
+        .card button:hover {
+            background-color:  #4CAF50; 
+        }
+
+        footer {
+            background-color: transparent;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
+        }
+        
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
+
+        #storedPatients {
+            margin-top: 10px;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            header {
+                padding: 10px 0;
+            }
+
+            #profile-pic {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <header>
+        <h1>Welcome, <span id="user-name"></span>!</h1>
+        <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
+        <input type="file" id="upload-photo" style="display:none;" onchange="changeProfilePicture(this)">
+        <button onclick="document.getElementById('upload-photo').click()">Change Profile Picture</button>
+        <button onclick="editDetails()">Edit Personal Details</button>
+    </header>
+    
+    <main class="container">
+        <section class="card" id="patient-management">
+            <h2>Patient Management</h2>
+            <input type="text" id="search-patient" placeholder="Search patients" oninput="showStoredPatients()">
+            <div id="storedPatients"></div>
+            <button id="addPatient" onclick="redirectT('med staff add patient.html')">Add Patient</button>
+        </section>
+
+        <section class="card" id="appointment-management">
+            <h2>Appointment Management</h2>
+            <button id="viewAppointments" onclick="redirectTo('med staff appointment.html')">View Appointment</button>
+            <button id="makeAppointments" onclick="redirectTo('med staff schedule appointment.html')">Schedule Appointment</button>
+            <button id="checkInPatient" onclick="redirectTo('med staff check in.html')">Check-In Patient</button>
+        </section>
+
+        <section class="card" id="medical-records">
+            <h2>Medical Records</h2>
+            <button id="uploadDocument" onclick="redirectTo('med staff doc upload.html')">Upload Document</button>
+            <button id="viewDocumentLibrary" onclick="redirectTo('med staff doc lib.html')">View Document Library</button>
+        </section>
+
+        <section class="card" id="medication-management">
+            <h2>Medication Management</h2>
+            <button id="recordMedication" onclick="redirectTo('med staff rec med admin.html')">Record Medication Administration</button>
+            <button id="manageMedicationInventory" onclick="redirectTo('med staff med inventory.html')">Manage Medication Inventory</button>
+        </section>
+
+        <section class="card" id="tasks-reminders">
+            <h2>Tasks and Reminders</h2>
+            <button id="addTask" onclick="redirectTo('med staff task.html')">Add Task</button>
+            <button id="setReminder" onclick="redirectTo('med staff reminder.html')">Set Reminder</button>
+        </section>
+    </main>
+
+<footer>
+    <a href="Privacy Policy.html">Privacy Policy</a> | 
+    <a href="Terms of Service.html">Terms of Service</a> | 
+    <a href="Help_Contact.html">Help/Contact</a>
+</footer>
+
+
+    <script>
+        function changeProfilePicture(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageSrc = e.target.result;
+                    document.getElementById('profile-pic').src = imageSrc;
+                    const userId = localStorage.getItem('currentUserId');
+                    if (userId) {
+                        const userData = JSON.parse(localStorage.getItem('users')) || {};
+                        userData[userId].profilePicture = imageSrc;
+                        localStorage.setItem('users', JSON.stringify(userData));
+                    }
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+        });
+
+        function loadUserData() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) return;
+
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const user = userData[userId] || {};
+
+            const firstName = user.firstName || '';
+            const surname = user.surname || '';
+            const fullName = firstName + (firstName ? ' ' : '') + surname; 
+
+            document.getElementById('user-name').textContent = fullName;
+
+            const storedProfilePicture = user.profilePicture || 'default-profile.png';
+            document.getElementById('profile-pic').src = storedProfilePicture;
+        }
+
+        function redirectTo(page) {
+            window.location.href = page;
+        }
+
+        function showStoredPatients() {
+            const input = document.getElementById('search-patient').value.toLowerCase();
+            const storedPatientsDiv = document.getElementById('storedPatients');
+            const patients = JSON.parse(localStorage.getItem('patients')) || []; // Get patients from localStorage
+
+            const filteredPatients = patients.filter(patient => patient.toLowerCase().includes(input));
+
+            storedPatientsDiv.innerHTML = '';
+
+            filteredPatients.forEach(patient => {
+                const patientDiv = document.createElement('div');
+                patientDiv.textContent = patient;
+                storedPatientsDiv.appendChild(patientDiv);
+            });
+          
+            if (filteredPatients.length === 0) {
+                storedPatientsDiv.innerHTML = 'No matching patients found.';
+            }
+        }
+    </script>
+</body>
+</html>

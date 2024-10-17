@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Prescription</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    line-height: 1.6;
+	    color: #000000;
+	    margin: 0;
+	    padding: 0;
+	}
+
+	.container {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    border-radius: 5px;
+	    margin: 20px auto;
+	    padding: 20px;
+	}
+
+	header {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    color: white;
+	    padding: 20px;
+	    border-radius: 5px;
+	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    margin: 50px auto;
+	    text-align: center;
+	}
+
+	header h1 {
+	    margin-bottom: 10px;
+	    color: #000000;
+	}
+
+	#profile-pic {
+	    width: 100px;
+	    height: 100px;
+	    border-radius: 50%;
+	    display: block;
+	    margin: 10px auto;
+	}
+
+	header button {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    margin: 5px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+
+	header button:hover {
+	    background-color: #4CAF50;
+	}
+
+	main {
+	    display: grid;
+	    grid-template-columns: 1fr;
+	    gap: 20px;
+	    padding: 20px 0;
+	}
+
+	.card {
+	    background-color: white;
+	    border-radius: 8px;
+	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	    padding: 20px;
+	    margin-bottom: 20px;
+	}
+
+	.card h2 {
+	    color: #000000;
+	    border-bottom: 2px solid #ecf0f1;
+	    padding-bottom: 10px;
+	    margin-top: 0;
+	}
+
+	.card button {
+	    background-color: #0066cc;
+	    color: white;
+	    padding: 10px 15px;
+	    border: none;
+	    border-radius: 5px;
+	    cursor: pointer;
+	    font-size: 16px;
+	    transition: background-color 0.3s;
+	    margin-top: 10px;
+	}
+
+	.card button:hover {
+	    background-color: #4CAF50;
+	}
+
+	footer {
+	    background-color: transparent;
+	    text-align: center;
+	    padding: 20px 0;
+	    margin-top: 20px;
+	}
+
+	footer a {
+	    color: #0066cc;
+	    text-decoration: none;
+	    margin: 0 10px;
+	}
+
+	footer a:hover {
+	    text-decoration: underline;
+	    color: #4CAF50;
+	}
+
+	#backBtn {
+	    position: absolute;
+	    top: 10px;
+	    left: 10px;
+	    padding: 5px 10px;
+	    background-color: transparent;
+	    border: 1px solid #333;
+	    cursor: pointer;
+	    color: #000000;
+	    border-radius: 5px;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    padding: 10px;
+	    text-align: left;
+	    border: 1px solid #ddd;
+	}
+
+	th {
+	    background-color: #f4f4f4;
+	}
+
+	tr:hover {
+	    background-color: #f1f1f1;
+	}
+
+	input[type="text"], input[type="date"], textarea {
+	    width: calc(100% - 22px);
+	    padding: 10px;
+	    margin-bottom: 10px;
+	    border: 1px solid #ccc;
+	    border-radius: 4px;
+	}
+
+	button[type="submit"] {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+
+	button[type="submit"]:hover {
+	    background-color: #4CAF50;
+	}
+
+	@media (max-width: 768px) {
+	    main {
+	        grid-template-columns: 1fr;
+	    }
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <header>
+        <h1>Add Prescription</h1>
+    </header>
+
+    <main class="container">
+        <form id="prescriptionForm" onsubmit="submitPrescription(event)">
+            <input type="text" id="patientFullName" placeholder="Patient's Full Name" required>
+            <input type="date" id="dateOfBirth" placeholder="Date of Birth" required>
+            <input type="date" id="prescriptionDate" placeholder="Date" required>
+            <input type="text" id="ailment" placeholder="Ailment" required>
+            <input type="text" id="treatment" placeholder="Treatment" required>
+            <textarea id="prescription" placeholder="Prescription Details" required></textarea>
+            <button type="submit">Submit</button>
+        </form>
+    </main>
+
+    <footer>
+        <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Help/Contact</a>
+    </footer>
+
+    <script>
+        function submitPrescription(event) {
+            event.preventDefault();
+            const prescriptionData = {
+                patientFullName: document.getElementById('patientFullName').value,
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                prescriptionDate: document.getElementById('prescriptionDate').value,
+                ailment: document.getElementById('ailment').value,
+                treatment: document.getElementById('treatment').value,
+                prescription: document.getElementById('prescription').value
+            };
+
+            // Logic to generate PDF and save to localStorage
+            const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
+            prescriptions.push(prescriptionData);
+            localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+
+            // Redirect to portfolio
+            window.location.href = 'receptionist portfolio.html';
+        }
+    </script>
+</body>
+</html>

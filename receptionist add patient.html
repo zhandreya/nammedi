@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    line-height: 1.6;
+	    color: #000000;
+	    margin: 0;
+	    padding: 0;
+	}
+
+	.container {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    border-radius: 5px;
+	    margin: 20px auto;
+	    padding: 20px;
+	}
+
+	header {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    color: white;
+	    padding: 20px;
+	    border-radius: 5px;
+	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);	
+	    width: 90%;
+	    max-width: 1200px;
+	    margin: 50px auto;
+	    text-align: center;
+	}
+
+	header h1 {
+	    margin-bottom: 10px;
+	    color: #000000;
+	}
+
+	#profile-pic {
+	    width: 100px;
+	    height: 100px;
+	    border-radius: 50%;
+	    display: block;
+	    margin: 10px auto;
+	}
+
+	header button {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    margin: 5px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+
+	header button:hover {
+	    background-color: #4CAF50;
+	}
+
+	main {
+	    display: grid;
+	    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	    gap: 20px;
+	    padding: 20px 0;
+	}
+
+	.card {
+	    background-color: white;
+	    border-radius: 8px;
+	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+	    padding: 20px;
+	    margin-bottom: 20px;
+	}
+
+	.card h2 {
+	    color: #000000;
+	    border-bottom: 2px solid #ecf0f1;
+	    padding-bottom: 10px;
+	    margin-top: 0;
+	}
+
+	.card button {
+	    background-color: #0066cc;
+	    color: white;
+	    padding: 10px 15px;
+	    border: none;
+	    border-radius: 5px;
+	    cursor: pointer;
+	    font-size: 16px;
+	    transition: background-color 0.3s;
+	    margin-top: 10px;
+	}
+
+	.card button:hover {
+	    background-color:  #4CAF50;
+	}
+
+	footer {
+	    background-color: transparent;
+	    text-align: center;
+	    padding: 20px 0;
+	    margin-top: 20px;
+	}
+
+	footer a {
+	    color: #0066cc;
+	    text-decoration: none;
+	    margin: 0 10px;
+	}
+
+	footer a:hover {
+	    text-decoration: underline;
+	    color: #4CAF50;
+	}
+
+	#backBtn {
+	    position: absolute;
+	    top: 10px;
+	    left: 10px;
+	    padding: 5px 10px;
+	    background-color: transparent;
+	    border: 1px solid #333;
+	    cursor: pointer;
+	    color: #000000;
+	    border-radius: 5px;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    padding: 10px;
+	    text-align: left;
+	    border: 1px solid #ddd;
+	}
+
+	th {
+	    background-color: #f4f4f4;
+	}
+
+	tr:hover {
+	    background-color: #f1f1f1;
+	}
+	
+	form {
+	    margin-top: 20px;
+	}
+
+	input[type="text"], input[type="date"] {
+	    width: calc(100% - 22px);
+	    padding: 10px;
+	    margin-bottom: 10px;
+	    border: 1px solid #ccc;
+	    border-radius: 4px;
+	}
+
+	button[type="submit"] {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+
+	button[type="submit"]:hover {
+	    background-color: #4CAF50;
+	}
+
+	@media (max-width: 768px) {
+	    main {
+	        grid-template-columns: 1fr;
+	    }
+	
+	    header {
+	        padding: 10px 0;
+	    }
+
+	    #profile-pic {
+	        width: 80px;
+	        height: 80px;
+	    }
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <div class="container">
+        <h2>Add Patient</h2>
+        <form id="patientForm">
+            <input type="text" id="fullName" placeholder="Full Name" required>
+            <input type="text" id="surname" placeholder="Surname" required>
+            <input type="date" id="dob" required>
+            <input type="number" id="age" placeholder="Age" required>
+            <select id="gender" required>
+                <option value="" disabled selected>Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="text" id="idPassport" placeholder="ID/Passport Number" required>
+            <input type="tel" id="cellphone" placeholder="Cellphone Number" required>
+            <select id="insurance" required>
+                <option value="" disabled selected>Medical Insurance</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+            </select>
+            <input type="text" id="institution" placeholder="Institution Name" required>
+            <select id="reason" required>
+                <option value="" disabled selected>Reason for Visit</option>
+                <option value="General Check-Up">General Check-Up</option>
+                <option value="Follow-Up">Follow-Up</option>
+                <option value="Specific Ailment">Specific Ailment</option>
+                <option value="Surgery">Surgery</option>
+            </select>
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('patientForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const patientData = {
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                dob: document.getElementById('dob').value,
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                idPassport: document.getElementById('idPassport').value,
+                cellphone: document.getElementById('cellphone').value,
+                insurance: document.getElementById('insurance').value,
+                institution: document.getElementById('institution').value,
+                reason: document.getElementById('reason').value
+            };
+            const patients = JSON.parse(localStorage.getItem('patients')) || [];
+            patients.push(patientData);
+            localStorage.setItem('patients', JSON.stringify(patients));
+            window.location.href = 'receptionist portfolio.html';
+        });
+    </script>
+</body>
+</html>

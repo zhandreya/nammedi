@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institutes Visited</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    color: #000000;
+	    margin: 0;
+	    padding: 20px;
+	}
+
+	h1 {
+	    text-align: center;
+	    color: #000000;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ccc;
+	    padding: 10px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: rgba(120, 120, 128, 0.30);
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Institutes Visited</h1>
+    <table id="institutes-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Institute</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody id="institutes-body"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadInstitutesVisited);
+
+        function loadInstitutesVisited() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const institutesVisited = userData[userId]?.institutesVisited || [];
+
+            const tableBody = document.getElementById('institutes-body');
+            institutesVisited.forEach(entry => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.institute}</td>
+                    <td>${entry.time}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>

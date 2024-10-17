@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor's Reports</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    color: #000000;
+	    margin: 0;
+	    padding: 20px;
+	}
+
+	h1 {
+	    text-align: center;
+	    color: #000000;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ccc;
+	    padding: 10px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: rgba(120, 120, 128, 0.30);
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Doctor's Reports</h1>
+    <table id="reports-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Doctor's Name</th>
+                <th>Report</th>
+                <th>Download</th>
+            </tr>
+        </thead>
+        <tbody id="reports-body"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadReports);
+
+        function loadReports() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const reports = userData[userId]?.reports || [];
+
+            const tableBody = document.getElementById('reports-body');
+            reports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.date}</td>
+                    <td>${report.doctorName}</td>
+                    <td>${report.title}</td>
+                    <td><a href="${report.link}" download>Download</a></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>

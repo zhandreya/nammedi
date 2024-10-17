@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAMIBIAN MEDICAL RECORDS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+        }
+
+        h1 {
+            color: #000000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 48px;
+            margin-top: 8px;
+            font-size: 40px;
+            font-family: Lato, sans-serif;
+        }
+
+        p {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            padding: 32px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .option {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: rgba(120, 120, 128, 0.30);
+            border-radius: 5px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        #signUpBtn, #logInBtn {
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-family: Lato, sans-serif;
+            flex: 1;
+            margin: 0 50px;
+        }
+
+        #signUpBtn:hover, #logInBtn:hover {
+            background-color: #4CAF50;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            font-family: Lato, sans-serif;
+            color: #000000;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1 class="title">NAMIBIAN MEDICAL RECORDS</h1>
+    <div class="container">
+        <p>Sign-up or Log In as:</p>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="userType" value="patient"> Patient
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="receptionist"> Receptionist
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="medicalStaff"> Medical Staff
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="specialist"> Specialist
+            </label>
+        </div>
+        <div class="buttons">
+            <button id="signUpBtn">Sign-Up</button>
+            <button id="logInBtn">Log In</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('backBtn').addEventListener('click', () => {
+            history.back();
+        });
+
+        document.getElementById('signUpBtn').addEventListener('click', () => {
+            const selectedUserType = document.querySelector('input[name="userType"]:checked');
+            if (selectedUserType) {
+                switch (selectedUserType.value) {
+                    case 'patient':
+                        window.location.href = 'patient sign-up.html';
+                        break;
+                    case 'receptionist':
+                        window.location.href = 'receptionist sign-up.html';
+                        break;
+                    case 'medicalStaff':
+                        window.location.href = 'medi staff sign-up.html';
+                        break;
+                    case 'specialist':
+                        window.location.href = 'specialist sign-up.html';
+                        break;
+                }
+            } else {
+                alert('Please select a user type');
+            }
+        });
+
+        document.getElementById('logInBtn').addEventListener('click', () => {
+            const selectedUserType = document.querySelector('input[name="userType"]:checked');
+            if (selectedUserType) {
+                switch (selectedUserType.value) {
+                    case 'patient':
+                        window.location.href = 'patient log in.html';
+                        break;
+                    case 'receptionist':
+                        window.location.href = 'receptionist log in.html';
+                        break;
+                    case 'medicalStaff':
+                        window.location.href = 'med staff log in.html';
+                        break;
+                    case 'specialist':
+                        window.location.href = 'specialist log in.html';
+                        break;
+                }
+            } else {
+                alert('Please select a user type');
+            }
+        });
+    </script>
+</body>
+</html>

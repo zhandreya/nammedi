@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Appointments</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    color: #000000;
+	    margin: 0;
+	    padding: 20px;
+	}
+
+	h1 {
+	    text-align: center;
+	    color: #000000;
+	}
+
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ccc;
+	    padding: 10px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: rgba(120, 120, 128, 0.30);
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Your Appointments</h1>
+    <table id="appointment-table">
+        <thead>
+            <tr>
+                <th>Patient Name</th>
+                <th>Institution</th>
+                <th>Doctor/Specialist</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody id="appointment-list"></tbody>
+    </table>
+
+    <script>
+       
+        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        const appointmentList = document.getElementById('appointment-list');
+
+        appointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${appointment.firstName} ${appointment.surname}</td>
+                <td>${appointment.institution}</td>
+                <td>${appointment.doctorSpecialist}</td>
+                <td>${appointment.preferredDate}</td>
+                <td>${appointment.preferredTime}</td>
+                <td>${appointment.visitPurpose}</td>
+            `;
+            appointmentList.appendChild(row);
+        });
+    </script>
+</body>
+</html>

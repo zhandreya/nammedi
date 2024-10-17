@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Inventory</title>
+    <style>
+	body {
+	    font-family: Lato, sans-serif;
+	    background-image: url('Desert Scope.jpeg');
+	    background-size: cover;
+	    background-position: center;
+	    line-height: 1.6;
+	    color: #000000;
+	    margin: 0;
+	    padding: 0;
+	}
+
+	.container {
+	    background-color: rgba(120, 120, 128, 0.30);
+	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+	    width: 90%;
+	    max-width: 1200px;
+	    border-radius: 5px;
+	    margin: 50px auto;
+	    padding: 20px;
+	}
+
+	h2 {
+	    color: #000000;
+	    margin-bottom: 20px;
+	}	
+
+	button {
+	    background-color: #0066cc;
+	    color: white;
+	    border: none;
+	    padding: 10px 15px;
+	    margin: 5px;
+	    cursor: pointer;
+	    border-radius: 5px;
+	    transition: background-color 0.3s;
+	}
+	
+	button:hover {
+	    background-color: #4CAF50;
+	}
+	
+	input[type="text"],
+	input[type="date"],
+	input[type="number"],
+	input[type="file"],
+	input[type="time"],
+	textarea,
+	select {
+	    width: 100%;
+	    padding: 10px;
+	    margin: 10px 0;
+	    border: 1px solid #ccc;
+	    border-radius: 5px;
+	}
+	
+	table {
+	    width: 100%;
+	    border-collapse: collapse;
+	    margin-top: 20px;
+	}
+
+	th, td {
+	    border: 1px solid #ddd;
+	    padding: 8px;
+	    text-align: left;
+	}
+
+	th {
+	    background-color: #f2f2f2;
+	}
+
+	textarea {
+	    height: 60px;
+	}
+
+	#backBtn {
+	    position: absolute;
+	    top: 10px;
+	    left: 10px;
+	    padding: 5px 10px;
+	    background-color: transparent;
+	    border: 1px solid #333;
+	    cursor: pointer;
+	    color: #000000;
+	    border-radius: 5px;
+	}
+
+	@media (max-width: 768px) {
+	    .container {
+	        padding: 10px;
+	    }
+
+	    button {
+	        padding: 8px 10px;
+	    }
+
+	    input[type="text"],
+	    input[type="date"],
+	    input[type="number"],
+	    input[type="file"],
+	    input[type="time"],
+	    textarea,
+	    select {
+	        padding: 8px;
+	    }
+	}
+
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <div class="container">
+        <h2>Medication Inventory</h2>
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Full Name</th>
+                    <th>Surname</th>
+                    <th>Ailment</th>
+                    <th>Treatment</th>
+                    <th>Prescription</th>
+                    <th>Quantity</th>
+                    <th>Institution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Inventory will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const medicationRecords = JSON.parse(localStorage.getItem('medicationRecords')) || [];
+            const tableBody = document.getElementById('inventoryTable').querySelector('tbody');
+            medicationRecords.forEach((record) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = record.date;
+                row.insertCell(1).textContent = record.fullName;
+                row.insertCell(2).textContent = 'Surname'; // Assuming this can be fetched or is static
+                row.insertCell(3).textContent = record.ailment;
+                row.insertCell(4).textContent = record.treatment;
+                row.insertCell(5).textContent = record.prescription;
+                row.insertCell(6).textContent = record.quantity;
+                row.insertCell(7).textContent = 'Institution Name'; // Assuming this can be fetched or is static
+            });
+        });
+    </script>
+</body>
+</html>

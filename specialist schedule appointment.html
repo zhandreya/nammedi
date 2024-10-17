@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule Appointment</title>
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
+
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
+
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 10px auto;
+        }
+
+        #make-appointment {
+            margin-top: 20px;
+        }
+
+        #appointment-form input,
+        #appointment-form select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #appointment-form button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #appointment-form button:hover {
+            background-color: #4CAF50;
+        }
+
+        footer {
+            background-color: transparent;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 768px) {
+            #appointment-form input,
+            #appointment-form select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <header>
+        <h1>Schedule Your Appointment</h1>
+        <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
+    </header>
+
+    <main class="container">
+        <section id="make-appointment">
+            <h2>Appointment Form</h2>
+            <form id="appointment-form" onsubmit="return submitForm(event);">
+                <input type="text" id="doctor-name" name="doctor_name" placeholder="Doctor/Specialist" required>
+                <input type="text" id="doctor-specialty" name="doctor_specialty" placeholder="Doctor's Specialty" required>
+                <input type="text" id="patient-first-name" name="patient_first_name" placeholder="Patient's First Name" required>
+                <input type="text" id="patient-surname" name="patient_surname" placeholder="Patient's Surname" required>
+                <input type="text" id="institution" name="institution" placeholder="Institution Name" required>
+                <input type="date" id="preferred-date" name="preferred_date" required>
+                <input type="time" id="preferred-time" name="preferred_time" required>
+                <select id="visit-purpose" name="visit_purpose" required>
+                    <option value="">Select Purpose of Visit</option>
+                    <option value="general-checkup">General Check-up</option>
+                    <option value="follow-up">Follow-up</option>
+                    <option value="specific-ailment">Specific Ailment</option>
+                    <option value="surgery">Surgery</option>
+                </select>
+                <button type="submit">Submit Request</button>
+            </form>
+        </section>
+    </main>
+
+<footer>
+    <a href="Privacy Policy.html">Privacy Policy</a> | 
+    <a href="Terms of Service.html">Terms of Service</a> | 
+    <a href="Help_Contact.html">Help/Contact</a>
+</footer>
+
+    <script>
+        function submitForm(event) {
+            event.preventDefault();
+            
+            const doctorName = document.getElementById('doctor-name').value;
+            const doctorSpecialty = document.getElementById('doctor-specialty').value;
+            const patientFirstName = document.getElementById('patient-first-name').value;
+            const patientSurname = document.getElementById('patient-surname').value;
+            const institution = document.getElementById('institution').value;
+            const preferredDate = document.getElementById('preferred-date').value;
+            const preferredTime = document.getElementById('preferred-time').value;
+            const visitPurpose = document.getElementById('visit-purpose').value;
+
+            const appointmentData = {
+                doctorName,
+                doctorSpecialty,
+                patientFirstName,
+                patientSurname,
+                institution,
+                preferredDate,
+                preferredTime,
+                visitPurpose
+            };
+
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            appointments.push(appointmentData);
+            localStorage.setItem('appointments', JSON.stringify(appointments));
+
+            window.history.back();
+            return false;
+        }
+
+        window.onload = function() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) return;
+
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const user = userData[userId] || {};
+            const storedPicture = user.profilePicture || 'default-profile.png';
+            document.getElementById('profile-pic').src = storedPicture;
+        };
+    </script>
+</body>
+</html>
