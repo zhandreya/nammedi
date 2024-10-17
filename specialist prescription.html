@@ -205,7 +205,9 @@
     </main>
 
     <footer>
-        <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a> | <a href="#">Help/Contact</a>
+        <a href="Privacy Policy.html">Privacy Policy</a> | 
+        <a href="Terms of Service.html">Terms of Service</a> | 
+        <a href="Help_Contact.html">Help/Contact</a>
     </footer>
 
     <script>
@@ -233,9 +235,37 @@
         function downloadPrescription(index) {
             const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
             const prescription = prescriptions[index];
-            // Logic to download the PDF (placeholder)
+           
             alert('Downloading prescription for ' + prescription.patientFullName);
         }
+	           function checkUserLogin() {
+    const userId = localStorage.getItem('currentUserId');
+    if (!userId) {
+
+        window.location.href = 'sign-up.html';
+    } else {
+        loadUserData();
+    }
+}
+
+let inactivityTime = function () {
+    let timeout;
+
+    const resetTimer = () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            localStorage.removeItem('currentUserId');
+            window.location.href = 'sign-up.html';
+        }, 3600000);
+    };
+
+    window.onload = resetTimer;
+    window.onmousemove = resetTimer;
+    window.onkeydown = resetTimer;
+};
+
+inactivityTime();
+
     </script>
 </body>
 </html>
