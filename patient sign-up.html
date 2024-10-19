@@ -18,7 +18,6 @@
         h1 {
             text-align: center;
             color: #000000;
-            font-family: Lato, sans-serif;
         }
 
         #backBtn {
@@ -29,18 +28,17 @@
             background-color: transparent;
             border: 1px solid #333;
             cursor: pointer;
-            font-family: Lato, sans-serif;
             color: #000000;
             border-radius: 5px;
         }
 
         form {
-            background-color: rgba(120,120,128,0.30);
+            background-color: rgba(120, 120, 128, 0.30);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             max-width: 800px;
-            margin: 0 auto;
+            margin: 20px auto;
         }
 
         .form-columns {
@@ -61,7 +59,8 @@
         input[type="date"],
         input[type="tel"],
         input[type="email"],
-        input[type="password"] {
+        input[type="password"],
+        select {
             width: 100%;
             padding: 8px;
             margin-top: 5px;
@@ -97,6 +96,13 @@
 
         #confirmBtn:hover {
             background-color: #4CAF50;
+        }
+
+        #profilePicPreview {
+            display: none;
+            width: 100px;
+            height: 100px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -141,7 +147,7 @@
                 </div>
                 <label for="profilePicture">Profile Picture</label>
                 <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
-                <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview" style="display: none; width: 100px; height: 100px;"/>
+                <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview"/>
             </div>
         </div>
         <div class="info-box">
@@ -155,8 +161,9 @@
             const file = input.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('profilePicPreview').src = e.target.result;
-                document.getElementById('profilePicPreview').style.display = 'block';
+                const profilePicPreview = document.getElementById('profilePicPreview');
+                profilePicPreview.src = e.target.result;
+                profilePicPreview.style.display = 'block';
             }
             reader.readAsDataURL(file);
         }
@@ -171,9 +178,9 @@
         }
 
         function validatePasswords() {
-            var password = document.getElementById("password").value;
-            var confirmPassword = document.getElementById("confirmPassword").value;
-            var passwordError = document.getElementById("passwordError");
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const passwordError = document.getElementById("passwordError");
 
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
@@ -213,9 +220,9 @@
                     window.location.href = "patient log in.html";
                 }
 
-                return false;
+                return false; // Prevent form submission
             } else {
-                return false;
+                return false; // Prevent form submission
             }
         }
     </script>
