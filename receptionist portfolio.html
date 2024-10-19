@@ -155,10 +155,9 @@
     <header>
         <h1>Welcome, <span id="user-name"></span>!</h1>
         <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
-        <input type="file" id="upload-photo" style="display:none;" onchange="changeProfilePicture(this)">
-        <button onclick="document.getElementById('upload-photo').click()">Change Profile Picture</button>
-        <button onclick="editDetails()">Edit Personal Details</button>
+        <button onclick="editPersonalDetails()">Edit Personal Details</button> 
     </header>
+
 
     <main class="container">
         <section class="card" id="patient-management">
@@ -216,7 +215,9 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
-
+        function editPersonalDetails() {
+            window.location.href = "patient changes.html";
+        }
         document.addEventListener('DOMContentLoaded', function() {
             loadUserData();
         });
