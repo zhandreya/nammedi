@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -192,6 +192,7 @@
 
         function validateSignupForm() {
             if (validatePasswords()) {
+                const profilePicture = document.getElementById("profilePicture").files[0];
                 const userData = {
                     firstName: document.getElementById("firstName").value,
                     surname: document.getElementById("surname").value,
@@ -205,17 +206,18 @@
                     password: document.getElementById("password").value,
                 };
 
-                saveToLocalStorage(userData);
-                window.location.href = "patient log in.html"; 
-
-                const profilePicture = document.getElementById("profilePicture").files[0];
                 if (profilePicture) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        userData.profilePicture = e.target.result; 
-                       
+                        userData.profilePicture = e.target.result;
+                        saveToLocalStorage(userData);
+                        window.location.href = "patient log in.html"; 
                     };
                     reader.readAsDataURL(profilePicture);
+                } else {
+                    userData.profilePicture = 'default-profile.png';
+                    saveToLocalStorage(userData);
+                    window.location.href = "patient log in.html"; 
                 }
 
                 return false; 
