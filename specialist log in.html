@@ -96,12 +96,6 @@
         </div>
     </form>
 
-    <div id="profileDisplay" style="display: none;">
-        <h2>Welcome!</h2>
-        <img id="profilePic" src="default-profile.png" alt="Profile Picture" width="100" height="100">
-        <p id="userName"></p>
-    </div>
-
     <script>
         function validateLoginForm() {
             const email = document.getElementById("workEmailS").value;
@@ -111,18 +105,12 @@
 
             if (users[email] && users[email].password === password) {
                 sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-                displayUserProfile(users[email]); // Display user profile
-                return false; // Prevent form submission
+                window.location.href = "specialist portfolio.html"; 
+                return false;
             } else {
                 document.getElementById("loginError").style.display = "block";
                 return false;
             }
-        }
-
-        function displayUserProfile(user) {
-            document.getElementById("profilePic").src = user.profilePicture || "default-profile.png";
-            document.getElementById("userName").innerText = `Welcome, ${user.firstName} ${user.surname}`;
-            document.getElementById("profileDisplay").style.display = "block";
         }
     </script>
 </body>
