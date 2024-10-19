@@ -6,92 +6,78 @@
     <title>Specialist Log In</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: Lato, sans-serif;
             background-image: url('Desert Scope.jpeg');
             background-size: cover;
             background-position: center;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 20px;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
         }
 
         h1 {
-            color: #000000;
-            margin-bottom: 48px;
-            margin-top: 0px;
-            font-size: 40px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            font-family: Lato, sans-serif;
-        }
-
-        .container {
-            background-color: rgba(120, 120, 128, 0.30);
-            padding: 32px;
-            border-radius: 10px;
             text-align: center;
-            max-width: 280px;
-            width: 100%;
-            margin-top: 40px;
-        }
-
-        label {
-            font-size: 18px;
-            display: block;
-            margin-bottom: 16px;
-            text-align: left;
-        }
-
-        .specialist-login-label {
-            font-size: 22px;
-        }
-
-        input[type="text"],
-        input[type="password"],
-        input[type="email"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        #error-message {
-            color: red;
-            display: none;
-        }
-
-        #logInBtn {
-            padding: 8px 16px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            color: #000000;
             font-family: Lato, sans-serif;
-        }
-
-        #logInBtn:hover {
-            background-color: #4CAF50;
         }
 
         #backBtn {
             position: absolute;
             top: 10px;
             left: 10px;
-            padding: 5px 10px; 
+            padding: 5px 10px;
             background-color: transparent;
             border: 1px solid #333;
             cursor: pointer;
             font-family: Lato, sans-serif;
             color: #000000;
             border-radius: 5px;
+        }
+
+        form {
+            background-color: rgba(120, 120, 128, 0.30);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #logInBtn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        #logInBtn:hover {
+            background-color: #4CAF50;
+        }
+
+        #loginError {
+            color: red;
+            display: none;
         }
     </style>
 </head>
@@ -101,30 +87,42 @@
     <form id="loginForm" onsubmit="return validateLoginForm();">
         <div class="container">
             <label class="specialist-login-label">Specialist Log In:</label>
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>           
+            <label for="workEmailS">Email Address</label>
+            <input type="email" id="workEmailS" name="workEmailS" required>           
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
-            <div id="loginError" style="color: red; display: none;">Invalid email or password.</div>
+            <div id="loginError">Invalid email or password.</div>
             <button type="submit" id="logInBtn">Log In</button>
         </div>
     </form>
 
+    <div id="profileDisplay" style="display: none;">
+        <h2>Welcome!</h2>
+        <img id="profilePic" src="default-profile.png" alt="Profile Picture" width="100" height="100">
+        <p id="userName"></p>
+    </div>
+
     <script>
         function validateLoginForm() {
-            const email = document.getElementById("email").value;
+            const email = document.getElementById("workEmailS").value;
             const password = document.getElementById("password").value;
 
             const users = JSON.parse(localStorage.getItem('users')) || {};
 
             if (users[email] && users[email].password === password) {
                 sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-                window.location.href = "specialist portfolio.html";
-                return false;
+                displayUserProfile(users[email]); // Display user profile
+                return false; // Prevent form submission
             } else {
                 document.getElementById("loginError").style.display = "block";
                 return false;
             }
+        }
+
+        function displayUserProfile(user) {
+            document.getElementById("profilePic").src = user.profilePicture || "default-profile.png";
+            document.getElementById("userName").innerText = `Welcome, ${user.firstName} ${user.surname}`;
+            document.getElementById("profileDisplay").style.display = "block";
         }
     </script>
 </body>
