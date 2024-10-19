@@ -161,9 +161,8 @@
             const file = input.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                const profilePicPreview = document.getElementById('profilePicPreview');
-                profilePicPreview.src = e.target.result;
-                profilePicPreview.style.display = 'block';
+                document.getElementById('profilePicPreview').src = e.target.result;
+                document.getElementById('profilePicPreview').style.display = 'block';
             }
             reader.readAsDataURL(file);
         }
@@ -178,9 +177,9 @@
         }
 
         function validatePasswords() {
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-            const passwordError = document.getElementById("passwordError");
+            var password = document.getElementById("password").value;
+            var confirmPassword = document.getElementById("confirmPassword").value;
+            var passwordError = document.getElementById("passwordError");
 
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
@@ -206,23 +205,22 @@
                     password: document.getElementById("password").value,
                 };
 
+                saveToLocalStorage(userData);
+                window.location.href = "patient log in.html"; 
+
                 const profilePicture = document.getElementById("profilePicture").files[0];
                 if (profilePicture) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         userData.profilePicture = e.target.result; 
-                        saveToLocalStorage(userData);
-                        window.location.href = "patient log in.html"; 
+                       
                     };
                     reader.readAsDataURL(profilePicture);
-                } else {
-                    saveToLocalStorage(userData); 
-                    window.location.href = "patient log in.html";
                 }
 
-                return false; // Prevent form submission
+                return false; 
             } else {
-                return false; // Prevent form submission
+                return false;
             }
         }
     </script>
