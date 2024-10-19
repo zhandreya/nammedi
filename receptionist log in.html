@@ -98,11 +98,11 @@
 <body>
     <button id="backBtn" onclick="window.history.back()">Back</button>
     <h1>NAMIBIAN MEDICAL RECORDS</h1>
-    <form id="loginForm" onsubmit="return validateLogin()">
+    <form id="loginForm" onsubmit="return validateLogin();">
         <div class="container">
             <label class="receptionist-login-label">Receptionist Log In:</label>
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>           
+            <label for="workEmailR">Email Address</label>
+            <input type="email" id="workEmailR" name="workEmailR" required>           
             <label for="password">Password</label>
             <input type="password" id="password" name="password" required>
             <div id="loginError" style="color: red; display: none;">Invalid email or password.</div>
@@ -111,8 +111,8 @@
     </form>
 
     <script>
-        function validateLoginForm() {
-            const email = document.getElementById("email").value;
+        function validateLogin() {
+            const email = document.getElementById("workEmailR").value;
             const password = document.getElementById("password").value;
 
             const users = JSON.parse(localStorage.getItem('users')) || {};
