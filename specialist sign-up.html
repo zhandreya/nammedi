@@ -35,10 +35,10 @@
         }
 
         form {
-            background-color: rgba(120,120,128,0.30);
+            background-color: rgba(120, 120, 128, 0.30);
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             max-width: 800px;
             margin: 0 auto;
         }
@@ -112,7 +112,7 @@
                 <input type="text" id="surname" name="surname" required>
                 <label for="dateOfBirth">Date of Birth</label>
                 <input type="date" id="dateOfBirth" name="dateOfBirth" required>
-		<label for="gender">Gender</label>
+                <label for="gender">Gender</label>
                 <select id="gender" name="gender" required>
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
@@ -122,8 +122,8 @@
                 <input type="text" id="idPassport" name="idPassport" required>
                 <label for="workTel">Work Tel. No.</label>
                 <input type="tel" id="workTel" name="workTel" required>
-                <label for="workEmail">Work Email Address</label>
-                <input type="email" id="workEmail" name="workEmail" required>
+                <label for="workEmailS">Work Email Address</label>
+                <input type="email" id="workEmailS" name="workEmailS" required>
                 <label for="specializingArea">Specializing Area</label>
                 <input type="text" id="specializingArea" name="specializingArea" required>
                 <label for="instituteEmployed">Institute Employed</label>
@@ -136,13 +136,13 @@
                 <input type="password" id="password" name="password" required>
                 <label for="confirmPassword">Confirm Password</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
-		<div id="passwordError" style="color: red; display: none;">Passwords do not match.</div>
+                <div id="passwordError" style="color: red; display: none;">Passwords do not match.</div>
                 <div class="terms-container">
                     <input type="checkbox" id="termsCheck" name="termsCheck" required>
                     <label for="termsCheck">I agree to the <a href="terms-and-cons.html">Terms & Conditions</a></label>
                 </div>
                 <label for="profilePicture">Profile Picture</label>
-                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" inchange="previewProfilePicture(this)">
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
                 <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview" style="display: none; width: 100px; height: 100px;"/>
             </div>
         </div>
@@ -165,7 +165,7 @@
 
         function saveToLocalStorage(userData) {
             const users = JSON.parse(localStorage.getItem('users')) || {};
-            const email = userData.email;
+            const email = userData.workEmailS;
 
             users[email] = userData;
             localStorage.setItem('users', JSON.stringify(users));
@@ -173,9 +173,9 @@
         }
 
         function validatePasswords() {
-            var password = document.getElementById("password").value;
-            var confirmPassword = document.getElementById("confirmPassword").value;
-            var passwordError = document.getElementById("passwordError");
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const passwordError = document.getElementById("passwordError");
 
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
@@ -195,7 +195,7 @@
                     gender: document.getElementById("gender").value,
                     idPassport: document.getElementById("idPassport").value,
                     workTel: document.getElementById("workTel").value,
-                    workEmail: document.getElementById("workEmail").value,
+                    workEmailS: document.getElementById("workEmailS").value,
                     specializingArea: document.getElementById("specializingArea").value,
                     instituteEmployed: document.getElementById("instituteEmployed").value,
                     username: document.getElementById("username").value,
