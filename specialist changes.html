@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #000000;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
+
+        form {
+            background-color: rgba(120, 120, 128, 0.30);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 20px auto;
+        }
+
+        .profile-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #profilePicPreview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-top: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        #confirmBtn {
+            display: block;
+            width: 200px;
+            margin: 20px auto 0;
+            padding: 10px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #confirmBtn:hover {
+            background-color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>Edit Your Profile</h1>
+    <form id="editForm" onsubmit="return validateEditForm();">
+        <div class="profile-container">
+            <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview"/>
+            <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
+            <button type="button" onclick="document.getElementById('profilePicture').click();">Change Profile Picture</button>
+        </div>
+        
+        <label for="firstName">First Name(s)</label>
+        <input type="text" id="firstName" name="firstName" required>
+        <label for="surname">Surname</label>
+        <input type="text" id="surname" name="surname" required>
+        <label for="placeOfBirth">Place of Birth</label>
+        <input type="text" id="placeOfBirth" name="placeOfBirth" required>
+        <label for="dateOfBirth">Date of Birth</label>
+        <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+        <label for="gender">Gender</label>
+        <select id="gender" name="gender" required>
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+        </select>
+        <label for="idPassport">ID/Passport No.</label>
+        <input type="text" id="idPassport" name="idPassport" required>
+        <label for="cellPhone">Cell Phone No.</label>
+        <input type="tel" id="cellPhone" name="cellPhone" required>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required>
+        
+        <button type="submit" id="confirmBtn">Update Profile</button>
+    </form>
+
+    <script>
+        function previewProfilePicture(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profilePicPreview').src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function validateEditForm() {
+            const userData = {
+                firstName: document.getElementById("firstName").value,
+                surname: document.getElementById("surname").value,
+                placeOfBirth: document.getElementById("placeOfBirth").value,
+                dateOfBirth: document.getElementById("dateOfBirth").value,
+                gender: document.getElementById("gender").value,
+                idPassport: document.getElementById("idPassport").value,
+                cellPhone: document.getElementById("cellPhone").value,
+                email: document.getElementById("email").value,
+            };
+
+            // Logic to save userData to localStorage or send to server can be added here
+
+            alert('Profile updated successfully!');
+            // Redirect to patient portfolio page
+            window.location.href = 'patient portfolio.html';
+            return false; // Prevent form submission for demo purposes
+        }
+
+        // Load existing user data into the form (mock data for demo)
+        document.addEventListener('DOMContentLoaded', function() {
+            const userData = JSON.parse(localStorage.getItem('usersp'))[localStorage.getItem('currentUserId')] || {};
+            document.getElementById('firstName').value = userData.firstName || '';
+            document.getElementById('surname').value = userData.surname || '';
+            document.getElementById('placeOfBirth').value = userData.placeOfBirth || '';
+            document.getElementById('dateOfBirth').value = userData.dateOfBirth || '';
+            document.getElementById('gender').value = userData.gender || '';
+            document.getElementById('idPassport').value = userData.idPassport || '';
+            document.getElementById('cellPhone').value = userData.cellPhone || '';
+            document.getElementById('email').value = userData.email || '';
+            document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
+        });
+    </script>
+</body>
+</html>
