@@ -163,7 +163,7 @@
         <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
         <input type="file" id="upload-photo" style="display:none;" onchange="changeProfilePicture(this)">
         <button onclick="document.getElementById('upload-photo').click()">Change Profile Picture</button>
-        <button onclick="editDetails()">Edit Personal Details</button>
+       <button onclick="editPersonalDetails()">Edit Personal Details</button>
     </header>
     
     <main class="container">
@@ -248,6 +248,10 @@
 
         function redirectTo(page) {
             window.location.href = page;
+        }
+
+        function editPersonalDetails() {
+            window.location.href = "med staff changes.html";
         }
 
         function showStoredPatients() {
