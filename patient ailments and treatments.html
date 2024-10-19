@@ -57,7 +57,7 @@
 
         function loadAilmentsAndTreatments() {
             const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('usersp')) || {};
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
             const ailments = userData[userId]?.ailments || [];
 
             const tableBody = document.getElementById('ailments-body');
