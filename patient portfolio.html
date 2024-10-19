@@ -158,7 +158,7 @@
     <button id="backBtn" onclick="window.history.back()">Back</button>
     <header>
         <h1>Welcome, <span id="user-name"></span>!</h1>
-        <img id="profile-pic" src="default-profile.png" alt="Profile Picture" style="width: 100px; height: 100px;">
+        <img id="profile-pic" src="default-profile.png" alt="Profile Picture">
         <button onclick="editPersonalDetails()">Edit Personal Details</button> 
     </header>
 
@@ -237,19 +237,15 @@
             if (!userId) {
                 window.location.href = 'sign-up.html';
             } else {
-                loadUserData();
+                loadUserData(userId);
             }
         }
 
-        function loadUserData() {
-            const userId = localStorage.getItem('currentUserId');
+        function loadUserData(userId) {
             const userData = JSON.parse(localStorage.getItem('users')) || {};
             const user = userData[userId] || {};
 
-            const firstName = user.firstName || '';
-            const surname = user.surname || '';
-            const fullName = firstName + (firstName ? ' ' : '') + surname; 
-
+            const fullName = `${user.firstName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
 
             const storedProfilePicture = user.profilePicture || 'default-profile.png';
@@ -277,48 +273,20 @@
             const firstDay = new Date(currentYear, currentMonth, 1).getDay();
 
             for (let i = 0; i < firstDay; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'calendar-day';
-                calendarView.appendChild(emptyCell);
+                const emptyDiv = document.createElement('div');
+                calendarView.appendChild(emptyDiv);
             }
 
             for (let day = 1; day <= daysInMonth; day++) {
-                const dayCell = document.createElement('div');
-                dayCell.className = 'calendar-day';
-                dayCell.textContent = day;
-
-                const dateString = `${currentYear}-${currentMonth + 1}-${day}`;
-                const dailyAppointments = appointments.filter(appointment => {
-                    const appointmentDate = new Date(appointment.date);
-                    return appointmentDate.toDateString() === new Date(dateString).toDateString();
-                });
-
-                if (dailyAppointments.length > 0) {
-                    dayCell.style.backgroundColor = '#dff0d8'; 
-                    dayCell.title = dailyAppointments.map(app => app.details).join(', ');
-                }
-
-                calendarView.appendChild(dayCell);
+                const dayDiv = document.createElement('div');
+                dayDiv.className = 'calendar-day';
+                dayDiv.textContent = day;
+                dayDiv.onclick = function() {
+                    alert(`No appointments on ${day} ${today.toLocaleString('default', { month: 'long' })} ${currentYear}`);
+                };
+                calendarView.appendChild(dayDiv);
             }
         }
-
-        let inactivityTime = function () {
-            let timeout;
-
-            const resetTimer = () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
-                }, 3600000);
-            };
-
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onkeydown = resetTimer;
-        };
-
-        inactivityTime();
     </script>
 </body>
 </html>
