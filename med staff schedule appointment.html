@@ -189,7 +189,7 @@
             const userId = localStorage.getItem('currentUserId');
             if (!userId) return;
 
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
             const user = userData[userId] || {};
             const storedPicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedPicture;
