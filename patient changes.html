@@ -177,15 +177,14 @@
                 email: document.getElementById("email").value,
             };
 
-            // Logic to save userData to localStorage or send to server can be added here
 
             alert('Profile updated successfully!');
-            // Redirect to patient portfolio page
+         
             window.location.href = 'patient portfolio.html';
-            return false; // Prevent form submission for demo purposes
+            return false; 
         }
 
-        // Load existing user data into the form (mock data for demo)
+  
         document.addEventListener('DOMContentLoaded', function() {
             const userData = JSON.parse(localStorage.getItem('usersp'))[localStorage.getItem('currentUserId')] || {};
             document.getElementById('firstName').value = userData.firstName || '';
