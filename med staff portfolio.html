@@ -216,7 +216,7 @@
                     document.getElementById('profile-pic').src = imageSrc;
                     const userId = localStorage.getItem('currentUserId');
                     if (userId) {
-                        const userData = JSON.parse(localStorage.getItem('users')) || {};
+                        const userData = JSON.parse(localStorage.getItem('usersm')) || {};
                         userData[userId].profilePicture = imageSrc;
                         localStorage.setItem('users', JSON.stringify(userData));
                     }
@@ -233,7 +233,7 @@
             const userId = localStorage.getItem('currentUserId');
             if (!userId) return;
 
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
             const user = userData[userId] || {};
 
             const firstName = user.firstName || '';
