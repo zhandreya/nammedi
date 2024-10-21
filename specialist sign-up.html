@@ -164,11 +164,15 @@
         }
 
         function saveToLocalStorage(userData) {
-            const users = JSON.parse(localStorage.getItem('usersd')) || {};
+            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
+            const users = JSON.parse(localStorage.getItem('users')) || {};
             const email = userData.workEmailS;
 
+            usersd[email] = userData;
             users[email] = userData;
-            localStorage.setItem('usersd', JSON.stringify(users));
+
+            localStorage.setItem('usersd', JSON.stringify(usersd));
+            localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('currentUserId', email);
         }
 
