@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -153,7 +153,6 @@
                 height: 80px;
             }
         }
-
     </style>
 </head>
 <body>
@@ -169,7 +168,7 @@
             <h2>Patient Management</h2>
             <input type="text" id="search-patient" placeholder="Search patients" oninput="showStoredPatients()">
             <div id="storedPatients"></div>
-            <button id="addPatient" onclick="redirectT('med staff add patient.html')">Add Patient</button>
+            <button id="addPatient" onclick="redirectTo('med staff add patient.html')">Add Patient</button>
         </section>
 
         <section class="card" id="appointment-management">
@@ -204,7 +203,6 @@
     <a href="Help_Contact.html">Help/Contact</a>
 </footer>
 
-
     <script>
         function changeProfilePicture(input) {
             if (input.files && input.files[0]) {
@@ -222,9 +220,11 @@
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
         function editPersonalDetails() {
             window.location.href = "med staff changes.html";
         }
+
         document.addEventListener('DOMContentLoaded', function() {
             loadUserData();
         });
@@ -250,57 +250,61 @@
             window.location.href = page;
         }
 
-        function editPersonalDetails() {
-            window.location.href = "med staff changes.html";
-        }
-
         function showStoredPatients() {
             const input = document.getElementById('search-patient').value.toLowerCase();
             const storedPatientsDiv = document.getElementById('storedPatients');
-            const patients = JSON.parse(localStorage.getItem('patients')) || [];
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
+            const currentUser = userData[userId] || {};
 
-            const filteredPatients = patients.filter(patient => patient.toLowerCase().includes(input));
+            const users = Object.values(userData);
+            const institute = currentUser.institute; 
+
+           
+            const filteredPatients = users.filter(user => 
+                user.institute === institute &&
+                (user.firstName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
+            );
 
             storedPatientsDiv.innerHTML = '';
 
-            filteredPatients.forEach(patient => {
+            filteredPatients.forEach(user => {
                 const patientDiv = document.createElement('div');
-                patientDiv.textContent = patient;
+                patientDiv.textContent = `${user.firstName} ${user.surname}`;
                 storedPatientsDiv.appendChild(patientDiv);
             });
-          
+
             if (filteredPatients.length === 0) {
                 storedPatientsDiv.innerHTML = 'No matching patients found.';
             }
         }
-               function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
