@@ -242,18 +242,27 @@
         function showStoredPatients() {
             const input = document.getElementById('search-patient').value.toLowerCase();
             const storedPatientsDiv = document.getElementById('storedPatients');
-            const patients = JSON.parse(localStorage.getItem('patients')) || []; 
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
+            const currentUser = userData[userId] || {};
 
-            const filteredPatients = patients.filter(patient => patient.toLowerCase().includes(input));
+            const users = Object.values(userData);
+            const institute = currentUser.institute; 
+
+           
+            const filteredPatients = users.filter(user => 
+                user.institute === institute &&
+                (user.firstName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
+            );
 
             storedPatientsDiv.innerHTML = '';
 
-            filteredPatients.forEach(patient => {
+            filteredPatients.forEach(user => {
                 const patientDiv = document.createElement('div');
-                patientDiv.textContent = patient;
+                patientDiv.textContent = `${user.firstName} ${user.surname}`;
                 storedPatientsDiv.appendChild(patientDiv);
             });
-          
+
             if (filteredPatients.length === 0) {
                 storedPatientsDiv.innerHTML = 'No matching patients found.';
             }
