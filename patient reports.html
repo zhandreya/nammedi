@@ -45,7 +45,7 @@
         <thead>
             <tr>
                 <th>Date</th>
-                <th>Doctor's Name</th>
+                <th>Doctor/Specialist</th>
                 <th>Report</th>
                 <th>Download</th>
             </tr>
@@ -66,7 +66,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${report.date}</td>
-                    <td>${report.doctorName}</td>
+                    <td>${report.doctor_specialist}</td>
                     <td>${report.title}</td>
                     <td><a href="${report.link}" download>Download</a></td>
                 `;
