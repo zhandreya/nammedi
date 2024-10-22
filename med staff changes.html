@@ -209,6 +209,24 @@
             document.getElementById('institute').value = userData.institute || '';
             document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
         });
+
+         let inactivityTime = function () {
+            let timeout;
+
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
+
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
+
+        inactivityTime();
     </script>
 </body>
 </html>
