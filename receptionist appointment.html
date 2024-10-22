@@ -141,7 +141,7 @@
             const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
 
             const filteredAppointments = [
-                ...usersmAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
+                ...usersrAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
                 ...usersAppointments.filter(patient => patient.institute === userInstitute)
             ];
 
