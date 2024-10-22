@@ -231,7 +231,7 @@
                 row.insertCell(3).textContent = invoice.reason;
                 row.insertCell(4).textContent = invoice.prescription;
                 row.insertCell(5).textContent = invoice.treatment;
-                row.insertCell(6).textContent = invoice.fee;
+                row.insertCell(6).textContent = invoice.paid ? 'Yes' : 'No';
             });
         }
 
