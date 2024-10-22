@@ -196,7 +196,7 @@
             <button id="makeAppointments" onclick="redirectTo('patient schedule appointment.html')">Schedule Appointment</button>
         </section>
 
-        <section class="card" id="upcoming-appointments">
+        <section class="card" id="appointments">
             <h2>Upcoming Appointments</h2>
             <div id="calendar-view"></div>
         </section>
@@ -245,7 +245,7 @@
             const userData = JSON.parse(localStorage.getItem('usersp')) || {};
             const user = userData[userId] || {};
 
-            const fullName = `${user.firstName || ''} ${user.surname || ''}`.trim();
+            const fullName = `${user.fullName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
 
             const storedProfilePicture = user.profilePicture || 'default-profile.png';
@@ -260,7 +260,7 @@
             window.location.href = "patient changes.html";
         }
 
-        function loadUpcomingAppointments() {
+        function loadAppointments() {
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             const calendarView = document.getElementById('calendar-view');
             const today = new Date();
