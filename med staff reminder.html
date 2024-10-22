@@ -115,15 +115,15 @@
 
             const today = new Date().toISOString().split('T')[0];
             const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
-            const userReminders = usersm[userEmail]?.reminders || [];
+            const userTasks = usersm[userEmail]?.tasks || [];
 
             const tableBody = document.getElementById('remindersTable').querySelector('tbody');
-            userReminders.forEach((reminder) => {
-                if (reminder.date === today) {
+            userTasks.forEach((task) => {
+                if (task.date === today) {
                     const row = tableBody.insertRow();
-                    row.insertCell(0).textContent = reminder.date;
-                    row.insertCell(1).textContent = reminder.time;
-                    row.insertCell(2).textContent = reminder.task;
+                    row.insertCell(0).textContent = task.date;
+                    row.insertCell(1).textContent = task.time;
+                    row.insertCell(2).textContent = task.text;
                 }
             });
         });
