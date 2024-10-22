@@ -48,7 +48,8 @@
                 <th>Appointment</th>
                 <th>Prescription</th>
                 <th>Doctor's Report</th>
-                <th>Ailment/Treatment</th>
+                <th>Ailment</th>
+		<th>Treatment</th>
             </tr>
         </thead>
         <tbody id="medical-history-body"></tbody>
@@ -71,6 +72,7 @@
                     <td>${entry.prescription}</td>
                     <td>${entry.report}</td>
                     <td>${entry.ailment}</td>
+		    <td>${entry.treatment}</td>
                 `;
                 tableBody.appendChild(row);
             });
