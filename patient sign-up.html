@@ -112,14 +112,14 @@
     <form id="signupForm" onsubmit="return validateSignupForm();">
         <div class="form-columns">
             <div class="column">
-                <label for="firstName">First Name(s)</label>
-                <input type="text" id="firstName" name="firstName" required>
+                <label for="fullName">First Name(s)</label>
+                <input type="text" id="fullName" name="fullName" required>
                 <label for="surname">Surname</label>
                 <input type="text" id="surname" name="surname" required>
                 <label for="placeOfBirth">Place of Birth</label>
                 <input type="text" id="placeOfBirth" name="placeOfBirth" required>
-                <label for="dateOfBirth">Date of Birth</label>
-                <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
                 <label for="gender">Gender</label>
                 <select id="gender" name="gender" required>
                     <option value="">Select Gender</option>
@@ -198,10 +198,10 @@
             if (validatePasswords()) {
                 const profilePicture = document.getElementById("profilePicture").files[0];
                 const userData = {
-                    firstName: document.getElementById("firstName").value,
+                    fullName: document.getElementById("fullName").value,
                     surname: document.getElementById("surname").value,
                     placeOfBirth: document.getElementById("placeOfBirth").value,
-                    dateOfBirth: document.getElementById("dateOfBirth").value,
+                    dob: document.getElementById("dob").value,
                     gender: document.getElementById("gender").value,
                     idPassport: document.getElementById("idPassport").value,
                     cellPhone: document.getElementById("cellPhone").value,
