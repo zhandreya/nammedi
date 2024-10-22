@@ -113,6 +113,7 @@
             <thead>
                 <tr>
                     <th>Date</th>
+                    <th>Time</th>
                     <th>DOB</th>
                     <th>Full Name</th>
                     <th>Surname</th>
@@ -154,11 +155,12 @@
                 futureDate.setDate(currentDate.getDate() + (index + 1) * 7);
 
                 row.insertCell(0).textContent = futureDate.toLocaleDateString();
-                row.insertCell(1).textContent = patient.dob; 
-                row.insertCell(2).textContent = patient.fullName;
-                row.insertCell(3).textContent = patient.surname;
-                row.insertCell(4).textContent = patient.gender; 
-                row.insertCell(5).textContent = patient.reason; 
+                row.insertCell(1).textContent = patient.time;
+                row.insertCell(2).textContent = patient.dob; 
+                row.insertCell(3).textContent = patient.fullName;
+                row.insertCell(4).textContent = patient.surname;
+                row.insertCell(5).textContent = patient.gender; 
+                row.insertCell(6).textContent = patient.reason; 
             });
         });
 
