@@ -85,6 +85,10 @@
         #confirmBtn:hover {
             background-color: #4CAF50;
         }
+        #emailError {
+            color: red;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -111,6 +115,7 @@
                 <input type="tel" id="workTel" name="workTel" required>
                 <label for="workEmailM">Work Email Address</label>
                 <input type="email" id="workEmailM" name="workEmailM" required>
+                <div id="emailError">This email is already registered. Please use a different email.</div>
                 <label for="profession">Profession</label>
                 <input type="text" id="profession" name="profession" required>
                 <label for="institute">Institute Employed</label>
@@ -177,7 +182,21 @@
             }
         }
 
+        function validateEmailUnique(email) {
+            const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
+            return !usersm[email];
+        }
+
         function validateSignupForm() {
+            const email = document.getElementById("workEmailM").value;
+
+            if (!validateEmailUnique(email)) {
+                document.getElementById("emailError").style.display = "block";
+                return false;
+            } else {
+                document.getElementById("emailError").style.display = "none";
+            }
+
             if (validatePasswords()) {
                 const userData = {
                     fullName: document.getElementById("fullName").value,
