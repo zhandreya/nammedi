@@ -225,8 +225,8 @@
             const tableBody = document.getElementById('invoiceTable').querySelector('tbody');
             invoiceData.forEach((invoice) => {
                 const row = tableBody.insertRow();
-                row.insertCell(0).textContent = invoice.fullname;
-                row.insertCell(1).textContent = invoice.idNumber;
+                row.insertCell(0).textContent = invoice.fullName;
+                row.insertCell(1).textContent = invoice.idPassport;
                 row.insertCell(2).textContent = invoice.date;
                 row.insertCell(3).textContent = invoice.reason;
                 row.insertCell(4).textContent = invoice.prescription;
