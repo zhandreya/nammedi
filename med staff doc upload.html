@@ -122,12 +122,12 @@
             <input type="date" id="date" required>
             <input type="text" id="fullName" placeholder="Full Name" required>
             <input type="text" id="surname" placeholder="Surname" required>
-            <select id="medicalAid" required>
+            <select id="insurance" required>
                 <option value="" disabled selected>Medical Aid</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
             </select>
-            <select id="payment" required>
+            <select id="paid" required>
                 <option value="" disabled selected>Payment</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -144,7 +144,7 @@
                 date: document.getElementById('date').value,
                 fullName: document.getElementById('fullName').value,
                 surname: document.getElementById('surname').value,
-                medicalAid: document.getElementById('medicalAid').value,
+                medicalAid: document.getElementById('insurance').value,
                 payment: document.getElementById('payment').value,
                 document: document.getElementById('document').files[0].name 
             };
