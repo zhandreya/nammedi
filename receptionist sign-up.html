@@ -106,17 +106,18 @@
     <form id="signupForm" onsubmit="return validateSignupForm();">
         <div class="form-columns">
             <div class="column">
-                <label for="firstName">First Name(s)</label>
-                <input type="text" id="firstName" name="firstName" required>
+                <label for="fulltName">First Name(s)</label>
+                <input type="text" id="fullName" name="fullName" required>
                 <label for="surname">Surname</label>
                 <input type="text" id="surname" name="surname" required>
-                <label for="dateOfBirth">Date of Birth</label>
-                <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
                 <label for="gender">Gender</label>
                 <select id="gender" name="gender" required>
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                 </select>
                 <label for="idPassport">ID/Passport No.</label>
                 <input type="text" id="idPassport" name="idPassport" required>
@@ -191,14 +192,14 @@
         function validateSignupForm() {
             if (validatePasswords()) {
                 const userData = {
-                    firstName: document.getElementById("firstName").value,
+                    fullName: document.getElementById("fullName").value,
                     surname: document.getElementById("surname").value,
-                    dateOfBirth: document.getElementById("dateOfBirth").value,
+                    dob: document.getElementById("dob").value,
                     gender: document.getElementById("gender").value,
                     idPassport: document.getElementById("idPassport").value,
                     workTel: document.getElementById("workTel").value,
                     workEmailR: document.getElementById("workEmailR").value,
-                    instituteEmployed: document.getElementById("institute").value,
+                    institute: document.getElementById("institute").value,
                     username: document.getElementById("username").value,
                     password: document.getElementById("password").value,
                 };
