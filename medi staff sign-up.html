@@ -197,39 +197,39 @@
                 document.getElementById("emailError").style.display = "none";
             }
 
-            if (validatePasswords()) {
-                const userData = {
-                    fullName: document.getElementById("fullName").value,
-                    surname: document.getElementById("surname").value,
-                    dob: document.getElementById("dob").value,
-                    gender: document.getElementById("gender").value,
-                    idPassport: document.getElementById("idPassport").value,
-                    workTel: document.getElementById("workTel").value,
-                    workEmailM: document.getElementById("workEmailM").value,
-                    profession: document.getElementById("profession").value,
-                    institute: document.getElementById("institute").value,
-                    username: document.getElementById("username").value,
-                    password: document.getElementById("password").value,
-                };
-
-                const profilePicture = document.getElementById("profilePicture").files[0];
-                if (profilePicture) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userData.profilePicture = e.target.result; 
-                        saveToLocalStorage(userData);
-                        window.location.href = "med staff log in.html"; 
-                    };
-                    reader.readAsDataURL(profilePicture);
-                } else {
-                    saveToLocalStorage(userData); 
-                    window.location.href = "med staff log in.html";
-                }
-
-                return false;
-            } else {
-                return false;
+            if (!validatePasswords()) {
+                return false; 
             }
+
+            const userData = {
+                fullName: document.getElementById("fullName").value,
+                surname: document.getElementById("surname").value,
+                dob: document.getElementById("dob").value,
+                gender: document.getElementById("gender").value,
+                idPassport: document.getElementById("idPassport").value,
+                workTel: document.getElementById("workTel").value,
+                workEmailM: document.getElementById("workEmailM").value,
+                profession: document.getElementById("profession").value,
+                institute: document.getElementById("institute").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+            };
+
+            const profilePicture = document.getElementById("profilePicture").files[0];
+            if (profilePicture) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userData.profilePicture = e.target.result; 
+                    saveToLocalStorage(userData);
+                    window.location.href = "med staff log in.html"; 
+                };
+                reader.readAsDataURL(profilePicture);
+            } else {
+                saveToLocalStorage(userData); 
+                window.location.href = "med staff log in.html";
+            }
+
+            return false; 
         }
     </script>
 </body>
