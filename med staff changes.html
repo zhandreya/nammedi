@@ -36,7 +36,6 @@
             text-align: center;
             max-width: 1200px;
             margin: 50px auto;
-            text-align: center;
         }
 
         header h1 {
@@ -169,6 +168,29 @@
         }
 
         function validateEditForm() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = {
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                dob: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value,
+                idPassport: document.getElementById('idPassport').value,
+                workTel: document.getElementById('workTel').value,
+                workEmailM: document.getElementById('workEmailM').value,
+                profession: document.getElementById('profession').value,
+                institute: document.getElementById('institute').value,
+                profilePicture: document.getElementById('profilePicPreview').src
+            };
+
+            let usersm = JSON.parse(localStorage.getItem('usersm')) || {};
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+
+            usersm[userId] = userData;
+            users[userId] = userData;
+
+            localStorage.setItem('usersm', JSON.stringify(usersm));
+            localStorage.setItem('users', JSON.stringify(users));
+
             alert('Profile updated successfully!');
             window.location.href = 'med staff portfolio.html';
             return false; 
