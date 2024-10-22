@@ -192,12 +192,13 @@
 
     <main class="container">
         <form id="prescriptionForm" onsubmit="submitPrescription(event)">
-            <input type="text" id="patientFullName" placeholder="Patient's Full Name" required>
-            <input type="date" id="dateOfBirth" placeholder="Date of Birth" required>
+            <input type="text" id="fullName" placeholder="Patient's Full Name" required>
+            <input type="date" id="dob" placeholder="Date of Birth" required>
             <input type="date" id="prescriptionDate" placeholder="Date" required>
             <input type="text" id="ailment" placeholder="Ailment" required>
             <input type="text" id="treatment" placeholder="Treatment" required>
             <textarea id="prescription" placeholder="Prescription Details" required></textarea>
+	    <textarea id="report" placeholder="Short Report" required></textarea>
             <button type="submit">Submit</button>
         </form>
     </main>
@@ -215,7 +216,8 @@
                 prescriptionDate: document.getElementById('prescriptionDate').value,
                 ailment: document.getElementById('ailment').value,
                 treatment: document.getElementById('treatment').value,
-                prescription: document.getElementById('prescription').value
+                prescription: document.getElementById('prescription').value,
+		report: document.getElementById('report').value
             };
 
           
