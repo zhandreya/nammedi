@@ -58,7 +58,7 @@
         function loadInstitutesVisited() {
             const userId = localStorage.getItem('currentUserId');
             const userData = JSON.parse(localStorage.getItem('users')) || {};
-            const institutesVisited = userData[userId]?.institutesVisited || [];
+            const institute = userData[userId]?.institute || [];
 
             const tableBody = document.getElementById('institutes-body');
             institutesVisited.forEach(entry => {
