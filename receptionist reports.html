@@ -226,7 +226,7 @@
                 row.insertCell(0).textContent = report.date;
                 row.insertCell(1).textContent = report.fullname;
                 row.insertCell(2).textContent = report.idNumber;
-                row.insertCell(3).textContent = report.fee;
+                row.insertCell(3).textContent = report.paid ? 'Yes' : 'No';
                 const downloadCell = row.insertCell(4);
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = 'Download';
