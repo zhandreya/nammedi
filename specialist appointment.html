@@ -140,9 +140,12 @@
             const usersdAppointments = JSON.parse(localStorage.getItem('usersd')) || [];
             const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
 
+            const currentUser = usersdAppointments.find(user => user.email === userEmail);
+            const doctorSpecialist = currentUser ? `${currentUser.fullName} ${currentUser.surname}` : '';
+
             const filteredAppointments = [
                 ...usersdAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
-                ...usersAppointments.filter(patient => patient.institute === userInstitute)
+                ...usersAppointments.filter(patient => patient.institute === userInstitute && patient.doctor_specialist === doctorSpecialist)
             ];
 
             const tableBody = document.getElementById('appointmentsTable').querySelector('tbody');
