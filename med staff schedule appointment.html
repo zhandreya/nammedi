@@ -127,14 +127,14 @@
         <section id="make-appointment">
             <h2>Appointment Form</h2>
             <form id="appointment-form" onsubmit="return submitForm(event);">
-                <input type="text" id="doctor-name" name="doctor_name" placeholder="Doctor/Specialist" required>
-                <input type="text" id="doctor-specialty" name="doctor_specialty" placeholder="Doctor's Specialty" required>
+                <input type="text" id="doctor-name" name="doctor_name" placeholder="Doctor/Specialist">
+                <input type="text" id="doctor-specialty" name="doctor_specialty" placeholder="Doctor's Specialty">
                 <input type="text" id="patient-first-name" name="patient_first_name" placeholder="Patient's First Name" required>
                 <input type="text" id="patient-surname" name="patient_surname" placeholder="Patient's Surname" required>
                 <input type="text" id="institution" name="institution" placeholder="Institution Name" required>
                 <input type="date" id="preferred-date" name="preferred_date" required>
                 <input type="time" id="preferred-time" name="preferred_time" required>
-                <select id="visit-purpose" name="visit_purpose" required>
+                <select id="reason" name="reason" required>
                     <option value="">Select Purpose of Visit</option>
                     <option value="general-checkup">General Check-up</option>
                     <option value="follow-up">Follow-up</option>
@@ -164,7 +164,7 @@
             const institution = document.getElementById('institution').value;
             const preferredDate = document.getElementById('preferred-date').value;
             const preferredTime = document.getElementById('preferred-time').value;
-            const visitPurpose = document.getElementById('visit-purpose').value;
+            const visitPurpose = document.getElementById('reason').value;
 
             const appointmentData = {
                 doctorName,
