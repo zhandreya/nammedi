@@ -5,196 +5,112 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Patient</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    line-height: 1.6;
-	    color: #000000;
-	    margin: 0;
-	    padding: 0;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
 
-	.container {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    border-radius: 5px;
-	    margin: 20px auto;
-	    padding: 20px;
-	}
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+        }
 
-	header {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    color: white;
-	    padding: 20px;
-	    border-radius: 5px;
-	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);	
-	    width: 90%;
-	    max-width: 1200px;
-	    margin: 50px auto;
-	    text-align: center;
-	}
+        h2 {
+            color: #000000;
+            margin-bottom: 20px;
+        }
 
-	header h1 {
-	    margin-bottom: 10px;
-	    color: #000000;
-	}
+        button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
 
-	#profile-pic {
-	    width: 100px;
-	    height: 100px;
-	    border-radius: 50%;
-	    display: block;
-	    margin: 10px auto;
-	}
+        button:hover {
+            background-color: #4CAF50;
+        }
 
-	header button {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    margin: 5px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+        input[type="text"],
+        input[type="date"],
+        input[type="number"],
+        input[type="file"],
+        input[type="time"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
 
-	header button:hover {
-	    background-color: #4CAF50;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	main {
-	    display: grid;
-	    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	    gap: 20px;
-	    padding: 20px 0;
-	}
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
 
-	.card {
-	    background-color: white;
-	    border-radius: 8px;
-	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	    padding: 20px;
-	    margin-bottom: 20px;
-	}
+        th {
+            background-color: #f2f2f2;
+        }
 
-	.card h2 {
-	    color: #000000;
-	    border-bottom: 2px solid #ecf0f1;
-	    padding-bottom: 10px;
-	    margin-top: 0;
-	}
+        textarea {
+            height: 60px;
+        }
 
-	.card button {
-	    background-color: #0066cc;
-	    color: white;
-	    padding: 10px 15px;
-	    border: none;
-	    border-radius: 5px;
-	    cursor: pointer;
-	    font-size: 16px;
-	    transition: background-color 0.3s;
-	    margin-top: 10px;
-	}
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
 
-	.card button:hover {
-	    background-color:  #4CAF50;
-	}
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
 
-	footer {
-	    background-color: transparent;
-	    text-align: center;
-	    padding: 20px 0;
-	    margin-top: 20px;
-	}
+            button {
+                padding: 8px 10px;
+            }
 
-	footer a {
-	    color: #0066cc;
-	    text-decoration: none;
-	    margin: 0 10px;
-	}
-
-	footer a:hover {
-	    text-decoration: underline;
-	    color: #4CAF50;
-	}
-
-	#backBtn {
-	    position: absolute;
-	    top: 10px;
-	    left: 10px;
-	    padding: 5px 10px;
-	    background-color: transparent;
-	    border: 1px solid #333;
-	    cursor: pointer;
-	    color: #000000;
-	    border-radius: 5px;
-	}
-
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
-
-	th, td {
-	    padding: 10px;
-	    text-align: left;
-	    border: 1px solid #ddd;
-	}
-
-	th {
-	    background-color: #f4f4f4;
-	}
-
-	tr:hover {
-	    background-color: #f1f1f1;
-	}
-	
-	form {
-	    margin-top: 20px;
-	}
-
-	input[type="text"], input[type="date"] {
-	    width: calc(100% - 22px);
-	    padding: 10px;
-	    margin-bottom: 10px;
-	    border: 1px solid #ccc;
-	    border-radius: 4px;
-	}
-
-	button[type="submit"] {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
-
-	button[type="submit"]:hover {
-	    background-color: #4CAF50;
-	}
-
-	@media (max-width: 768px) {
-	    main {
-	        grid-template-columns: 1fr;
-	    }
-	
-	    header {
-	        padding: 10px 0;
-	    }
-
-	    #profile-pic {
-	        width: 80px;
-	        height: 80px;
-	    }
-	}
-
+            input[type="text"],
+            input[type="date"],
+            input[type="number"],
+            input[type="file"],
+            input[type="time"],
+            textarea,
+            select {
+                padding: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -234,6 +150,9 @@
     <script>
         document.getElementById('patientForm').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            const userEmail = localStorage.getItem('currentUserEmail');
+            
             const patientData = {
                 fullName: document.getElementById('fullName').value,
                 surname: document.getElementById('surname').value,
@@ -246,39 +165,55 @@
                 institution: document.getElementById('institution').value,
                 reason: document.getElementById('reason').value
             };
+            
             const patients = JSON.parse(localStorage.getItem('patients')) || [];
             patients.push(patientData);
             localStorage.setItem('patients', JSON.stringify(patients));
+
+            if (userEmail) {
+                const userInfo = {
+                    email: userEmail,
+                    institution: document.getElementById('institution').value
+                };
+                
+                const users = JSON.parse(localStorage.getItem('users')) || {};
+                users[userEmail] = userInfo;
+                localStorage.setItem('users', JSON.stringify(users));
+
+                const usersm = JSON.parse(localStorage.getItem('usersr')) || {};
+                usersm[userEmail] = userInfo.institution;
+                localStorage.setItem('usersr', JSON.stringify(usersr));
+            }
+
             window.location.href = 'receptionist portfolio.html';
         });
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
