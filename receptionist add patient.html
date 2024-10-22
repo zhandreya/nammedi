@@ -181,7 +181,7 @@
                 localStorage.setItem('users', JSON.stringify(users));
 
                 const usersm = JSON.parse(localStorage.getItem('usersr')) || {};
-                usersm[userEmail] = userInfo.institution;
+                usersr[userEmail] = userInfo.institution;
                 localStorage.setItem('usersr', JSON.stringify(usersr));
             }
 
