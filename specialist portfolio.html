@@ -205,14 +205,14 @@
                     if (userId) {
                         const userData = JSON.parse(localStorage.getItem('usersd')) || {};
                         userData[userId].profilePicture = imageSrc;
-                        localStorage.setItem('users', JSON.stringify(userData));
+                        localStorage.setItem('usersd', JSON.stringify(userData));
                     }
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
         function editPersonalDetails() {
-            window.location.href = "patient changes.html";
+            window.location.href = "specialist changes.html";
         }
         document.addEventListener('DOMContentLoaded', function() {
             loadUserData();
@@ -225,9 +225,9 @@
             const userData = JSON.parse(localStorage.getItem('usersd')) || {};
             const user = userData[userId] || {};
 
-            const firstName = user.firstName || '';
+            const fullName = user.fullName || '';
             const surname = user.surname || '';
-            const fullName = firstName + (firstName ? ' ' : '') + surname; 
+            const fullName = fullName + (fullName ? ' ' : '') + surname; 
 
             document.getElementById('user-name').textContent = fullName;
 
@@ -252,14 +252,14 @@
            
             const filteredPatients = users.filter(user => 
                 user.institute === institute &&
-                (user.firstName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
+                (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
             );
 
             storedPatientsDiv.innerHTML = '';
 
             filteredPatients.forEach(user => {
                 const patientDiv = document.createElement('div');
-                patientDiv.textContent = `${user.firstName} ${user.surname}`;
+                patientDiv.textContent = `${user.fullName} ${user.surname}`;
                 storedPatientsDiv.appendChild(patientDiv);
             });
 
