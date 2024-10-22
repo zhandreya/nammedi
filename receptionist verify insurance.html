@@ -202,9 +202,9 @@
     <div class="container">
         <h2>Verify Insurance</h2>
         <form id="insuranceForm">
-            <input type="text" id="patient-fullname" placeholder="Patient's Full Name" required>
+            <input type="text" id="fullName" placeholder="Patient's Full Name" required>
             <input type="date" id="dob" required>
-            <input type="text" id="id-number" placeholder="ID/Passport Number" required>
+            <input type="text" id="idPassport" placeholder="ID/Passport Number" required>
             <input type="text" id="medical-aid-number" placeholder="Medical Aid Number" required>
             <input type="date" id="date" required>
             <input type="text" id="payment" placeholder="Payment Status" required>
@@ -216,9 +216,9 @@
         document.getElementById('insuranceForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const data = {
-                fullname: document.getElementById('patient-fullname').value,
+                fullname: document.getElementById('fullName').value,
                 dob: document.getElementById('dob').value,
-                idNumber: document.getElementById('id-number').value,
+                idPassport: document.getElementById('idPassport').value,
                 medicalAidNumber: document.getElementById('medical-aid-number').value,
                 date: document.getElementById('date').value,
                 payment: document.getElementById('payment').value,
