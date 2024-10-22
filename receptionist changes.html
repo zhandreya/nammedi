@@ -131,17 +131,18 @@
     </header>
     <main class="container">
         <form id="editForm" onsubmit="return validateEditForm();">        
-                <label for="firstName">First Name(s)</label>
-                <input type="text" id="firstName" name="firstName" required>
+                <label for="fullName">First Name(s)</label>
+                <input type="text" id="fullName" name="fullName" required>
                 <label for="surname">Surname</label>
                 <input type="text" id="surname" name="surname" required>
-                <label for="dateOfBirth">Date of Birth</label>
-                <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
                 <label for="gender">Gender</label>
                 <select id="gender" name="gender" required>
                     <option value="">Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                 </select>
                 <label for="idPassport">ID/Passport No.</label>
                 <input type="text" id="idPassport" name="idPassport" required>
@@ -149,8 +150,8 @@
                 <input type="tel" id="workTel" name="workTel" required>
                 <label for="workEmailR">Work Email Address</label>
                 <input type="email" id="workEmailR" name="workEmailR" required>
-                <label for="instituteEmployed">Institute Employed</label>
-                <input type="text" id="instituteEmployed" name="instituteEmployed" required>        
+                <label for="institute">Institute Employed</label>
+                <input type="text" id="institute" name="institute" required>        
             <button type="submit" id="confirmBtn">Update Profile</button>
         </form>
     </main>
@@ -173,14 +174,14 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const userData = JSON.parse(localStorage.getItem('usersr'))[localStorage.getItem('currentUserId')] || {};
-            document.getElementById('firstName').value = userData.firstName || '';
+            document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
             document.getElementById('dateOfBirth').value = userData.dateOfBirth || '';
             document.getElementById('gender').value = userData.gender || '';
             document.getElementById('idPassport').value = userData.idPassport || '';
             document.getElementById('workTel').value = userData.workTel || '';
             document.getElementById('workEmailR').value = userData.workEmailR || '';
-            document.getElementById('instituteEmployed').value = userData.instituteEmployed || '';
+            document.getElementById('institute').value = userData.institute || '';
             document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
         });
     </script>
