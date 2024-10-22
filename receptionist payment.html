@@ -223,8 +223,8 @@
             paymentData.forEach((payment) => {
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = payment.date;
-                row.insertCell(1).textContent = payment.fullname;
-                row.insertCell(2).textContent = payment.idNumber;
+                row.insertCell(1).textContent = payment.fullName;
+                row.insertCell(2).textContent = payment.idPassport;
                 row.insertCell(3).textContent = payment.paid ? 'Yes' : 'No';
             });
         }
