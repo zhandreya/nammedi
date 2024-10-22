@@ -3,251 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Specialist Appointments</title>
+    <title>Appointment Management</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    line-height: 1.6;
-	    color: #000000;
-	    margin: 0;
-	    padding: 0;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
 
-	.container {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    border-radius: 5px;
-	    margin: 20px auto;
-	    padding: 20px;
-	}
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 20px auto;
+            padding: 20px;
+        }
 
-	header {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    color: white;
-	    padding: 20px;
-	    border-radius: 5px;
-	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    margin: 50px auto;
-	    text-align: center;
-	}
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
 
-	header h1 {
-	    margin-bottom: 10px;
-	    color: #000000;
-	}
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
 
-	#profile-pic {
-	    width: 100px;
-	    height: 100px;
-	    border-radius: 50%;
-	    display: block;
-	    margin: 10px auto;
-	}
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 10px auto;
+        }
 
-	header button {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    margin: 5px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+        header button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
 
-	header button:hover {
-	    background-color: #4CAF50;
-	}
+        header button:hover {
+            background-color: #4CAF50;
+        }
 
-	main {
-	    display: grid;
-	    grid-template-columns: 1fr;
-	    gap: 20px;
-	    padding: 20px 0;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	.card {
-	    background-color: white;
-	    border-radius: 8px;
-	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	    padding: 20px;
-	    margin-bottom: 20px;
-	}
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
 
-	.card h2 {
-	    color: #000000;
-	    border-bottom: 2px solid #ecf0f1;
-	    padding-bottom: 10px;
-	    margin-top: 0;
-	}
+        th {
+            background-color: #f4f4f4;
+        }
 
-	.card button {
-	    background-color: #0066cc;
-	    color: white;
-	    padding: 10px 15px;
-	    border: none;
-	    border-radius: 5px;
-	    cursor: pointer;
-	    font-size: 16px;
-	    transition: background-color 0.3s;
-	    margin-top: 10px;
-	}
+        tr:hover {
+            background-color: #f1f1f1;
+        }
 
-	.card button:hover {
-	    background-color: #4CAF50;
-	}
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
 
-	footer {
-	    background-color: transparent;
-	    text-align: center;
-	    padding: 20px 0;
-	    margin-top: 20px;
-	}
-
-	footer a {
-	    color: #0066cc;
-	    text-decoration: none;
-	    margin: 0 10px;
-	}
-
-	footer a:hover {
-	    text-decoration: underline;
-	    color: #4CAF50;
-	}
-
-	#backBtn {
-	    position: absolute;
-	    top: 10px;
-	    left: 10px;
-	    padding: 5px 10px;
-	    background-color: transparent;
-	    border: 1px solid #333;
-	    cursor: pointer;
-	    color: #000000;
-	    border-radius: 5px;
-	}
-
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
-
-	th, td {
-	    padding: 10px;
-	    text-align: left;
-	    border: 1px solid #ddd;
-	}
-
-	th {
-	    background-color: #f4f4f4;
-	}
-
-	tr:hover {
-	    background-color: #f1f1f1;
-	}
-
-	input[type="text"], input[type="date"], textarea {
-	    width: calc(100% - 22px);
-	    padding: 10px;
-	    margin-bottom: 10px;
-	    border: 1px solid #ccc;
-	    border-radius: 4px;
-	}
-
-	button[type="submit"] {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
-
-	button[type="submit"]:hover {
-	    background-color: #4CAF50;
-	}
-
-	@media (max-width: 768px) {
-	    main {
-	        grid-template-columns: 1fr;
-	    }
-	}
-
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 0;
+            }
+        }
     </style>
 </head>
 <body>
     <button id="backBtn" onclick="window.history.back()">Back</button>
-    <h1>Your Appointments</h1>
-    <table id="appointment-table">
-        <thead>
-            <tr>
-                <th>Doctor's Name</th>
-                <th>Doctor's Specialty</th>
-                <th>Patient Name</th>
-                <th>Institution</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Purpose</th>
-            </tr>
-        </thead>
-        <tbody id="appointment-list"></tbody>
-    </table>
+    <div class="container">
+        <h2>Appointment Management</h2>
+        <table id="appointmentsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>DOB</th>
+                    <th>Full Name</th>
+                    <th>Surname</th>
+                    <th>Gender</th>
+                    <th>Reason for Visit</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
 
     <script>
-       
-        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-        const appointmentList = document.getElementById('appointment-list');
+        document.addEventListener('DOMContentLoaded', function() {
+            const userId = localStorage.getItem('currentUserId');
+            const userEmail = localStorage.getItem('currentUserEmail');
+            const userInstitute = localStorage.getItem('currentUserInstitute');
 
-        appointments.forEach(appointment => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${appointment.doctorName}</td>
-                <td>${appointment.doctorSpecialty}</td>
-                <td>${appointment.patientFirstName} ${appointment.patientSurname}</td>
-                <td>${appointment.institution}</td>
-                <td>${appointment.preferredDate}</td>
-                <td>${appointment.preferredTime}</td>
-                <td>${appointment.visitPurpose}</td>
-            `;
-            appointmentList.appendChild(row);
+            if (!userId || !userEmail || !userInstitute) {
+                window.location.href = 'sign-up.html';
+                return;
+            }
+
+            const usersmAppointments = JSON.parse(localStorage.getItem('usersd')) || [];
+            const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
+
+            const filteredAppointments = [
+                ...usersdAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
+                ...usersAppointments.filter(patient => patient.institute === userInstitute)
+            ];
+
+            const tableBody = document.getElementById('appointmentsTable').querySelector('tbody');
+            const currentDate = new Date();
+
+            filteredAppointments.forEach((patient, index) => {
+                const row = tableBody.insertRow();
+                
+                const futureDate = new Date(currentDate);
+                futureDate.setDate(currentDate.getDate() + (index + 1) * 7);
+
+                row.insertCell(0).textContent = futureDate.toLocaleDateString();
+                row.insertCell(1).textContent = patient.dob; 
+                row.insertCell(2).textContent = patient.fullName;
+                row.insertCell(3).textContent = patient.surname;
+                row.insertCell(4).textContent = patient.gender; 
+                row.insertCell(5).textContent = patient.reason; 
+            });
         });
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        let inactivityTime = function () {
+            let timeout;
 
-let inactivityTime = function () {
-    let timeout;
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
-
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
