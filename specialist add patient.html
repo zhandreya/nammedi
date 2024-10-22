@@ -180,7 +180,7 @@
                 users[userEmail] = userInfo;
                 localStorage.setItem('users', JSON.stringify(users));
 
-                const usersm = JSON.parse(localStorage.getItem('usersd')) || {};
+                const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
                 usersd[userEmail] = userInfo.institution;
                 localStorage.setItem('usersd', JSON.stringify(usersd));
             }
