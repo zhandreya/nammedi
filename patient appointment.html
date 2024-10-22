@@ -63,9 +63,9 @@
         appointments.forEach(appointment => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${appointment.firstName} ${appointment.surname}</td>
+                <td>${appointment.fullName} ${appointment.surname}</td>
                 <td>${appointment.institution}</td>
-                <td>${appointment.doctorSpecialist}</td>
+                <td>${appointment.doctor_specialist}</td>
                 <td>${appointment.preferredDate}</td>
                 <td>${appointment.preferredTime}</td>
                 <td>${appointment.visitPurpose}</td>
