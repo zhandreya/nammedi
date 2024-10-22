@@ -104,6 +104,11 @@
             height: 100px;
             margin-top: 10px;
         }
+
+        #emailError {
+            color: red;
+            display: none; 
+        }
     </style>
 </head>
 <body>
@@ -182,9 +187,9 @@
         }
 
         function validatePasswords() {
-            var password = document.getElementById("password").value;
-            var confirmPassword = document.getElementById("confirmPassword").value;
-            var passwordError = document.getElementById("passwordError");
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const passwordError = document.getElementById("passwordError");
 
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
@@ -204,46 +209,45 @@
             const email = document.getElementById("email").value;
 
             if (!validateEmailUnique(email)) {
-                document.getElementById("emailError").style.display = "block";
+                document.getElementById("emailError").style.display = "block"; 
                 return false;
             } else {
-                document.getElementById("emailError").style.display = "none";
+                document.getElementById("emailError").style.display = "none"; 
             }
 
-        function validateSignupForm() {
-            if (validatePasswords()) {
-                const profilePicture = document.getElementById("profilePicture").files[0];
-                const userData = {
-                    fullName: document.getElementById("fullName").value,
-                    surname: document.getElementById("surname").value,
-                    placeOfBirth: document.getElementById("placeOfBirth").value,
-                    dob: document.getElementById("dob").value,
-                    gender: document.getElementById("gender").value,
-                    idPassport: document.getElementById("idPassport").value,
-                    cellPhone: document.getElementById("cellPhone").value,
-                    email: document.getElementById("email").value,
-                    username: document.getElementById("username").value,
-                    password: document.getElementById("password").value,
-                };
+            if (!validatePasswords()) {
+                return false;
+            }
 
-                if (profilePicture) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userData.profilePicture = e.target.result;
-                        saveToLocalStorage(userData);
-                        window.location.href = "patient log in.html"; 
-                    };
-                    reader.readAsDataURL(profilePicture);
-                } else {
-                    userData.profilePicture = 'default-profile.png';
+            const profilePicture = document.getElementById("profilePicture").files[0];
+            const userData = {
+                fullName: document.getElementById("fullName").value,
+                surname: document.getElementById("surname").value,
+                placeOfBirth: document.getElementById("placeOfBirth").value,
+                dob: document.getElementById("dob").value,
+                gender: document.getElementById("gender").value,
+                idPassport: document.getElementById("idPassport").value,
+                cellPhone: document.getElementById("cellPhone").value,
+                email: document.getElementById("email").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+            };
+
+            if (profilePicture) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userData.profilePicture = e.target.result;
                     saveToLocalStorage(userData);
                     window.location.href = "patient log in.html"; 
-                }
-
-                return false; 
+                };
+                reader.readAsDataURL(profilePicture);
             } else {
-                return false;
+                userData.profilePicture = 'default-profile.png';
+                saveToLocalStorage(userData);
+                window.location.href = "patient log in.html"; 
             }
+
+            return false; 
         }
     </script>
 </body>
