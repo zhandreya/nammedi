@@ -195,7 +195,7 @@
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>User Full Name</th>
+                    <th>Full Name</th>
                     <th>Patient Full Name</th>
                     <th>Action</th>
                 </tr>
@@ -224,8 +224,8 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${prescription.prescriptionDate}</td>
-                    <td>${prescription.userFullName}</td>
-                    <td>${prescription.patientFullName}</td>
+                    <td>${prescription.FullName}</td>
+                    <td>${prescription.FullName}</td>
                     <td><button onclick="downloadPrescription(${index})">Download</button></td>
                 `;
                 tbody.appendChild(row);
@@ -236,7 +236,7 @@
             const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
             const prescription = prescriptions[index];
            
-            alert('Downloading prescription for ' + prescription.patientFullName);
+            alert('Downloading prescription for ' + prescription.FullName);
         }
 	           function checkUserLogin() {
     const userId = localStorage.getItem('currentUserId');
