@@ -195,7 +195,7 @@
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Full Name</th>
+                    <th>Doctor/Specialist</th>
                     <th>Patient Full Name</th>
                     <th>Action</th>
                 </tr>
@@ -224,7 +224,7 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${prescription.prescriptionDate}</td>
-                    <td>${prescription.FullName}</td>
+                    <td>${prescription.doctor_specialist}</td>
                     <td>${prescription.FullName}</td>
                     <td><button onclick="downloadPrescription(${index})">Download</button></td>
                 `;
