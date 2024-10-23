@@ -36,7 +36,6 @@
             text-align: center;
             max-width: 1200px;
             margin: 50px auto;
-            text-align: center;
         }
 
         header h1 {
@@ -131,27 +130,27 @@
     </header>
     <main class="container">
         <form id="editForm" onsubmit="return validateEditForm();">        
-                <label for="fullName">First Name(s)</label>
-                <input type="text" id="fullName" name="fullName" required>
-                <label for="surname">Surname</label>
-                <input type="text" id="surname" name="surname" required>
-                <label for="dob">Date of Birth</label>
-                <input type="date" id="dob" name="dob" required>
-                <label for="gender">Gender</label>
-                <select id="gender" name="gender" required>
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-                <label for="idPassport">ID/Passport No.</label>
-                <input type="text" id="idPassport" name="idPassport" required>
-                <label for="workTel">Work Tel. No.</label>
-                <input type="tel" id="workTel" name="workTel" required>
-                <label for="workEmailR">Work Email Address</label>
-                <input type="email" id="workEmailR" name="workEmailR" required>
-                <label for="institute">Institute Employed</label>
-                <input type="text" id="institute" name="institute" required>        
+            <label for="fullName">First Name(s)</label>
+            <input type="text" id="fullName" name="fullName" required>
+            <label for="surname">Surname</label>
+            <input type="text" id="surname" name="surname" required>
+            <label for="dob">Date of Birth</label>
+            <input type="date" id="dob" name="dob" required>
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+            <label for="idPassport">ID/Passport No.</label>
+            <input type="text" id="idPassport" name="idPassport" required>
+            <label for="workTel">Work Tel. No.</label>
+            <input type="tel" id="workTel" name="workTel" required>
+            <label for="workEmailR">Work Email Address</label>
+            <input type="email" id="workEmailR" name="workEmailR" required>
+            <label for="institute">Institute Employed</label>
+            <input type="text" id="institute" name="institute" required>        
             <button type="submit" id="confirmBtn">Update Profile</button>
         </form>
     </main>
@@ -167,16 +166,56 @@
         }
 
         function validateEditForm() {
+            const email = localStorage.getItem('currentUserEmail');
+            const userId = localStorage.getItem('currentUserId');
+
+            const updatedUserData = {
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                dateOfBirth: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value,
+                idPassport: document.getElementById('idPassport').value,
+                workTel: document.getElementById('workTel').value,
+                workEmailR: document.getElementById('workEmailR').value,
+                institute: document.getElementById('institute').value,
+                profilePicture: document.getElementById('profilePicPreview').src
+            };
+
+            // Store the updated data in both paths
+            storeUserData(email, updatedUserData);
+
             alert('Profile updated successfully!');
             window.location.href = 'receptionist portfolio.html';
             return false; 
         }
 
+        function storeUserData(email, updatedUserData) {
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
+
+            // Update users data
+            if (!usersData[email]) {
+                usersData[email] = {};
+            }
+            usersData[email] = { ...usersData[email], ...updatedUserData };
+
+            // Update usersr data
+            if (!usersrData[email]) {
+                usersrData[email] = {};
+            }
+            usersrData[email] = { ...usersrData[email], ...updatedUserData };
+
+            // Save updated data back to localStorage
+            localStorage.setItem('users', JSON.stringify(usersData));
+            localStorage.setItem('usersr', JSON.stringify(usersrData));
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            const userData = JSON.parse(localStorage.getItem('usersr'))[localStorage.getItem('currentUserId')] || {};
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('usersr'))[userId] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
-            document.getElementById('dateOfBirth').value = userData.dateOfBirth || '';
+            document.getElementById('dob').value = userData.dateOfBirth || '';
             document.getElementById('gender').value = userData.gender || '';
             document.getElementById('idPassport').value = userData.idPassport || '';
             document.getElementById('workTel').value = userData.workTel || '';
