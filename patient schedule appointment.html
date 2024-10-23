@@ -145,17 +145,16 @@
         </section>
     </main>
 
-<footer>
-    <a href="Privacy Policy.html">Privacy Policy</a> | 
-    <a href="Terms of Service.html">Terms of Service</a> | 
-    <a href="Help_Contact.html">Help/Contact</a>
-</footer>
-
+    <footer>
+        <a href="Privacy Policy.html">Privacy Policy</a> | 
+        <a href="Terms of Service.html">Terms of Service</a> | 
+        <a href="Help_Contact.html">Help/Contact</a>
+    </footer>
 
     <script>
         function submitForm(event) {
             event.preventDefault();
-            
+
             const fullName = document.getElementById('fullName').value;
             const surname = document.getElementById('surname').value;
             const institution = document.getElementById('institution').value;
@@ -174,12 +173,34 @@
                 reason
             };
 
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            appointments.push(appointmentData);
-            localStorage.setItem('appointments', JSON.stringify(appointments));
+            // Store appointment in both users and usersp paths
+            storeAppointment(appointmentData);
 
+            // Go back to the previous page
             window.history.back();
             return false;
+        }
+
+        function storeAppointment(appointmentData) {
+            const email = localStorage.getItem('currentUserEmail');
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+
+            // Store appointment in users data
+            if (!usersData[email]) {
+                usersData[email] = { appointments: [] };
+            }
+            usersData[email].appointments.push(appointmentData);
+
+            // Store appointment in usersp data
+            if (!userspData[email]) {
+                userspData[email] = { appointments: [] };
+            }
+            userspData[email].appointments.push(appointmentData);
+
+            // Save updated data back to localStorage
+            localStorage.setItem('users', JSON.stringify(usersData));
+            localStorage.setItem('usersp', JSON.stringify(userspData));
         }
 
         window.onload = function() {
@@ -191,34 +212,33 @@
             const storedPicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedPicture;
         };
-               function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
