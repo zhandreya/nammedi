@@ -51,10 +51,6 @@
             margin: 10px auto;
         }
 
-        #make-appointment {
-            margin-top: 20px;
-        }
-
         #appointment-form input,
         #appointment-form select {
             width: calc(100% - 20px);
@@ -107,13 +103,6 @@
             color: #000000;
             border-radius: 5px;
         }
-
-        @media (max-width: 768px) {
-            #appointment-form input,
-            #appointment-form select {
-                width: 100%;
-            }
-        }
     </style>
 </head>
 <body>
@@ -133,7 +122,7 @@
                 <input type="text" id="surname" name="surname" placeholder="Patient's Surname" required>
                 <input type="text" id="institution" name="institution" placeholder="Institution Name" required>
                 <input type="date" id="preferred-date" name="preferredDate" required>
-                <input type="time" id="preferred-time" name="preferredDime" required>
+                <input type="time" id="preferred-time" name="preferredTime" required>
                 <select id="reason" name="reason" required>
                     <option value="">Select Purpose of Visit</option>
                     <option value="general-checkup">General Check-up</option>
@@ -146,27 +135,28 @@
         </section>
     </main>
 
-<footer>
-    <a href="Privacy Policy.html">Privacy Policy</a> | 
-    <a href="Terms of Service.html">Terms of Service</a> | 
-    <a href="Help_Contact.html">Help/Contact</a>
-</footer>
+    <footer>
+        <a href="Privacy Policy.html">Privacy Policy</a> | 
+        <a href="Terms of Service.html">Terms of Service</a> | 
+        <a href="Help_Contact.html">Help/Contact</a>
+    </footer>
 
     <script>
         function submitForm(event) {
             event.preventDefault();
             
-            const doctorName = document.getElementById('doctor-name').value;
-            const doctorSpecialty = document.getElementById('doctor-specialty').value;
-            const patientFirstName = document.getElementById('patient-first-name').value;
-            const patientSurname = document.getElementById('patient-surname').value;
+            // Get form values
+            const doctorSpecialist = document.getElementById('doctor_specialist').value;
+            const specialty = document.getElementById('specialty').value;
+            const fullName = document.getElementById('fullName').value;
+            const surname = document.getElementById('surname').value;
             const institution = document.getElementById('institution').value;
             const preferredDate = document.getElementById('preferred-date').value;
             const preferredTime = document.getElementById('preferred-time').value;
-            const visitPurpose = document.getElementById('visit-purpose').value;
+            const reason = document.getElementById('reason').value;
 
             const appointmentData = {
-                doctor_specialist,
+                doctorSpecialist,
                 specialty,
                 fullName,
                 surname,
@@ -176,10 +166,19 @@
                 reason
             };
 
+            // Store appointment data in both users and usersr
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            appointments.push(appointmentData);
-            localStorage.setItem('appointments', JSON.stringify(appointments));
+            const usersrAppointments = JSON.parse(localStorage.getItem('usersrAppointments')) || [];
 
+            // Add to both arrays
+            appointments.push(appointmentData);
+            usersrAppointments.push(appointmentData);
+
+            // Save back to local storage
+            localStorage.setItem('appointments', JSON.stringify(appointments));
+            localStorage.setItem('usersrAppointments', JSON.stringify(usersrAppointments));
+
+            // Redirect or inform user
             window.history.back();
             return false;
         }
@@ -193,34 +192,33 @@
             const storedPicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedPicture;
         };
-               function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
