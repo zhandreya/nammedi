@@ -203,24 +203,6 @@
     </footer>
 
     <script>
-        let timeout; 
-
-        function logout() {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }
-
-        function resetTimer() {
-            clearTimeout(timeout);
-            timeout = setTimeout(logout, 3600000); // Set to 1 hour (3600000 milliseconds)
-        }
-
-        window.onload = resetTimer; 
-        window.onmousemove = resetTimer; 
-        window.onkeypress = resetTimer; 
-        window.onclick = resetTimer;
-        window.onscroll = resetTimer;
-
         document.addEventListener('DOMContentLoaded', function() {
             checkUserLogin();
             loadUpcomingAppointments();
@@ -229,16 +211,15 @@
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
             if (!email) {
-                document.getElementById('user-name').textContent = ''; // No guest name
-                document.getElementById('profile-pic').src = 'default-profile.png';
+                window.location.href = 'sign-up.html';
             } else {
                 loadUserData(email);
             }
         }
 
         function loadUserData(email) {
-            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
-            const user = userspData[email] || {};
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const user = userData[email] || {};
             const fullName = `${user.fullName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
 
