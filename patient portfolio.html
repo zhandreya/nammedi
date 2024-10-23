@@ -191,12 +191,6 @@
         </section>
 
         <section class="card" id="appointments">
-            <h2>Appointment Management</h2>
-            <button id="viewAppointments" onclick="redirectTo('patient appointment.html')">View Appointment</button>
-            <button id="makeAppointments" onclick="redirectTo('patient schedule appointment.html')">Schedule Appointment</button>
-        </section>
-
-        <section class="card" id="appointments">
             <h2>Upcoming Appointments</h2>
             <div id="calendar-view"></div>
         </section>
@@ -233,18 +227,17 @@
         });
 
         function checkUserLogin() {
-            const userId = localStorage.getItem('currentUserId');
-            if (!userId) {
+            const email = localStorage.getItem('currentUserEmail');
+            if (!email) {
                 window.location.href = 'sign-up.html';
             } else {
-                loadUserData(userId);
+                loadUserData(email);
             }
         }
 
-        function loadUserData(userId) {
-            const userData = JSON.parse(localStorage.getItem('usersp')) || {};
-            const user = userData[userId] || {};
-
+        function loadUserData(email) {
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const user = userData[email] || {};
             const fullName = `${user.fullName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
 
@@ -260,32 +253,27 @@
             window.location.href = "patient changes.html";
         }
 
-        function loadAppointments() {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            const calendarView = document.getElementById('calendar-view');
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
+        function loadUpcomingAppointments() {
+            const email = localStorage.getItem('currentUserEmail');
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+            const appointments = usersData[email]?.appointments || [];
+            const additionalAppointments = userspData[email]?.upcomingAppointments || []; // Adjust based on your data structure
 
+            const calendarView = document.getElementById('calendar-view');
             calendarView.innerHTML = '';
 
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const allAppointments = [...appointments, ...additionalAppointments];
 
-            for (let i = 0; i < firstDay; i++) {
-                const emptyDiv = document.createElement('div');
-                calendarView.appendChild(emptyDiv);
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
+            allAppointments.forEach(appointment => {
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'calendar-day';
-                dayDiv.textContent = day;
+                dayDiv.textContent = new Date(appointment.date).getDate(); // Adjust based on date structure
                 dayDiv.onclick = function() {
-                    alert(`No appointments on ${day} ${today.toLocaleString('default', { month: 'long' })} ${currentYear}`);
+                    alert(`Appointment Details: ${appointment.details}`); // Adjust based on your data structure
                 };
                 calendarView.appendChild(dayDiv);
-            }
+            });
         }
     </script>
 </body>
