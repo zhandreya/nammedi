@@ -5,37 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor's Reports</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    color: #000000;
-	    margin: 0;
-	    padding: 20px;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
 
-	h1 {
-	    text-align: center;
-	    color: #000000;
-	}
+        h1 {
+            text-align: center;
+            color: #000000;
+        }
 
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	th, td {
-	    border: 1px solid #ccc;
-	    padding: 10px;
-	    text-align: left;
-	}
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
 
-	th {
-	    background-color: rgba(120, 120, 128, 0.30);
-	}
-
+        th {
+            background-color: rgba(120, 120, 128, 0.30);
+        }
     </style>
 </head>
 <body>
@@ -57,9 +56,18 @@
         document.addEventListener('DOMContentLoaded', loadReports);
 
         function loadReports() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
-            const reports = userData[userId]?.reports || [];
+            const email = localStorage.getItem('currentUserEmail');
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+
+            const user = usersData[email] || {};
+            const userp = userspData[email] || {};
+
+            // Combine reports from both sources
+            const reports = [
+                ...(user.reports || []),
+                ...(userp.reports || [])
+            ];
 
             const tableBody = document.getElementById('reports-body');
             reports.forEach(report => {
@@ -67,40 +75,43 @@
                 row.innerHTML = `
                     <td>${report.date}</td>
                     <td>${report.doctor_specialist}</td>
-                    <td>${report.title}</td>
+                    <td>${report.report}</td>
                     <td><a href="${report.link}" download>Download</a></td>
                 `;
                 tableBody.appendChild(row);
             });
         }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const email = localStorage.getItem('currentUserEmail');
+            if (!email) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        function loadUserData() {
+            // Optionally implement user data loading if needed
+        }
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+        let inactivityTime = function () {
+            let timeout;
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserEmail');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-inactivityTime();
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
+        inactivityTime();
     </script>
 </body>
 </html>
