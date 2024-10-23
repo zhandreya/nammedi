@@ -5,37 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical History</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    color: #000000;
-	    margin: 0;
-	    padding: 20px;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
 
-	h1 {
-	    text-align: center;
-	    color: #000000;
-	}
+        h1 {
+            text-align: center;
+            color: #000000;
+        }
 
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	th, td {
-	    border: 1px solid #ccc;
-	    padding: 10px;
-	    text-align: left;
-	}
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
 
-	th {
-	    background-color: rgba(120, 120, 128, 0.30);
-	}
-
+        th {
+            background-color: rgba(120, 120, 128, 0.30);
+        }
     </style>
 </head>
 <body>
@@ -49,19 +48,29 @@
                 <th>Prescription</th>
                 <th>Doctor's Report</th>
                 <th>Ailment</th>
-		<th>Treatment</th>
+                <th>Treatment</th>
             </tr>
         </thead>
         <tbody id="medical-history-body"></tbody>
     </table>
     
     <script>
-        document.addEventListener('DOMContentLoaded', loadMedicalHistory);
+        document.addEventListener('DOMContentLoaded', checkUserLogin);
 
-        function loadMedicalHistory() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
-            const medicalHistory = userData[userId]?.medicalHistory || [];
+        function checkUserLogin() {
+            const email = localStorage.getItem('currentUserEmail');
+            if (!email) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadMedicalHistory(email);
+            }
+        }
+
+        function loadMedicalHistory(email) {
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+            const medicalHistory = usersData[email]?.medicalHistory || [];
+            const additionalData = userspData[email]?.additionalInfo || []; // Adjust this as per your data structure
 
             const tableBody = document.getElementById('medical-history-body');
             medicalHistory.forEach(entry => {
@@ -72,39 +81,31 @@
                     <td>${entry.prescription}</td>
                     <td>${entry.report}</td>
                     <td>${entry.ailment}</td>
-		    <td>${entry.treatment}</td>
+                    <td>${entry.treatment}</td>
                 `;
                 tableBody.appendChild(row);
             });
+
+            // You can also process and display data from userspData if needed
         }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        let inactivityTime = function () {
+            let timeout;
 
-let inactivityTime = function () {
-    let timeout;
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserEmail');
+                    window.location.href = 'sign-up.html';
+                }, 3600000); // 1 hour
+            };
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
-
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
