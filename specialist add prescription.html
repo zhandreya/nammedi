@@ -100,7 +100,6 @@
         </form>
     </main>
 
-
     <script>
         async function submitPrescription(event) {
             event.preventDefault();
@@ -150,6 +149,20 @@
             doc.text(`Treatment: ${prescriptionData.treatment}`, 10, 80);
             doc.text(`Prescription Details: ${prescriptionData.prescription}`, 10, 90);
             doc.text(`Short Report: ${prescriptionData.report}`, 10, 100);
+            
+            // Save PDF to a Blob
+            const pdfBlob = doc.output('blob');
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+
+            // Store the PDF URL in local storage under "reports"
+            const reportsData = JSON.parse(localStorage.getItem('reports')) || {};
+            if (!reportsData[userEmail]) {
+                reportsData[userEmail] = { pdfs: [] };
+            }
+            reportsData[userEmail].pdfs.push(pdfUrl);
+            localStorage.setItem('reports', JSON.stringify(reportsData));
+
+            // Automatically download the PDF
             doc.save(`${prescriptionData.fullName}_prescription.pdf`);
 
             window.location.href = 'specialist portfolio.html';
