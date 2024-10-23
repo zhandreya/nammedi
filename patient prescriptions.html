@@ -5,37 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prescriptions</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    color: #000000;
-	    margin: 0;
-	    padding: 20px;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
 
-	h1 {
-	    text-align: center;
-	    color: #000000;
-	}
+        h1 {
+            text-align: center;
+            color: #000000;
+        }
 
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	th, td {
-	    border: 1px solid #ccc;
-	    padding: 10px;
-	    text-align: left;
-	}
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
 
-	th {
-	    background-color: rgba(120, 120, 128, 0.30);
-	}
-
+        th {
+            background-color: rgba(120, 120, 128, 0.30);
+        }
     </style>
 </head>
 <body>
@@ -45,7 +44,7 @@
         <thead>
             <tr>
                 <th>Date</th>
-		<th>Doctor/Specialist</th>
+                <th>Doctor/Specialist</th>
                 <th>Ailment</th>
                 <th>Treatment</th>
                 <th>Prescription</th>
@@ -58,16 +57,25 @@
         document.addEventListener('DOMContentLoaded', loadPrescriptions);
 
         function loadPrescriptions() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
-            const prescriptions = userData[userId]?.prescriptions || [];
+            const email = localStorage.getItem('currentUserEmail');
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+            
+            const user = usersData[email] || {};
+            const userp = userspData[email] || {};
+
+            // Combine prescriptions from both sources
+            const prescriptions = [
+                ...(user.prescriptions || []),
+                ...(userp.prescriptions || [])
+            ];
 
             const tableBody = document.getElementById('prescriptions-body');
             prescriptions.forEach(entry => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${entry.date}</td>
-		    <td>${entry.doctor_specialist}</td>
+                    <td>${entry.doctor_specialist}</td>
                     <td>${entry.ailment}</td>
                     <td>${entry.treatment}</td>
                     <td>${entry.prescription}</td>
@@ -75,34 +83,37 @@
                 tableBody.appendChild(row);
             });
         }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const email = localStorage.getItem('currentUserEmail');
+            if (!email) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        function loadUserData() {
+            // Optionally implement user data loading if needed
+        }
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+        let inactivityTime = function () {
+            let timeout;
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserEmail');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-inactivityTime();
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
+        inactivityTime();
     </script>
 </body>
 </html>
