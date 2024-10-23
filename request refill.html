@@ -27,7 +27,7 @@
 
         function loadRefillRequests() {
             const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const userData = JSON.parse(localStorage.getItem('usersr')) || {};
             const refills = userData[userId]?.refillRequests || [];
 
             const tableBody = document.getElementById('refill-body');
@@ -39,43 +39,74 @@
                     <td>${entry.prescription}</td>
                     <td>${entry.duration}</td>
                     <td>${entry.nextAvailableDate}</td>
-                    <td>${isAvailable ? `<button onclick="submitRefill('${entry.id}')">Submit</button>` : 'Unavailable'}</td>
+                    <td>${isAvailable ? `<button onclick="submitRefill('${entry.id}', '${entry.prescription}', '${entry.date}', '${entry.duration}', '${entry.nextAvailableDate}')">Submit</button>` : 'Unavailable'}</td>
                 `;
                 tableBody.appendChild(row);
             });
         }
 
-        function submitRefill(refillId) {
-          
-            alert(`Refill request for ${refillId} submitted.`);
+        function submitRefill(refillId, prescription, date, duration, nextAvailableDate) {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const userEmail = userData[userId]?.email;
+            const institution = userData[userId]?.institution;
+
+            // Prepare refill data
+            const refillData = {
+                id: refillId,
+                prescription: prescription,
+                date: date,
+                duration: duration,
+                nextAvailableDate: nextAvailableDate,
+                userEmail: userEmail,
+                institution: institution
+            };
+
+            // Store data under "users" path
+            const usersRefills = JSON.parse(localStorage.getItem('users0')) || {};
+            if (!usersRefills[userEmail]) {
+                usersRefills[userEmail] = [];
+            }
+            usersRefills[userEmail].push(refillData);
+            localStorage.setItem('users', JSON.stringify(usersRefills));
+
+            // Store data under "usersr" path
+            const usersrRefills = JSON.parse(localStorage.getItem('usersr')) || {};
+            if (!usersrRefills[userEmail]) {
+                usersrRefills[userEmail] = [];
+            }
+            usersrRefills[userEmail].push(refillData);
+            localStorage.setItem('usersr', JSON.stringify(usersrRefills));
+
+            alert(`Refill request for ${prescription} submitted.`);
         }
-               function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
+        inactivityTime();
 
     </script>
 </body>
