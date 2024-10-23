@@ -5,196 +5,88 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Insurance Claims</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    line-height: 1.6;
-	    color: #000000;
-	    margin: 0;
-	    padding: 0;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
 
-	.container {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    border-radius: 5px;
-	    margin: 20px auto;
-	    padding: 20px;
-	}
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 20px auto;
+            padding: 20px;
+        }
 
-	header {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    color: white;
-	    padding: 20px;
-	    border-radius: 5px;
-	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);	
-	    width: 90%;
-	    max-width: 1200px;
-	    margin: 50px auto;
-	    text-align: center;
-	}
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
 
-	header h1 {
-	    margin-bottom: 10px;
-	    color: #000000;
-	}
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
 
-	#profile-pic {
-	    width: 100px;
-	    height: 100px;
-	    border-radius: 50%;
-	    display: block;
-	    margin: 10px auto;
-	}
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
 
-	header button {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    margin: 5px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	header button:hover {
-	    background-color: #4CAF50;
-	}
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
 
-	main {
-	    display: grid;
-	    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	    gap: 20px;
-	    padding: 20px 0;
-	}
+        th {
+            background-color: #f4f4f4;
+        }
 
-	.card {
-	    background-color: white;
-	    border-radius: 8px;
-	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	    padding: 20px;
-	    margin-bottom: 20px;
-	}
+        tr:hover {
+            background-color: #f1f1f1;
+        }
 
-	.card h2 {
-	    color: #000000;
-	    border-bottom: 2px solid #ecf0f1;
-	    padding-bottom: 10px;
-	    margin-top: 0;
-	}
+        button {
+            background-color: #0066cc;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
 
-	.card button {
-	    background-color: #0066cc;
-	    color: white;
-	    padding: 10px 15px;
-	    border: none;
-	    border-radius: 5px;
-	    cursor: pointer;
-	    font-size: 16px;
-	    transition: background-color 0.3s;
-	    margin-top: 10px;
-	}
-
-	.card button:hover {
-	    background-color:  #4CAF50;
-	}
-
-	footer {
-	    background-color: transparent;
-	    text-align: center;
-	    padding: 20px 0;
-	    margin-top: 20px;
-	}
-
-	footer a {
-	    color: #0066cc;
-	    text-decoration: none;
-	    margin: 0 10px;
-	}
-
-	footer a:hover {
-	    text-decoration: underline;
-	    color: #4CAF50;
-	}
-
-	#backBtn {
-	    position: absolute;
-	    top: 10px;
-	    left: 10px;
-	    padding: 5px 10px;
-	    background-color: transparent;
-	    border: 1px solid #333;
-	    cursor: pointer;
-	    color: #000000;
-	    border-radius: 5px;
-	}
-
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
-
-	th, td {
-	    padding: 10px;
-	    text-align: left;
-	    border: 1px solid #ddd;
-	}
-
-	th {
-	    background-color: #f4f4f4;
-	}
-
-	tr:hover {
-	    background-color: #f1f1f1;
-	}
-	
-	form {
-	    margin-top: 20px;
-	}
-
-	input[type="text"], input[type="date"] {
-	    width: calc(100% - 22px);
-	    padding: 10px;
-	    margin-bottom: 10px;
-	    border: 1px solid #ccc;
-	    border-radius: 4px;
-	}
-
-	button[type="submit"] {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
-
-	button[type="submit"]:hover {
-	    background-color: #4CAF50;
-	}
-
-	@media (max-width: 768px) {
-	    main {
-	        grid-template-columns: 1fr;
-	    }
-	
-	    header {
-	        padding: 10px 0;
-	    }
-
-	    #profile-pic {
-	        width: 80px;
-	        height: 80px;
-	    }
-	}
-
+        button:hover {
+            background-color: #4CAF50;
+        }
     </style>
 </head>
 <body>
@@ -211,59 +103,63 @@
                 </tr>
             </thead>
             <tbody>
-            
             </tbody>
         </table>
     </div>
 
     <script>
         function loadClaims() {
+            const currentUserEmail = localStorage.getItem('currentUserEmail');
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const userDetails = Object.entries(usersData).find(([key]) => key.startsWith(currentUserEmail));
+            const userFullName = userDetails ? `${userDetails[1].fullName} ${userDetails[1].surname}` : 'User Not Found';
+
             const claimsData = JSON.parse(localStorage.getItem('insuranceData')) || [];
             const tableBody = document.getElementById('claimsTable').querySelector('tbody');
+
             claimsData.forEach((claim) => {
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = claim.date;
-                row.insertCell(1).textContent = 'User Name';
-                row.insertCell(2).textContent = claim.fullname;
+                row.insertCell(1).textContent = userFullName; // Current user's full name
+                row.insertCell(2).textContent = claim.patientFullName || 'N/A'; // Assuming patientFullName is stored
                 const downloadCell = row.insertCell(3);
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = 'Download';
                 downloadButton.onclick = function() {
-                   
+                    // Implement download functionality
                 };
                 downloadCell.appendChild(downloadButton);
             });
         }
 
         document.addEventListener('DOMContentLoaded', loadClaims);
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
