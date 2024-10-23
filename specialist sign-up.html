@@ -191,6 +191,25 @@
             }
         }
 
+        function validateEmailUnique(email) {
+            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
+            return !usersd[email];
+        }
+
+        function validateSignupForm() {
+            const email = document.getElementById("workEmailS").value;
+
+            if (!validateEmailUnique(email)) {
+                document.getElementById("emailError").style.display = "block";
+                return false;
+            } else {
+                document.getElementById("emailError").style.display = "none";
+            }
+
+            if (!validatePasswords()) {
+                return false; 
+            }
+
         function validateSignupForm() {
             if (validatePasswords()) {
                 const userData = {
