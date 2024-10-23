@@ -190,12 +190,12 @@
         }
 
         function validateEmailUnique(email) {
-            const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
-            return !usersm[email];
+            const usersr = JSON.parse(localStorage.getItem('usersr')) || {};
+            return !usersr[email];
         }
 
         function validateSignupForm() {
-            const email = document.getElementById("workEmailM").value;
+            const email = document.getElementById("workEmailR").value;
 
             if (!validateEmailUnique(email)) {
                 document.getElementById("emailError").style.display = "block";
