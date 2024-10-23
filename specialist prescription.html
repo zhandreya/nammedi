@@ -197,6 +197,9 @@
                     <th>Date</th>
                     <th>Doctor/Specialist</th>
                     <th>Patient Full Name</th>
+		    <th>Patient Surname</th>
+		    <th>Patient ID/Passport</th>
+		    <th>Patient Cell Phone</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -225,7 +228,10 @@
                 row.innerHTML = `
                     <td>${prescription.prescriptionDate}</td>
                     <td>${prescription.doctor_specialist}</td>
-                    <td>${prescription.FullName}</td>
+                    <td>${prescription.fullName}</td>
+		    <td>${prescription.surname}</td>
+                    <td>${prescription.idPassport}</td>
+		    <td>${prescription.cellPhone}</td>
                     <td><button onclick="downloadPrescription(${index})">Download</button></td>
                 `;
                 tbody.appendChild(row);
