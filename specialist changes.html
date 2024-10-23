@@ -36,7 +36,6 @@
             text-align: center;
             max-width: 1200px;
             margin: 50px auto;
-            text-align: center;
         }
 
         header h1 {
@@ -130,7 +129,7 @@
         <button type="button" onclick="document.getElementById('profilePicture').click();">Change Profile Picture</button>
     </header>
     <main class="container">
-        <form id="editForm" onsubmit="return validateEditForm();">        
+        <form id="editForm" onsubmit="return updateProfile();">        
                 <label for="fullName">First Name(s)</label>
                 <input type="text" id="fullName" name="fullName" required>
                 <label for="surname">Surname</label>
@@ -168,14 +167,45 @@
             reader.readAsDataURL(file);
         }
 
-        function validateEditForm() {
+        function updateProfile() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = {
+                fullName: document.getElementById('fullName').value,
+                surname: document.getElementById('surname').value,
+                dob: document.getElementById('dob').value,
+                gender: document.getElementById('gender').value,
+                idPassport: document.getElementById('idPassport').value,
+                workTel: document.getElementById('workTel').value,
+                workEmailS: document.getElementById('workEmailS').value,
+                speciality: document.getElementById('speciality').value,
+                institute: document.getElementById('institute').value,
+                profilePicture: document.getElementById('profilePicPreview').src // Added for profile picture
+            };
+
+            // Store data in "users" path
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            if (!usersData[userId]) {
+                usersData[userId] = {};
+            }
+            Object.assign(usersData[userId], userData);
+            localStorage.setItem('users', JSON.stringify(usersData));
+
+            // Store data in "usersd" path
+            const usersdData = JSON.parse(localStorage.getItem('usersd')) || {};
+            if (!usersdData[userId]) {
+                usersdData[userId] = {};
+            }
+            Object.assign(usersdData[userId], userData);
+            localStorage.setItem('usersd', JSON.stringify(usersdData));
+
             alert('Profile updated successfully!');
             window.location.href = 'specialist portfolio.html';
             return false; 
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const userData = JSON.parse(localStorage.getItem('usersd'))[localStorage.getItem('currentUserId')] || {};
+            const userId = localStorage.getItem('currentUserId');
+            const userData = JSON.parse(localStorage.getItem('usersd'))[userId] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
             document.getElementById('dob').value = userData.dob || '';
