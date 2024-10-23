@@ -207,7 +207,7 @@
 
         function logout() {
             localStorage.removeItem('currentUserId');
-            window.location.href = 'signup.html';
+            window.location.href = 'sign-up.html';
         }
 
         function resetTimer() {
@@ -229,7 +229,7 @@
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
             if (!email) {
-                document.getElementById('user-name').textContent = 'Guest';
+                document.getElementById('user-name').textContent = ''; // No guest name
                 document.getElementById('profile-pic').src = 'default-profile.png';
             } else {
                 loadUserData(email);
@@ -237,8 +237,8 @@
         }
 
         function loadUserData(email) {
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
-            const user = userData[email] || {};
+            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+            const user = userspData[email] || {};
             const fullName = `${user.fullName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
 
@@ -259,7 +259,7 @@
             const usersData = JSON.parse(localStorage.getItem('users')) || {};
             const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
             const appointments = usersData[email]?.appointments || [];
-            const additionalAppointments = userspData[email]?.upcomingAppointments || []; // Adjust based on your data structure
+            const additionalAppointments = userspData[email]?.upcomingAppointments || [];
 
             const calendarView = document.getElementById('calendar-view');
             calendarView.innerHTML = '';
@@ -269,9 +269,9 @@
             allAppointments.forEach(appointment => {
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'calendar-day';
-                dayDiv.textContent = new Date(appointment.date).getDate(); // Adjust based on date structure
+                dayDiv.textContent = new Date(appointment.date).getDate();
                 dayDiv.onclick = function() {
-                    alert(`Appointment Details: ${appointment.details}`); // Adjust based on your data structure
+                    alert(`Appointment Details: ${appointment.details}`);
                 };
                 calendarView.appendChild(dayDiv);
             });
