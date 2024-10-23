@@ -5,196 +5,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check-In Patient</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    line-height: 1.6;
-	    color: #000000;
-	    margin: 0;
-	    padding: 0;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
 
-	.container {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    border-radius: 5px;
-	    margin: 20px auto;
-	    padding: 20px;
-	}
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 20px auto;
+            padding: 20px;
+        }
 
-	header {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    color: white;
-	    padding: 20px;
-	    border-radius: 5px;
-	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);	
-	    width: 90%;
-	    max-width: 1200px;
-	    margin: 50px auto;
-	    text-align: center;
-	}
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
 
-	header h1 {
-	    margin-bottom: 10px;
-	    color: #000000;
-	}
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
 
-	#profile-pic {
-	    width: 100px;
-	    height: 100px;
-	    border-radius: 50%;
-	    display: block;
-	    margin: 10px auto;
-	}
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 10px auto;
+        }
 
-	header button {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    margin: 5px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+        header button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
 
-	header button:hover {
-	    background-color: #4CAF50;
-	}
+        header button:hover {
+            background-color: #4CAF50;
+        }
 
-	main {
-	    display: grid;
-	    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	    gap: 20px;
-	    padding: 20px 0;
-	}
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
 
-	.card {
-	    background-color: white;
-	    border-radius: 8px;
-	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	    padding: 20px;
-	    margin-bottom: 20px;
-	}
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
 
-	.card h2 {
-	    color: #000000;
-	    border-bottom: 2px solid #ecf0f1;
-	    padding-bottom: 10px;
-	    margin-top: 0;
-	}
+        .card h2 {
+            color: #000000;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
 
-	.card button {
-	    background-color: #0066cc;
-	    color: white;
-	    padding: 10px 15px;
-	    border: none;
-	    border-radius: 5px;
-	    cursor: pointer;
-	    font-size: 16px;
-	    transition: background-color 0.3s;
-	    margin-top: 10px;
-	}
+        .card button {
+            background-color: #0066cc;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
 
-	.card button:hover {
-	    background-color:  #4CAF50;
-	}
+        .card button:hover {
+            background-color: #4CAF50;
+        }
 
-	footer {
-	    background-color: transparent;
-	    text-align: center;
-	    padding: 20px 0;
-	    margin-top: 20px;
-	}
+        footer {
+            background-color: transparent;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
 
-	footer a {
-	    color: #0066cc;
-	    text-decoration: none;
-	    margin: 0 10px;
-	}
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
 
-	footer a:hover {
-	    text-decoration: underline;
-	    color: #4CAF50;
-	}
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
+        }
 
-	#backBtn {
-	    position: absolute;
-	    top: 10px;
-	    left: 10px;
-	    padding: 5px 10px;
-	    background-color: transparent;
-	    border: 1px solid #333;
-	    cursor: pointer;
-	    color: #000000;
-	    border-radius: 5px;
-	}
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
 
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
+        form {
+            margin-top: 20px;
+        }
 
-	th, td {
-	    padding: 10px;
-	    text-align: left;
-	    border: 1px solid #ddd;
-	}
+        input[type="text"], input[type="date"], input[type="tel"], input[type="number"], select {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
 
-	th {
-	    background-color: #f4f4f4;
-	}
+        button[type="submit"] {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
 
-	tr:hover {
-	    background-color: #f1f1f1;
-	}
-	
-	form {
-	    margin-top: 20px;
-	}
+        button[type="submit"]:hover {
+            background-color: #4CAF50;
+        }
 
-	input[type="text"], input[type="date"] {
-	    width: calc(100% - 22px);
-	    padding: 10px;
-	    margin-bottom: 10px;
-	    border: 1px solid #ccc;
-	    border-radius: 4px;
-	}
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
 
-	button[type="submit"] {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+            header {
+                padding: 10px 0;
+            }
 
-	button[type="submit"]:hover {
-	    background-color: #4CAF50;
-	}
-
-	@media (max-width: 768px) {
-	    main {
-	        grid-template-columns: 1fr;
-	    }
-	
-	    header {
-	        padding: 10px 0;
-	    }
-
-	    #profile-pic {
-	        width: 80px;
-	        height: 80px;
-	    }
-	}
-
+            #profile-pic {
+                width: 80px;
+                height: 80px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -252,39 +231,68 @@
                 reason: document.getElementById('reason').value,
                 paid: document.getElementById('paid').value
             };
+
+            const currentUserEmail = localStorage.getItem('currentUserEmail');
+            const institutionName = document.getElementById('institution').value;
+
+            // Store data in both "users" and "usersr" paths
+            storeUserData(currentUserEmail, institutionName, checkInData);
+
             const checkIns = JSON.parse(localStorage.getItem('checkIns')) || [];
             checkIns.push(checkInData);
             localStorage.setItem('checkIns', JSON.stringify(checkIns));
+
             window.location.href = 'receptionist portfolio.html';
         });
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function storeUserData(email, institution, data) {
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
 
-let inactivityTime = function () {
-    let timeout;
+            // Create a unique key using email and institution
+            const key = `${email}_${institution}`;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            // Store data in users
+            if (!usersData[key]) {
+                usersData[key] = [];
+            }
+            usersData[key].push(data);
+            localStorage.setItem('users', JSON.stringify(usersData));
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            // Store data in usersr
+            if (!usersrData[key]) {
+                usersrData[key] = [];
+            }
+            usersrData[key].push(data);
+            localStorage.setItem('usersr', JSON.stringify(usersrData));
+        }
 
-inactivityTime();
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
+        let inactivityTime = function () {
+            let timeout;
+
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
+
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
+
+        inactivityTime();
     </script>
 </body>
 </html>
