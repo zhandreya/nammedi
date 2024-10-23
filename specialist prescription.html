@@ -207,16 +207,34 @@
         </table>
     </main>
 
-    <footer>
-        <a href="Privacy Policy.html">Privacy Policy</a> | 
-        <a href="Terms of Service.html">Terms of Service</a> | 
-        <a href="Help_Contact.html">Help/Contact</a>
-    </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            loadPrescriptions();
+            checkUserLogin();
         });
+
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData(userId);
+                loadPrescriptions();
+            }
+        }
+
+        function loadUserData(userId) {
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            const usersdData = JSON.parse(localStorage.getItem('usersd')) || {};
+
+            const userFullName = usersData[userId]?.fullName || usersdData[userId]?.fullName;
+            const userSurname = usersData[userId]?.surname || usersdData[userId]?.surname;
+
+            // Check if both fullName and surname equal "doctor_specialist"
+            if (userFullName === "doctor_specialist" && userSurname === "doctor_specialist") {
+                console.log("User is a doctor/specialist:", userFullName, userSurname);
+                // You can proceed to load or display relevant data for doctors/specialists here
+            }
+        }
 
         function loadPrescriptions() {
             const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
@@ -229,9 +247,9 @@
                     <td>${prescription.prescriptionDate}</td>
                     <td>${prescription.doctor_specialist}</td>
                     <td>${prescription.fullName}</td>
-		    <td>${prescription.surname}</td>
+                    <td>${prescription.surname}</td>
                     <td>${prescription.idPassport}</td>
-		    <td>${prescription.cellPhone}</td>
+                    <td>${prescription.cellPhone}</td>
                     <td><button onclick="downloadPrescription(${index})">Download</button></td>
                 `;
                 tbody.appendChild(row);
@@ -241,37 +259,35 @@
         function downloadPrescription(index) {
             const prescriptions = JSON.parse(localStorage.getItem('prescriptions')) || [];
             const prescription = prescriptions[index];
-           
-            alert('Downloading prescription for ' + prescription.FullName);
+
+            // Assuming each prescription object has a 'pdfUrl' property with the file path
+            const pdfUrl = prescription.pdfUrl || 'path/to/default/prescription.pdf'; // Replace with your actual path
+
+            // Create a temporary anchor element to trigger the download
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.download = `Prescription_${prescription.fullName}_${prescription.prescriptionDate}.pdf`; // Set a default name
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        let inactivityTime = function () {
+            let timeout;
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-let inactivityTime = function () {
-    let timeout;
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
-
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
-
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
