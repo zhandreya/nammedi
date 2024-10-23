@@ -176,9 +176,9 @@
         }
 
         function validatePasswords() {
-            var password = document.getElementById("password").value;
-            var confirmPassword = document.getElementById("confirmPassword").value;
-            var passwordError = document.getElementById("passwordError");
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const passwordError = document.getElementById("passwordError");
 
             if (password !== confirmPassword) {
                 passwordError.style.display = "block";
@@ -189,6 +189,24 @@
             }
         }
 
+        function validateEmailUnique(email) {
+            const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
+            return !usersm[email];
+        }
+
+        function validateSignupForm() {
+            const email = document.getElementById("workEmailM").value;
+
+            if (!validateEmailUnique(email)) {
+                document.getElementById("emailError").style.display = "block";
+                return false;
+            } else {
+                document.getElementById("emailError").style.display = "none";
+            }
+
+            if (!validatePasswords()) {
+                return false; 
+            }
         function validateSignupForm() {
             if (validatePasswords()) {
                 const userData = {
