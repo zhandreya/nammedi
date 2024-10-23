@@ -207,12 +207,12 @@
 
         function logout() {
             localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
+            window.location.href = 'signup.html';
         }
 
         function resetTimer() {
             clearTimeout(timeout);
-            timeout = setTimeout(logout, 3600000);
+            timeout = setTimeout(logout, 3600000); // Set to 1 hour (3600000 milliseconds)
         }
 
         window.onload = resetTimer; 
@@ -229,7 +229,8 @@
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
             if (!email) {
-                window.location.href = 'sign-up.html';
+                document.getElementById('user-name').textContent = 'Guest';
+                document.getElementById('profile-pic').src = 'default-profile.png';
             } else {
                 loadUserData(email);
             }
