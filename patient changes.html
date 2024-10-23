@@ -167,7 +167,7 @@
         }
 
         function validateEditForm() {
-            const userId = localStorage.getItem('currentUserId'); 
+            const email = document.getElementById("email").value; // Use email as the key
             const userData = {
                 fullName: document.getElementById("fullName").value,
                 surname: document.getElementById("surname").value,
@@ -176,18 +176,18 @@
                 gender: document.getElementById("gender").value,
                 idPassport: document.getElementById("idPassport").value,
                 cellPhone: document.getElementById("cellPhone").value,
-                email: document.getElementById("email").value,
+                email: email, // Include email in the data
                 profilePicture: document.getElementById('profilePicPreview').src
             };
 
             const usersp = JSON.parse(localStorage.getItem('usersp')) || {};
 
-            usersp[userId] = userData;
+            usersp[email] = userData; // Use email as the key
 
             localStorage.setItem('usersp', JSON.stringify(usersp));
 
             const users = JSON.parse(localStorage.getItem('users')) || {};
-            users[userId] = userData;
+            users[email] = userData; // Use email as the key
             localStorage.setItem('users', JSON.stringify(users));
 
             alert('Profile updated successfully!');
@@ -197,8 +197,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('usersp'))[userId] || {};
+            const email = localStorage.getItem('currentUserEmail'); // Assuming you store the current user's email
+            const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
             document.getElementById('placeOfBirth').value = userData.placeOfBirth || '';
