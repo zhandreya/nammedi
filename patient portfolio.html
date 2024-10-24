@@ -239,9 +239,10 @@
             const allAppointments = [...appointments, ...additionalAppointments];
 
             allAppointments.forEach(appointment => {
+                const appointmentDate = new Date(appointment.date);
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'calendar-day';
-                dayDiv.textContent = new Date(appointment.date).getDate();
+                dayDiv.textContent = appointmentDate.getDate();
                 dayDiv.onclick = function() {
                     alert(`Appointment Details: ${appointment.details}`);
                 };
