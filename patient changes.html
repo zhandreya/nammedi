@@ -168,21 +168,22 @@
 
         function validateEditForm() {
             const email = document.getElementById("email").value; // Use email as the key
-            const password = prompt("Please enter your password to confirm changes:");
-            const userData = {
-                fullName: document.getElementById("fullName").value,
-                surname: document.getElementById("surname").value,
-                placeOfBirth: document.getElementById("placeOfBirth").value,
-                dob: document.getElementById("dob").value,
-                gender: document.getElementById("gender").value,
-                idPassport: document.getElementById("idPassport").value,
-                cellPhone: document.getElementById("cellPhone").value,
-                email: email, // Include email in the data
-                profilePicture: document.getElementById('profilePicPreview').src
-            };
-
+            const password = prompt("Please enter your current password to confirm changes:");
             const usersp = JSON.parse(localStorage.getItem('usersp')) || {};
+
             if (usersp[email] && usersp[email].password === password) {
+                const userData = {
+                    fullName: document.getElementById("fullName").value,
+                    surname: document.getElementById("surname").value,
+                    placeOfBirth: document.getElementById("placeOfBirth").value,
+                    dob: document.getElementById("dob").value,
+                    gender: document.getElementById("gender").value,
+                    idPassport: document.getElementById("idPassport").value,
+                    cellPhone: document.getElementById("cellPhone").value,
+                    email: email, // Include email in the data
+                    profilePicture: document.getElementById('profilePicPreview').src
+                };
+
                 usersp[email] = userData; // Use email as the key
                 localStorage.setItem('usersp', JSON.stringify(usersp));
 
