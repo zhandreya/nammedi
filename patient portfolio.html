@@ -208,17 +208,9 @@
             loadUpcomingAppointments();
         });
 
-        function checkUserLogin() {
-            const email = localStorage.getItem('currentUserEmail');
-            if (!email) {
-                window.location.href = 'sign-up.html';
-            } else {
-                loadUserData(email);
-            }
-        }
 
         function loadUserData(email) {
-            const userData = JSON.parse(localStorage.getItem('users')) || {};
+            const userData = JSON.parse(localStorage.getItem('usersp')) || {};
             const user = userData[email] || {};
             const fullName = `${user.fullName || ''} ${user.surname || ''}`.trim();
             document.getElementById('user-name').textContent = fullName;
