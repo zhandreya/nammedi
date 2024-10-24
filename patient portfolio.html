@@ -291,15 +291,7 @@
             }
         }
 
-        function checkUserLogin() {
-            const email = localStorage.getItem('currentUserId');
-            if (!email) {
-                alert('You are not logged in.');
-                window.location.href = 'patient log in.html';
-            } else {
-                loadUserData(email);
-            }
-        }
+
     </script>
 </body>
 </html>
