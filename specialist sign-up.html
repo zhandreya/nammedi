@@ -10,114 +10,140 @@
             background-image: url('Desert Scope.jpeg');
             background-size: cover;
             background-position: center;
-            line-height: 1.6;
-            color: #000000;
             margin: 0;
-            padding: 0;
-        }
-        .container {
-            background-color: rgba(255, 255, 255, 0.8);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 600px;
-            border-radius: 5px;
-            margin: 50px auto;
             padding: 20px;
+            background-color: #f0f0f0;
         }
         h1 {
             text-align: center;
+            color: #000000;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
+        form {
+            background-color: rgba(120, 120, 128, 0.30);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .form-columns {
+            display: flex;
+            justify-content: space-between;
+        }
+        .column {
+            width: 48%;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-top: 10px;
         }
-        input[type="text"], input[type="email"], input[type="password"], input[type="date"], select {
+        input[type="text"],
+        input[type="date"],
+        input[type="tel"],
+        input[type="email"],
+        input[type="password"] {
             width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
+            padding: 8px;
+            margin-top: 5px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            box-sizing: border-box;
         }
-        button {
-            width: 100%;
+        .terms-container {
+            margin-top: 20px;
+        }
+        .info-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        #confirmBtn {
+            display: block;
+            width: 200px;
+            margin: 20px auto 0;
             padding: 10px;
             background-color: #0066cc;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            font-size: 16px;
         }
-        button:hover {
+        #confirmBtn:hover {
             background-color: #4CAF50;
         }
-        .profile-pic-preview {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .profile-pic-preview img {
-            max-width: 100px;
-            border-radius: 50%;
-        }
-        .error {
+        #emailError {
             color: red;
-            margin-top: -10px;
-            margin-bottom: 10px;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Specialist Sign-Up</h1>
-        <form id="signup-form" onsubmit="return validateSignupForm()">
-            <label for="fullName">Full Name</label>
-            <input type="text" id="fullName" required>
-
-            <label for="surname">Surname</label>
-            <input type="text" id="surname" required>
-
-            <label for="dob">Date of Birth</label>
-            <input type="date" id="dob" required>
-
-            <label for="gender">Gender</label>
-            <select id="gender" required>
-                <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-            </select>
-
-            <label for="idPassport">ID/Passport Number</label>
-            <input type="text" id="idPassport" required>
-
-            <label for="workTel">Work Telephone</label>
-            <input type="text" id="workTel" required>
-
-            <label for="workEmailS">Work Email</label>
-            <input type="email" id="workEmailS" required>
-
-            <label for="speciality">Speciality</label>
-            <input type="text" id="speciality" required>
-
-            <label for="institute">Institute</label>
-            <input type="text" id="institute" required>
-
-            <label for="username">Username</label>
-            <input type="text" id="username" required>
-
-            <label for="password">Password</label>
-            <input type="password" id="password" required>
-
-            <label for="profilePicture">Profile Picture</label>
-            <input type="file" id="profilePicture" accept="image/*" onchange="changeProfilePicture(this)">
-
-            <div class="profile-pic-preview">
-                <img id="profile-pic-preview" src="default-profile.png" alt="Profile Picture Preview">
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1>NAMIBIAN MEDICAL RECORDS</h1>
+    <form id="signupForm" onsubmit="return validateSignupForm();">
+        <div class="form-columns">
+            <div class="column">
+                <label for="fullName">First Name(s)</label>
+                <input type="text" id="fullName" name="fullName" required>
+                <label for="surname">Surname</label>
+                <input type="text" id="surname" name="surname" required>
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob" name="dob" required>
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+		    <option value="Other">Other</option>
+                </select>
+                <label for="idPassport">ID/Passport No.</label>
+                <input type="text" id="idPassport" name="idPassport" required>
+                <label for="workTel">Work Tel. No.</label>
+                <input type="tel" id="workTel" name="workTel" required>
+                <label for="workEmailS">Work Email Address</label>
+                <input type="email" id="workEmailS" name="workEmailS" required>
+                <div id="emailError">Email already exists.</div>
+                <label for="speciality">Speciality</label>
+                <input type="text" id="speciality" name="speciality" required>
+                <label for="institute">Institute Employed</label>
+                <input type="text" id="institute" name="institute" required>
             </div>
-
-            <button type="submit">Sign Up</button>
-        </form>
-    </div>
+            <div class="column">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <div id="passwordError" style="color: red; display: none;">Passwords do not match.</div>
+                <div class="terms-container">
+                    <input type="checkbox" id="termsCheck" name="termsCheck" required>
+                    <label for="termsCheck">I agree to the <a href="terms-and-cons.html">Terms & Conditions</a></label>
+                </div>
+                <label for="profilePicture">Profile Picture</label>
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
+                <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview" style="display: none; width: 100px; height: 100px;"/>
+            </div>
+        </div>
+        <div class="info-box">
+            <p>The information provided will be shared amongst medical professionals for medical purposes only. This information will not be shared without your consent. By clicking the "I Confirm" button, you agree that your information can be shared in the medical industry.</p>
+        </div>
+        <button type="submit" id="confirmBtn">I Confirm</button>
+    </form>
 
     <script>
         function previewProfilePicture(input) {
@@ -131,10 +157,14 @@
         }
 
         function saveToLocalStorage(userData) {
+            const users = JSON.parse(localStorage.getItem('users')) || {};
             const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
             const email = userData.workEmailS;
 
+            users[email] = userData;
             usersd[email] = userData;
+            
+            localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('usersd', JSON.stringify(usersd));
             localStorage.setItem('currentUserId', email);
         }
@@ -188,21 +218,21 @@
                 password: document.getElementById("password").value,
             };
 
-                if (profilePicture) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userData.profilePicture = e.target.result; 
-                        saveToLocalStorage(userData);
-                        window.location.href = "specialist log in.html"; 
-                    };
-                    reader.readAsDataURL(profilePicture);
-                } else {
-                    saveToLocalStorage(userData); 
-                    window.location.href = "specialist log in.html";
-                }
-
-                return false; 
+            if (profilePicture) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userData.profilePicture = e.target.result; 
+                    saveToLocalStorage(userData);
+                    window.location.href = "specialist log in.html"; 
+                };
+                reader.readAsDataURL(profilePicture);
+            } else {
+                userData.profilePicture = 'default-profile.png';
+                saveToLocalStorage(userData); 
+                window.location.href = "speciality log in.html"; 
             }
+
+            return false; 
         }
     </script>
 </body>
