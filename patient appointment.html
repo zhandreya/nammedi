@@ -120,35 +120,38 @@
         </table>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAppointments();
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAppointments();
+    });
+
+    function loadAppointments() {
+        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        appointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
+                <td>${appointment.preferredTime}</td>
+                <td>${appointment.doctor_specialist}</td>
+                <td>${appointment.reason}</td>
+                <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
+            `;
+            tableBody.appendChild(row);
         });
+    }
 
-        function loadAppointments() {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = ''; // Clear existing rows
+    function cancelAppointment(id) {
+        let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        appointments = appointments.filter(appointment => appointment.id !== id);
+        localStorage.setItem('appointments', JSON.stringify(appointments));
+        
+        // Refresh the page to load updated appointments
+        location.reload();
+    }
+</script>
 
-            appointments.forEach(appointment => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
-                    <td>${appointment.preferredTime}</td>
-                    <td>${appointment.doctor_specialist}</td>
-                    <td>${appointment.reason}</td>
-                    <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        function cancelAppointment(id) {
-            let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-            appointments = appointments.filter(appointment => appointment.id !== id);
-            localStorage.setItem('appointments', JSON.stringify(appointments));
-            loadAppointments(); // Refresh the appointments list
-        }
-    </script>
 </body>
 </html>
