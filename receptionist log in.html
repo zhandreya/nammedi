@@ -110,22 +110,24 @@
         </div>
     </form>
 
-    <script>
-        function validateLogin() {
-            const email = document.getElementById("workEmailR").value;
-            const password = document.getElementById("password").value;
+<script>
+    function validateLoginForm() {
+        const email = document.getElementById("workEmailR").value; // Changed ID to workEmailS
+        const password = document.getElementById("password").value;
 
-            const users = JSON.parse(localStorage.getItem('usersr')) || {};
+        const users = JSON.parse(localStorage.getItem('usersr')) || {}; // Changed from usersp to usersd
 
-            if (users[email] && users[email].password === password) {
-                sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-                window.location.href = "receptionist portfolio.html";
-                return false;
-            } else {
-                document.getElementById("loginError").style.display = "block";
-                return false;
-            }
+        if (users[email] && users[email].password === password) {
+            localStorage.setItem('currentUserId', email); // Fixed to use setItem
+            sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
+            window.location.href = "receptionist portfolio.html"; // Updated URL
+            return false;
+        } else {
+            document.getElementById("loginError").style.display = "block";
+            return false;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
