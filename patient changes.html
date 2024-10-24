@@ -157,6 +157,7 @@
     </main>
 
     <script>
+        // Function to preview profile picture
         function previewProfilePicture(input) {
             const file = input.files[0];
             const reader = new FileReader();
@@ -166,8 +167,9 @@
             reader.readAsDataURL(file);
         }
 
+        // Function to validate the edit form
         function validateEditForm() {
-            const email = document.getElementById("email").value; // Use email as the key
+            const email = localStorage.getItem('currentUserId'); // Get email from localStorage
             const password = prompt("Please enter your current password to confirm changes:");
             const usersp = JSON.parse(localStorage.getItem('usersp')) || {};
 
@@ -180,11 +182,11 @@
                     gender: document.getElementById("gender").value,
                     idPassport: document.getElementById("idPassport").value,
                     cellPhone: document.getElementById("cellPhone").value,
-                    email: email, // Include email in the data
+                    email: email,
                     profilePicture: document.getElementById('profilePicPreview').src
                 };
 
-                usersp[email] = userData; // Use email as the key
+                usersp[email] = userData; // Update user data in storage
                 localStorage.setItem('usersp', JSON.stringify(usersp));
 
                 alert('Profile updated successfully!');
@@ -196,8 +198,9 @@
             }
         }
 
+        // Populate the form with current user data
         document.addEventListener('DOMContentLoaded', function() {
-            const email = localStorage.getItem('currentUserId'); // Assuming the user ID is stored in localStorage
+            const email = localStorage.getItem('currentUserId'); // Assuming this is where you store the email
             const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
