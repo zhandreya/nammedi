@@ -118,6 +118,7 @@
             const users = JSON.parse(localStorage.getItem('usersp')) || {};
 
             if (users[email] && users[email].password === password) {
+                localStorage.setItem('currentUserId', email); // Store email in localStorage
                 sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
                 window.location.href = "patient portfolio.html";
                 return false;
