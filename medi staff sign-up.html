@@ -201,6 +201,8 @@
                 return false; 
             }
 
+
+            const profilePicture = document.getElementById("profilePicture").files[0];
             const userData = {
                 fullName: document.getElementById("fullName").value,
                 surname: document.getElementById("surname").value,
@@ -215,7 +217,6 @@
                 password: document.getElementById("password").value,
             };
 
-            const profilePicture = document.getElementById("profilePicture").files[0];
             if (profilePicture) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
