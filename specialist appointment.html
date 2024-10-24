@@ -10,7 +10,6 @@
             background-image: url('Desert Scope.jpeg');
             background-size: cover;
             background-position: center;
-            line-height: 1.6;
             color: #000000;
             margin: 0;
             padding: 0;
@@ -22,48 +21,17 @@
             width: 90%;
             max-width: 1200px;
             border-radius: 5px;
-            margin: 20px auto;
+            margin: 50px auto;
             padding: 20px;
         }
 
         header {
-            background-color: rgba(120, 120, 128, 0.30);
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 1200px;
-            margin: 50px auto;
             text-align: center;
+            padding: 20px;
         }
 
         header h1 {
-            margin-bottom: 10px;
             color: #000000;
-        }
-
-        #profile-pic {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            display: block;
-            margin: 10px auto;
-        }
-
-        header button {
-            background-color: #0066cc;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            margin: 5px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-
-        header button:hover {
-            background-color: #4CAF50;
         }
 
         table {
@@ -72,18 +40,47 @@
             margin-top: 20px;
         }
 
+        table, th, td {
+            border: 1px solid #333;
+        }
+
         th, td {
-            padding: 10px;
+            padding: 15px;
             text-align: left;
-            border: 1px solid #ddd;
         }
 
         th {
-            background-color: #f4f4f4;
+            background-color: #f2f2f2;
         }
 
-        tr:hover {
-            background-color: #f1f1f1;
+        .button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #4CAF50;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
         }
 
         #backBtn {
@@ -97,93 +94,82 @@
             color: #000000;
             border-radius: 5px;
         }
-
-        @media (max-width: 768px) {
-            header {
-                padding: 10px 0;
-            }
-        }
     </style>
 </head>
 <body>
     <button id="backBtn" onclick="window.history.back()">Back</button>
+    <header>
+        <h1>Appointment Management</h1>
+    </header>
+
     <div class="container">
-        <h2>Appointment Management</h2>
-        <table id="appointmentsTable">
+        <h2>Your Appointments</h2>
+        <table id="appointments-table">
             <thead>
                 <tr>
                     <th>Date</th>
                     <th>Time</th>
-                    <th>DOB</th>
-                    <th>Full Name</th>
-                    <th>Surname</th>
-                    <th>Gender</th>
-                    <th>Reason for Visit</th>
+                    <th>Doctor/Specialist</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
+                <!-- Appointment rows will be populated here -->
             </tbody>
         </table>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userId = localStorage.getItem('currentUserId');
-            const userEmail = localStorage.getItem('currentUserEmail');
-            const userInstitute = localStorage.getItem('currentUserInstitute');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserData();
+    });
 
-            if (!userId || !userEmail || !userInstitute) {
-                window.location.href = 'sign-up.html';
-                return;
-            }
+    function loadUserData() {
+        // Assuming "currentUserId" holds the ID of the current user
+        const currentUserId = localStorage.getItem('currentUserId');
+        const users = JSON.parse(localStorage.getItem('users')) || [];
+        const usersd = JSON.parse(localStorage.getItem('usersd')) || [];
 
-            const usersdAppointments = JSON.parse(localStorage.getItem('usersd')) || [];
-            const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
+        const currentUser = users.find(user => user.id === currentUserId);
+        const currentDoctorDetails = usersd.find(user => user.id === currentUserId);
 
-            const currentUser = usersdAppointments.find(user => user.email === userEmail);
-            const doctorSpecialist = currentUser ? `${currentUser.fullName} ${currentUser.surname}` : '';
+        if (currentUser && currentDoctorDetails) {
+            const doctorSpecialist = `${currentUser.fullName} ${currentUser.surname}`;
+            localStorage.setItem('doctor_specialist', doctorSpecialist);
+            loadAppointments();
+        } else {
+            console.error('User not found');
+        }
+    }
 
-            const filteredAppointments = [
-                ...usersdAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
-                ...usersAppointments.filter(patient => patient.institute === userInstitute && patient.doctor_specialist === doctorSpecialist)
-            ];
+    function loadAppointments() {
+        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
+        tableBody.innerHTML = ''; // Clear existing rows
 
-            const tableBody = document.getElementById('appointmentsTable').querySelector('tbody');
-            const currentDate = new Date();
-
-            filteredAppointments.forEach((patient, index) => {
-                const row = tableBody.insertRow();
-                
-                const futureDate = new Date(currentDate);
-                futureDate.setDate(currentDate.getDate() + (index + 1) * 7);
-
-                row.insertCell(0).textContent = futureDate.toLocaleDateString();
-                row.insertCell(1).textContent = patient.time;
-                row.insertCell(2).textContent = patient.dob; 
-                row.insertCell(3).textContent = patient.fullName;
-                row.insertCell(4).textContent = patient.surname;
-                row.insertCell(5).textContent = patient.gender; 
-                row.insertCell(6).textContent = patient.reason; 
-            });
+        appointments.forEach(appointment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
+                <td>${appointment.preferredTime}</td>
+                <td>${appointment.doctor_specialist || localStorage.getItem('doctor_specialist')}</td>
+                <td>${appointment.reason}</td>
+                <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
+            `;
+            tableBody.appendChild(row);
         });
+    }
 
-        let inactivityTime = function () {
-            let timeout;
+    function cancelAppointment(id) {
+        let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
+        localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
-            const resetTimer = () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
-                }, 3600000);
-            };
+        loadAppointments(); // Reload the appointments in the table
+        alert('Appointment canceled successfully!'); // Notify the user
+    }
+</script>
 
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onkeydown = resetTimer;
-        };
-
-        inactivityTime();
-    </script>
 </body>
 </html>
