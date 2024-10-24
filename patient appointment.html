@@ -147,9 +147,14 @@
         let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
         appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
         localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
-        
-        // Refresh the page to load updated appointments
-        location.reload();
+
+        // Clear user data from local storage
+        const userId = localStorage.getItem('currentUserId');
+        localStorage.removeItem('users');
+        localStorage.removeItem('usersp');
+
+        alert('User data removed successfully! Redirecting...');
+        window.location.href = 'patient portfolio.html'; // Redirect to patient portfolio
     }
 </script>
 
