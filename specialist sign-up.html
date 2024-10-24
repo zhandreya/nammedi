@@ -120,36 +120,60 @@
     </div>
 
     <script>
-        function validateEmailUnique(email) {
-            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-            return !usersd.hasOwnProperty(email);
-        }
-
-        function validatePasswords() {
-            const password = document.getElementById('password').value;
-            // Add your password validation logic here if needed
-            return true;
+        function previewProfilePicture(input) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('profilePicPreview').src = e.target.result;
+                document.getElementById('profilePicPreview').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
         }
 
         function saveToLocalStorage(userData) {
             const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-            usersd[userData.workEmailS] = userData; // Use email as unique ID
+            const email = userData.workEmailS;
+
+            usersd[email] = userData;
             localStorage.setItem('usersd', JSON.stringify(usersd));
-            localStorage.setItem('currentUserId', userData.workEmailS);
+            localStorage.setItem('currentUserId', email);
+        }
+
+        function validatePasswords() {
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const passwordError = document.getElementById("passwordError");
+
+            if (password !== confirmPassword) {
+                passwordError.style.display = "block";
+                return false;
+            } else {
+                passwordError.style.display = "none";
+                return true;
+            }
+        }
+
+        function validateEmailUnique(email) {
+            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
+            return !usersd[email];
         }
 
         function validateSignupForm() {
             const email = document.getElementById("workEmailS").value;
 
             if (!validateEmailUnique(email)) {
-                alert("Email already exists.");
+                document.getElementById("emailError").style.display = "block";
                 return false;
+            } else {
+                document.getElementById("emailError").style.display = "none";
             }
 
             if (!validatePasswords()) {
                 return false; 
             }
 
+
+            const profilePicture = document.getElementById("profilePicture").files[0];
             const userData = {
                 fullName: document.getElementById("fullName").value,
                 surname: document.getElementById("surname").value,
@@ -164,30 +188,20 @@
                 password: document.getElementById("password").value,
             };
 
-            const profilePicture = document.getElementById("profilePicture").files[0];
-            if (profilePicture) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    userData.profilePicture = e.target.result; 
-                    saveToLocalStorage(userData);
-                    window.location.href = "specialist log in.html"; 
-                };
-                reader.readAsDataURL(profilePicture);
-            } else {
-                saveToLocalStorage(userData); 
-                window.location.href = "specialist log in.html";
-            }
+                if (profilePicture) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        userData.profilePicture = e.target.result; 
+                        saveToLocalStorage(userData);
+                        window.location.href = "specialist log in.html"; 
+                    };
+                    reader.readAsDataURL(profilePicture);
+                } else {
+                    saveToLocalStorage(userData); 
+                    window.location.href = "specialist log in.html";
+                }
 
-            return false;
-        }
-
-        function changeProfilePicture(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('profile-pic-preview').src = e.target.result;
-                };
-                reader.readAsDataURL(input.files[0]);
+                return false; 
             }
         }
     </script>
