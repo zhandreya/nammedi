@@ -163,14 +163,13 @@
         reader.readAsDataURL(file);
     }
 
-    function validateEditForm() {
-        const email = localStorage.getItem('currentUserEmail');
+    function updateProfile() {
         const userId = localStorage.getItem('currentUserId');
 
         const updatedUserData = {
             fullName: document.getElementById('fullName').value,
             surname: document.getElementById('surname').value,
-            dateOfBirth: document.getElementById('dob').value,
+            dob: document.getElementById('dob').value,
             gender: document.getElementById('gender').value,
             idPassport: document.getElementById('idPassport').value,
             workTel: document.getElementById('workTel').value,
@@ -179,28 +178,28 @@
         };
 
         // Store the updated data in both paths
-        storeUserData(email, updatedUserData);
+        storeUserData(userId, updatedUserData);
 
         alert('Profile updated successfully!');
-        window.location.href = 'receptionist portfolio.html';
+        window.location.href = 'receptionist portfolio.html'; // Redirect after update
         return false; 
     }
 
-    function storeUserData(email, updatedUserData) {
+    function storeUserData(userId, updatedUserData) {
         const usersData = JSON.parse(localStorage.getItem('users')) || {};
         const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
 
         // Update users data
-        if (!usersData[email]) {
-            usersData[email] = {};
+        if (!usersData[userId]) {
+            usersData[userId] = {};
         }
-        usersData[email] = { ...usersData[email], ...updatedUserData };
+        usersData[userId] = { ...usersData[userId], ...updatedUserData };
 
         // Update usersr data
-        if (!usersrData[email]) {
-            usersrData[email] = {};
+        if (!usersrData[userId]) {
+            usersrData[userId] = {};
         }
-        usersrData[email] = { ...usersrData[email], ...updatedUserData };
+        usersrData[userId] = { ...usersrData[userId], ...updatedUserData };
 
         // Save updated data back to localStorage
         localStorage.setItem('users', JSON.stringify(usersData));
@@ -212,7 +211,7 @@
         const userData = JSON.parse(localStorage.getItem('usersr'))[userId] || {};
         document.getElementById('fullName').value = userData.fullName || '';
         document.getElementById('surname').value = userData.surname || '';
-        document.getElementById('dob').value = userData.dateOfBirth || '';
+        document.getElementById('dob').value = userData.dob || '';
         document.getElementById('gender').value = userData.gender || '';
         document.getElementById('idPassport').value = userData.idPassport || '';
         document.getElementById('workTel').value = userData.workTel || '';
@@ -220,6 +219,5 @@
         document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
     });
 </script>
-
 </body>
 </html>
