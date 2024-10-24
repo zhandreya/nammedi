@@ -149,8 +149,6 @@
             <input type="text" id="idPassport" name="idPassport">
             <label for="cellPhone">Cell Phone No.</label>
             <input type="tel" id="cellPhone" name="cellPhone">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required>
             
             <button type="submit" id="confirmBtn">Update Profile</button>
         </form>
@@ -176,7 +174,6 @@
                     gender: document.getElementById("gender").value,
                     idPassport: document.getElementById("idPassport").value,
                     cellPhone: document.getElementById("cellPhone").value,
-                    email: email,
                     profilePicture: document.getElementById('profilePicPreview').src
                 };
 
@@ -190,11 +187,11 @@
 
            
             const usersdData = JSON.parse(localStorage.getItem('usersp')) || {};
-            if (!usersdData[userId]) {
-                usersdData[userId] = {};
+            if (!userspData[userId]) {
+                userspData[userId] = {};
             }
-            Object.assign(usersdData[userId], userData);
-            localStorage.setItem('usersd', JSON.stringify(usersdData));
+            Object.assign(userspData[userId], userData);
+            localStorage.setItem('usersp', JSON.stringify(userspData));
 
             alert('Profile updated successfully!');
             window.location.href = 'patient portfolio.html';
@@ -211,7 +208,6 @@
             document.getElementById('gender').value = userData.gender || '';
             document.getElementById('idPassport').value = userData.idPassport || '';
             document.getElementById('cellPhone').value = userData.cellPhone || '';
-            document.getElementById('email').value = userData.email || '';
             document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
         });
     </script>
