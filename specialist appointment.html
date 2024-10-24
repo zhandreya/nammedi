@@ -135,8 +135,8 @@
         const currentDoctorDetails = usersd.find(user => user.id === currentUserId);
 
         if (currentUser && currentDoctorDetails) {
-            const doctorSpecialist = `${currentUser.fullName} ${currentUser.surname}`;
-            localStorage.setItem('doctor_specialist', doctorSpecialist);
+            const doctor_specialist = `${currentUser.fullName} ${currentUser.surname}`;
+            localStorage.setItem('doctor_specialist', doctor_specialist);
             loadAppointments();
         } else {
             console.error('User not found');
