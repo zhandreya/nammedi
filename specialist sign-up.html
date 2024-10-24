@@ -10,191 +10,139 @@
             background-image: url('Desert Scope.jpeg');
             background-size: cover;
             background-position: center;
+            line-height: 1.6;
+            color: #000000;
             margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
+            padding: 0;
         }
-
+        .container {
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+        }
         h1 {
             text-align: center;
-            color: #000000;
-            font-family: Lato, sans-serif;
         }
-
-        #backBtn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 5px 10px;
-            background-color: transparent;
-            border: 1px solid #333;
-            cursor: pointer;
-            font-family: Lato, sans-serif;
-            color: #000000;
-            border-radius: 5px;
-        }
-
-        form {
-            background-color: rgba(120, 120, 128, 0.30);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .form-columns {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .column {
-            width: 48%;
-        }
-
         label {
             display: block;
-            margin-top: 10px;
+            margin-bottom: 5px;
         }
-
-        input[type="text"],
-        input[type="date"],
-        input[type="tel"],
-        input[type="email"],
-        input[type="password"] {
+        input[type="text"], input[type="email"], input[type="password"], input[type="date"], select {
             width: 100%;
-            padding: 8px;
-            margin-top: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box;
         }
-
-        .terms-container {
-            margin-top: 20px;
-        }
-
-        .info-box {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-top: 20px;
-            border-radius: 4px;
-        }
-
-        #confirmBtn {
-            display: block;
-            width: 200px;
-            margin: 20px auto 0;
+        button {
+            width: 100%;
             padding: 10px;
             background-color: #0066cc;
             color: white;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            transition: background-color 0.3s;
         }
-
-        #confirmBtn:hover {
+        button:hover {
             background-color: #4CAF50;
+        }
+        .profile-pic-preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .profile-pic-preview img {
+            max-width: 100px;
+            border-radius: 50%;
+        }
+        .error {
+            color: red;
+            margin-top: -10px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-    <button id="backBtn" onclick="window.history.back()">Back</button>
-    <h1>NAMIBIAN MEDICAL RECORDS</h1>
-    <form id="signupForm" onsubmit="return validateSignupForm();">
-        <div class="form-columns">
-            <div class="column">
-                <label for="fullName">First Name(s)</label>
-                <input type="text" id="fullName" name="fullName" required>
-                <label for="surname">Surname</label>
-                <input type="text" id="surname" name="surname" required>
-                <label for="dob">Date of Birth</label>
-                <input type="date" id="dob" name="dob" required>
-                <label for="gender">Gender</label>
-                <select id="gender" name="gender" required>
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                </select>
-                <label for="idPassport">ID/Passport No.</label>
-                <input type="text" id="idPassport" name="idPassport" required>
-                <label for="workTel">Work Tel. No.</label>
-                <input type="tel" id="workTel" name="workTel" required>
-                <label for="workEmailS">Work Email Address</label>
-                <input type="email" id="workEmailS" name="workEmailS" required>
-                <label for="speciality">Specializing Area</label>
-                <input type="text" id="speciality" name="speciality" required>
-                <label for="institute">Institute Employed</label>
-                <input type="text" id="institute" name="institute" required>
+    <div class="container">
+        <h1>Specialist Sign-Up</h1>
+        <form id="signup-form" onsubmit="return validateSignupForm()">
+            <label for="fullName">Full Name</label>
+            <input type="text" id="fullName" required>
+
+            <label for="surname">Surname</label>
+            <input type="text" id="surname" required>
+
+            <label for="dob">Date of Birth</label>
+            <input type="date" id="dob" required>
+
+            <label for="gender">Gender</label>
+            <select id="gender" required>
+                <option value="">Select</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="idPassport">ID/Passport Number</label>
+            <input type="text" id="idPassport" required>
+
+            <label for="workTel">Work Telephone</label>
+            <input type="text" id="workTel" required>
+
+            <label for="workEmailS">Work Email</label>
+            <input type="email" id="workEmailS" required>
+
+            <label for="speciality">Speciality</label>
+            <input type="text" id="speciality" required>
+
+            <label for="institute">Institute</label>
+            <input type="text" id="institute" required>
+
+            <label for="username">Username</label>
+            <input type="text" id="username" required>
+
+            <label for="password">Password</label>
+            <input type="password" id="password" required>
+
+            <label for="profilePicture">Profile Picture</label>
+            <input type="file" id="profilePicture" accept="image/*" onchange="changeProfilePicture(this)">
+
+            <div class="profile-pic-preview">
+                <img id="profile-pic-preview" src="default-profile.png" alt="Profile Picture Preview">
             </div>
-            <div class="column">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" required>
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-                <label for="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required>
-                <div id="passwordError" style="color: red; display: none;">Passwords do not match.</div>
-                <div class="terms-container">
-                    <input type="checkbox" id="termsCheck" name="termsCheck" required>
-                    <label for="termsCheck">I agree to the <a href="terms-and-cons.html">Terms & Conditions</a></label>
-                </div>
-                <label for="profilePicture">Profile Picture</label>
-                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" onchange="previewProfilePicture(this)">
-                <img id="profilePicPreview" src="default-profile.png" alt="Profile Preview" style="display: none; width: 100px; height: 100px;"/>
-            </div>
-        </div>
-        <div class="info-box">
-            <p>The information which you have provided on this page will be shared amongst professionals in the medical industry. This information will be used for medical purposes only. This information will not be shared without your given consent. By clicking the "I Confirm" button you agree that your information can be shared in the medical industry.</p>
-        </div>
-        <button type="submit" id="confirmBtn">I Confirm</button>
-    </form>
+
+            <button type="submit">Sign Up</button>
+        </form>
+    </div>
 
     <script>
-        function previewProfilePicture(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profilePicPreview').src = e.target.result;
-                document.getElementById('profilePicPreview').style.display = 'block';
-            }
-            reader.readAsDataURL(file);
+        function validateEmailUnique(email) {
+            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
+            return !usersd.hasOwnProperty(email);
+        }
+
+        function validatePasswords() {
+            const password = document.getElementById('password').value;
+            // Add your password validation logic here if needed
+            return true;
         }
 
         function saveToLocalStorage(userData) {
             const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-            usersd[userData.workEmailS] = userData;
+            usersd[userData.workEmailS] = userData; // Use email as unique ID
             localStorage.setItem('usersd', JSON.stringify(usersd));
             localStorage.setItem('currentUserId', userData.workEmailS);
-        }
-
-        function validatePasswords() {
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-            const passwordError = document.getElementById("passwordError");
-
-            if (password !== confirmPassword) {
-                passwordError.style.display = "block";
-                return false;
-            } else {
-                passwordError.style.display = "none";
-                return true;
-            }
-        }
-
-        function validateEmailUnique(email) {
-            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-            return !usersd[email];
         }
 
         function validateSignupForm() {
             const email = document.getElementById("workEmailS").value;
 
             if (!validateEmailUnique(email)) {
-                alert("Email already exists."); // You can show this in a better way
+                alert("Email already exists.");
                 return false;
             }
 
@@ -231,6 +179,16 @@
             }
 
             return false;
+        }
+
+        function changeProfilePicture(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-pic-preview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
     </script>
 </body>
