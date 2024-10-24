@@ -60,9 +60,11 @@
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
             if (!email) {
-                window.location.href = 'signup.html';
+                // Commenting out the redirect for initial load
+                // window.location.href = 'signup.html';
             } else {
                 loadMedicalHistory(email);
+                startInactivityTimer(); // Start the inactivity timer if user is logged in
             }
         }
 
@@ -85,7 +87,7 @@
             });
         }
 
-        let inactivityTime = function () {
+        function startInactivityTimer() {
             let timeout;
 
             const resetTimer = () => {
@@ -99,9 +101,7 @@
             window.onload = resetTimer;
             window.onmousemove = resetTimer;
             window.onkeydown = resetTimer;
-        };
-
-        inactivityTime();
+        }
     </script>
 </body>
 </html>
