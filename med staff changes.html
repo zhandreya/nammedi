@@ -146,8 +146,6 @@
             <input type="text" id="idPassport" name="idPassport" required>
             <label for="workTel">Work Tel. No.</label>
             <input type="tel" id="workTel" name="workTel" required>
-            <label for="workEmailM">Work Email Address</label>
-            <input type="email" id="workEmailM" name="workEmailM" required>
             <label for="profession">Profession</label>
             <input type="text" id="profession" name="profession" required>
             <label for="institute">Institute Employed</label>
@@ -176,7 +174,6 @@
             gender: document.getElementById('gender').value,
             idPassport: document.getElementById('idPassport').value,
             workTel: document.getElementById('workTel').value,
-            workEmailM: document.getElementById('workEmailM').value,
             profession: document.getElementById('profession').value,
             institute: document.getElementById('institute').value,
             profilePicture: document.getElementById('profilePicPreview').src
@@ -206,7 +203,6 @@
         document.getElementById('gender').value = userData.gender || '';
         document.getElementById('idPassport').value = userData.idPassport || '';
         document.getElementById('workTel').value = userData.workTel || '';
-        document.getElementById('workEmailM').value = userData.workEmailM || '';
         document.getElementById('profession').value = userData.profession || '';
         document.getElementById('institute').value = userData.institute || '';
         document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
