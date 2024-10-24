@@ -120,12 +120,6 @@
         </table>
     </div>
 
-    <footer>
-        <a href="Privacy Policy.html">Privacy Policy</a> | 
-        <a href="Terms of Service.html">Terms of Service</a> | 
-        <a href="Help_Contact.html">Help/Contact</a>
-    </footer>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             loadAppointments();
@@ -134,6 +128,7 @@
         function loadAppointments() {
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
 
             appointments.forEach(appointment => {
                 const row = document.createElement('tr');
@@ -152,7 +147,7 @@
             let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             appointments = appointments.filter(appointment => appointment.id !== id);
             localStorage.setItem('appointments', JSON.stringify(appointments));
-            loadAppointments();
+            loadAppointments(); // Refresh the appointments list
         }
     </script>
 </body>
