@@ -59,13 +59,7 @@
 
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
-            if (!email) {
-                // Commenting out the redirect for initial load
-                // window.location.href = 'signup.html';
-            } else {
-                loadMedicalHistory(email);
-                startInactivityTimer(); // Start the inactivity timer if user is logged in
-            }
+            loadMedicalHistory(email); // Load history regardless of login status
         }
 
         function loadMedicalHistory(email) {
@@ -93,8 +87,8 @@
             const resetTimer = () => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserEmail');
-                    window.location.href = 'signup.html';
+                    // Do nothing on timeout, just for tracking if needed
+                    console.log('User is inactive for 1 hour');
                 }, 3600000); // 1 hour
             };
 
@@ -102,6 +96,8 @@
             window.onmousemove = resetTimer;
             window.onkeydown = resetTimer;
         }
+
+        startInactivityTimer(); // Start the inactivity timer
     </script>
 </body>
 </html>
