@@ -154,62 +154,62 @@
         </form>
     </main>
 
-    <script>
-        function previewProfilePicture(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profilePicPreview').src = e.target.result;
-            }
-            reader.readAsDataURL(file);
+<script>
+    function previewProfilePicture(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePicPreview').src = e.target.result;
         }
+        reader.readAsDataURL(file);
+    }
 
-        function updateProfile() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = {'
-                    fullName: document.getElementById("fullName").value,
-                    surname: document.getElementById("surname").value,
-                    placeOfBirth: document.getElementById("placeOfBirth").value,
-                    dob: document.getElementById("dob").value,
-                    gender: document.getElementById("gender").value,
-                    idPassport: document.getElementById("idPassport").value,
-                    cellPhone: document.getElementById("cellPhone").value,
-                    profilePicture: document.getElementById('profilePicPreview').src
-                };
+    function updateProfile() {
+        const userId = localStorage.getItem('currentUserId');
+        const userData = {
+            fullName: document.getElementById('fullName').value,
+            surname: document.getElementById('surname').value,
+            placeOfBirth: document.getElementById('placeOfBirth').value,
+            dob: document.getElementById('dob').value,
+            gender: document.getElementById('gender').value,
+            idPassport: document.getElementById('idPassport').value,
+            cellPhone: document.getElementById('cellPhone').value,
+            profilePicture: document.getElementById('profilePicPreview').src
+        };
 
-           
-            const usersData = JSON.parse(localStorage.getItem('users')) || {};
-            if (!usersData[userId]) {
-                usersData[userId] = {};
-            }
-            Object.assign(usersData[userId], userData);
-            localStorage.setItem('users', JSON.stringify(usersData));
-
-           
-            const usersdData = JSON.parse(localStorage.getItem('usersp')) || {};
-            if (!userspData[userId]) {
-                userspData[userId] = {};
-            }
-            Object.assign(userspData[userId], userData);
-            localStorage.setItem('usersp', JSON.stringify(userspData));
-
-            alert('Profile updated successfully!');
-            window.location.href = 'patient portfolio.html';
-            return false; 
+        // Store data in "users" path
+        const usersData = JSON.parse(localStorage.getItem('users')) || {};
+        if (!usersData[userId]) {
+            usersData[userId] = {};
         }
+        Object.assign(usersData[userId], userData);
+        localStorage.setItem('users', JSON.stringify(usersData));
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const email = localStorage.getItem('currentUserId'); // Assuming this is where you store the email
-            const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
-            document.getElementById('fullName').value = userData.fullName || '';
-            document.getElementById('surname').value = userData.surname || '';
-            document.getElementById('placeOfBirth').value = userData.placeOfBirth || '';
-            document.getElementById('dob').value = userData.dob || '';
-            document.getElementById('gender').value = userData.gender || '';
-            document.getElementById('idPassport').value = userData.idPassport || '';
-            document.getElementById('cellPhone').value = userData.cellPhone || '';
-            document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
-        });
-    </script>
+        // Store data in "usersp" path
+        const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
+        if (!userspData[userId]) {
+            userspData[userId] = {};
+        }
+        Object.assign(userspData[userId], userData);
+        localStorage.setItem('usersp', JSON.stringify(userspData));
+
+        alert('Profile updated successfully!');
+        window.location.href = 'patient portfolio.html';
+        return false; 
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const userId = localStorage.getItem('currentUserId');
+        const userData = JSON.parse(localStorage.getItem('usersp'))[userId] || {};
+        document.getElementById('fullName').value = userData.fullName || '';
+        document.getElementById('surname').value = userData.surname || '';
+        document.getElementById('placeOfBirth').value = userData.placeOfBirth || '';
+        document.getElementById('dob').value = userData.dob || '';
+        document.getElementById('gender').value = userData.gender || '';
+        document.getElementById('idPassport').value = userData.idPassport || '';
+        document.getElementById('cellPhone').value = userData.cellPhone || '';
+        document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
+    });
+</script>
 </body>
 </html>
