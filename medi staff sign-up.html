@@ -156,15 +156,15 @@
         }
 
         function saveToLocalStorage(userData) {
-            const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
             const users = JSON.parse(localStorage.getItem('users')) || {};
+            const usersm = JSON.parse(localStorage.getItem('usersm')) || {};
             const email = userData.workEmailM;
 
-            usersm[email] = userData;
             users[email] = userData;
+            usersm[email] = userData;
             
-            localStorage.setItem('usersm', JSON.stringify(usersm));
             localStorage.setItem('users', JSON.stringify(users));
+            localStorage.setItem('usersm', JSON.stringify(usersm));
             localStorage.setItem('currentUserId', email);
         }
 
@@ -225,6 +225,7 @@
                 };
                 reader.readAsDataURL(profilePicture);
             } else {
+                userData.profilePicture = 'default-profile.png';
                 saveToLocalStorage(userData); 
                 window.location.href = "med staff log in.html";
             }
