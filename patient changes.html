@@ -131,26 +131,25 @@
     <main class="container">
         <form id="editForm" onsubmit="return validateEditForm();">        
             <label for="fullName">First Name(s)</label>
-            <input type="text" id="fullName" name="fullName">
+            <input type="text" id="fullName" name="fullName" required>
             <label for="surname">Surname</label>
-            <input type="text" id="surname" name="surname">
+            <input type="text" id="surname" name="surname" required>
             <label for="placeOfBirth">Place of Birth</label>
-            <input type="text" id="placeOfBirth" name="placeOfBirth">
+            <input type="text" id="placeOfBirth" name="placeOfBirth" required>
             <label for="dob">Date of Birth</label>
-            <input type="date" id="dob" name="dob">
+            <input type="date" id="dob" name="dob" required>
             <label for="gender">Gender</label>
-            <select id="gender" name="gender">
+            <select id="gender" name="gender" required>
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
             </select>
             <label for="idPassport">ID/Passport No.</label>
-            <input type="text" id="idPassport" name="idPassport">
+            <input type="text" id="idPassport" name="idPassport" required>
             <label for="cellPhone">Cell Phone No.</label>
-            <input type="tel" id="cellPhone" name="cellPhone">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" name="email">
+            <input type="tel" id="cellPhone" name="cellPhone" required>
+            <input type="email" id="email" name="email" required>
             
             <button type="submit" id="confirmBtn">Update Profile</button>
         </form>
@@ -176,7 +175,6 @@
                 gender: document.getElementById("gender").value,
                 idPassport: document.getElementById("idPassport").value,
                 cellPhone: document.getElementById("cellPhone").value,
-                email: email, // Include email in the data
                 profilePicture: document.getElementById('profilePicPreview').src
             };
 
@@ -194,7 +192,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const email = localStorage.getItem('currentUserId'); // Assuming the user ID is stored in localStorage
+            const email = localStorage.getItem('currentUserEmail'); // Assuming the user email is stored in localStorage
             const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
@@ -203,7 +201,6 @@
             document.getElementById('gender').value = userData.gender || '';
             document.getElementById('idPassport').value = userData.idPassport || '';
             document.getElementById('cellPhone').value = userData.cellPhone || '';
-            document.getElementById('email').value = userData.email || '';
             document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
         });
     </script>
