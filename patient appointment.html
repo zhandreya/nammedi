@@ -145,8 +145,8 @@
 
     function cancelAppointment(id) {
         let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-        appointments = appointments.filter(appointment => appointment.id !== id);
-        localStorage.setItem('appointments', JSON.stringify(appointments));
+        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
+        localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
         
         // Refresh the page to load updated appointments
         location.reload();
