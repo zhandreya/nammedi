@@ -157,7 +157,6 @@
     </main>
 
     <script>
-        // Function to preview profile picture
         function previewProfilePicture(input) {
             const file = input.files[0];
             const reader = new FileReader();
@@ -167,14 +166,9 @@
             reader.readAsDataURL(file);
         }
 
-        // Function to validate the edit form
-        function validateEditForm() {
-            const email = localStorage.getItem('currentUserId'); // Get email from localStorage
-            const password = prompt("Please enter your current password to confirm changes:");
-            const usersp = JSON.parse(localStorage.getItem('usersp')) || {};
-
-            if (usersp[email] && usersp[email].password === password) {
-                const userData = {
+        function updateProfile() {
+            const userId = localStorage.getItem('currentUserId');
+            const userData = {'
                     fullName: document.getElementById("fullName").value,
                     surname: document.getElementById("surname").value,
                     placeOfBirth: document.getElementById("placeOfBirth").value,
@@ -186,19 +180,27 @@
                     profilePicture: document.getElementById('profilePicPreview').src
                 };
 
-                usersp[email] = userData; // Update user data in storage
-                localStorage.setItem('usersp', JSON.stringify(usersp));
-
-                alert('Profile updated successfully!');
-                window.location.href = 'patient portfolio.html';
-                return false; 
-            } else {
-                alert('Incorrect password. Profile not updated.');
-                return false; 
+           
+            const usersData = JSON.parse(localStorage.getItem('users')) || {};
+            if (!usersData[userId]) {
+                usersData[userId] = {};
             }
+            Object.assign(usersData[userId], userData);
+            localStorage.setItem('users', JSON.stringify(usersData));
+
+           
+            const usersdData = JSON.parse(localStorage.getItem('usersp')) || {};
+            if (!usersdData[userId]) {
+                usersdData[userId] = {};
+            }
+            Object.assign(usersdData[userId], userData);
+            localStorage.setItem('usersd', JSON.stringify(usersdData));
+
+            alert('Profile updated successfully!');
+            window.location.href = 'patient portfolio.html';
+            return false; 
         }
 
-        // Populate the form with current user data
         document.addEventListener('DOMContentLoaded', function() {
             const email = localStorage.getItem('currentUserId'); // Assuming this is where you store the email
             const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
