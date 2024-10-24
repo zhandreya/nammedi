@@ -157,76 +157,60 @@
         </form>
     </main>
 
-    <script>
-        function previewProfilePicture(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profilePicPreview').src = e.target.result;
-            }
-            reader.readAsDataURL(file);
+<script>
+    function previewProfilePicture(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePicPreview').src = e.target.result;
         }
+        reader.readAsDataURL(file);
+    }
 
-        function validateEditForm() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = {
-                fullName: document.getElementById('fullName').value,
-                surname: document.getElementById('surname').value,
-                dob: document.getElementById('dob').value,
-                gender: document.getElementById('gender').value,
-                idPassport: document.getElementById('idPassport').value,
-                workTel: document.getElementById('workTel').value,
-                workEmailM: document.getElementById('workEmailM').value,
-                profession: document.getElementById('profession').value,
-                institute: document.getElementById('institute').value,
-                profilePicture: document.getElementById('profilePicPreview').src
-            };
-
-            let usersm = JSON.parse(localStorage.getItem('usersm')) || {};
-            let users = JSON.parse(localStorage.getItem('users')) || {};
-
-            usersm[userId] = userData;
-            users[userId] = userData;
-
-            localStorage.setItem('usersm', JSON.stringify(usersm));
-            localStorage.setItem('users', JSON.stringify(users));
-
-            alert('Profile updated successfully!');
-            window.location.href = 'med staff portfolio.html';
-            return false; 
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const userData = JSON.parse(localStorage.getItem('usersm'))[localStorage.getItem('currentUserId')] || {};
-            document.getElementById('fullName').value = userData.fullName || '';
-            document.getElementById('surname').value = userData.surname || '';
-            document.getElementById('dob').value = userData.dob || '';
-            document.getElementById('gender').value = userData.gender || '';
-            document.getElementById('idPassport').value = userData.idPassport || '';
-            document.getElementById('workTel').value = userData.workTel || '';
-            document.getElementById('workEmailM').value = userData.workEmailM || '';
-            document.getElementById('profession').value = userData.profession || '';
-            document.getElementById('institute').value = userData.institute || '';
-            document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
-        });
-
-         let inactivityTime = function () {
-            let timeout;
-
-            const resetTimer = () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
-                }, 3600000);
-            };
-
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onkeydown = resetTimer;
+    function validateEditForm() {
+        const userId = localStorage.getItem('currentUserId');
+        const userData = {
+            fullName: document.getElementById('fullName').value,
+            surname: document.getElementById('surname').value,
+            dob: document.getElementById('dob').value,
+            gender: document.getElementById('gender').value,
+            idPassport: document.getElementById('idPassport').value,
+            workTel: document.getElementById('workTel').value,
+            workEmailM: document.getElementById('workEmailM').value,
+            profession: document.getElementById('profession').value,
+            institute: document.getElementById('institute').value,
+            profilePicture: document.getElementById('profilePicPreview').src
         };
 
-        inactivityTime();
-    </script>
+        // Store data in "usersm" path
+        let usersm = JSON.parse(localStorage.getItem('usersm')) || {};
+        // Store data in "users" path
+        let users = JSON.parse(localStorage.getItem('users')) || {};
+
+        usersm[userId] = userData;
+        users[userId] = userData;
+
+        localStorage.setItem('usersm', JSON.stringify(usersm));
+        localStorage.setItem('users', JSON.stringify(users));
+
+        alert('Profile updated successfully!');
+        window.location.href = 'med staff portfolio.html';
+        return false; 
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const userData = JSON.parse(localStorage.getItem('usersm'))[localStorage.getItem('currentUserId')] || {};
+        document.getElementById('fullName').value = userData.fullName || '';
+        document.getElementById('surname').value = userData.surname || '';
+        document.getElementById('dob').value = userData.dob || '';
+        document.getElementById('gender').value = userData.gender || '';
+        document.getElementById('idPassport').value = userData.idPassport || '';
+        document.getElementById('workTel').value = userData.workTel || '';
+        document.getElementById('workEmailM').value = userData.workEmailM || '';
+        document.getElementById('profession').value = userData.profession || '';
+        document.getElementById('institute').value = userData.institute || '';
+        document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
+    });
+</script>
 </body>
 </html>
