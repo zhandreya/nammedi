@@ -231,7 +231,7 @@
             window.location.href = "patient changes.html";
         }
 
-        // New loadUpcomingAppointments function
+        // Load upcoming appointments
         function loadUpcomingAppointments() {
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             const calendarView = document.getElementById('calendar-view');
@@ -262,13 +262,13 @@
                 // Check for appointments on this day
                 const dateString = `${currentYear}-${currentMonth + 1}-${day}`;
                 const dailyAppointments = appointments.filter(appointment => {
-                    const appointmentDate = new Date(appointment.date);
+                    const appointmentDate = new Date(appointment.preferredDate);
                     return appointmentDate.toDateString() === new Date(dateString).toDateString();
                 });
 
                 if (dailyAppointments.length > 0) {
                     dayCell.style.backgroundColor = '#dff0d8'; // Highlight days with appointments
-                    dayCell.title = dailyAppointments.map(app => app.details).join(', '); // Show appointment details on hover
+                    dayCell.title = dailyAppointments.map(app => `${app.reason} at ${app.preferredTime}`).join(', '); // Show appointment details on hover
                 }
 
                 calendarView.appendChild(dayCell);
