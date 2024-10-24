@@ -98,7 +98,7 @@
         .calendar-day {
             background-color: #ecf0f1;
             border-radius: 5px;
-            padding: 5px;
+            padding: 10px;
             text-align: center;
             cursor: pointer;
             transition: background-color 0.3s;
@@ -166,7 +166,6 @@
         <section class="card" id="medical-history">
             <h2>Medical History</h2>
             <button id="medHistory" onclick="redirectTo('patient med history.html')">View Medical History</button>
-            <ul id="appointmentList"></ul>
         </section>
 
         <section class="card" id="institutes-visited">
@@ -238,16 +237,52 @@
 
             const allAppointments = [...appointments, ...additionalAppointments];
 
-            allAppointments.forEach(appointment => {
-                const appointmentDate = new Date(appointment.date);
+            if (allAppointments.length === 0) {
+                calendarView.innerHTML = '<div>No upcoming appointments</div>';
+                return;
+            }
+
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const totalDays = lastDay.getDate();
+            const startDay = firstDay.getDay();
+
+            // Create empty calendar days
+            for (let i = 0; i < startDay; i++) {
+                const emptyDiv = document.createElement('div');
+                calendarView.appendChild(emptyDiv);
+            }
+
+            // Populate the calendar with days
+            for (let day = 1; day <= totalDays; day++) {
                 const dayDiv = document.createElement('div');
                 dayDiv.className = 'calendar-day';
-                dayDiv.textContent = appointmentDate.getDate();
+                dayDiv.textContent = day;
+
+                // Check if there are appointments on this day
+                const dayAppointments = allAppointments.filter(appointment => {
+                    const appointmentDate = new Date(appointment.date);
+                    return appointmentDate.getDate() === day && 
+                           appointmentDate.getMonth() === currentMonth && 
+                           appointmentDate.getFullYear() === currentYear;
+                });
+
+                // If appointments exist for this day, display a tooltip
+                if (dayAppointments.length > 0) {
+                    dayDiv.title = dayAppointments.map(a => a.details).join(', ');
+                }
+
                 dayDiv.onclick = function() {
-                    alert(`Appointment Details: ${appointment.details}`);
+                    if (dayAppointments.length > 0) {
+                        alert("Appointment Details: " + dayAppointments.map(a => a.details).join('\n'));
+                    }
                 };
+
                 calendarView.appendChild(dayDiv);
-            });
+            }
         }
 
         function checkUserLogin() {
