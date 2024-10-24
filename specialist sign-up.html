@@ -166,15 +166,9 @@
 
         function saveToLocalStorage(userData) {
             const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-            const users = JSON.parse(localStorage.getItem('users')) || {};
-            const email = userData.workEmailS;
-
-            usersd[email] = userData;
-            users[email] = userData;
-
+            usersd[userData.workEmailS] = userData;
             localStorage.setItem('usersd', JSON.stringify(usersd));
-            localStorage.setItem('users', JSON.stringify(users));
-            localStorage.setItem('currentUserId', email);
+            localStorage.setItem('currentUserId', userData.workEmailS);
         }
 
         function validatePasswords() {
@@ -200,50 +194,43 @@
             const email = document.getElementById("workEmailS").value;
 
             if (!validateEmailUnique(email)) {
-                document.getElementById("emailError").style.display = "block";
+                alert("Email already exists."); // You can show this in a better way
                 return false;
-            } else {
-                document.getElementById("emailError").style.display = "none";
             }
 
             if (!validatePasswords()) {
                 return false; 
             }
 
-        function validateSignupForm() {
-            if (validatePasswords()) {
-                const userData = {
-                    fullName: document.getElementById("fullName").value,
-                    surname: document.getElementById("surname").value,
-                    dob: document.getElementById("dob").value,
-                    gender: document.getElementById("gender").value,
-                    idPassport: document.getElementById("idPassport").value,
-                    workTel: document.getElementById("workTel").value,
-                    workEmailS: document.getElementById("workEmailS").value,
-                    speciality: document.getElementById("speciality").value,
-                    institute: document.getElementById("institute").value,
-                    username: document.getElementById("username").value,
-                    password: document.getElementById("password").value,
+            const userData = {
+                fullName: document.getElementById("fullName").value,
+                surname: document.getElementById("surname").value,
+                dob: document.getElementById("dob").value,
+                gender: document.getElementById("gender").value,
+                idPassport: document.getElementById("idPassport").value,
+                workTel: document.getElementById("workTel").value,
+                workEmailS: document.getElementById("workEmailS").value,
+                speciality: document.getElementById("speciality").value,
+                institute: document.getElementById("institute").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value,
+            };
+
+            const profilePicture = document.getElementById("profilePicture").files[0];
+            if (profilePicture) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userData.profilePicture = e.target.result; 
+                    saveToLocalStorage(userData);
+                    window.location.href = "specialist log in.html"; 
                 };
-
-                const profilePicture = document.getElementById("profilePicture").files[0];
-                if (profilePicture) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userData.profilePicture = e.target.result; 
-                        saveToLocalStorage(userData);
-                        window.location.href = "specialist log in.html"; 
-                    };
-                    reader.readAsDataURL(profilePicture);
-                } else {
-                    saveToLocalStorage(userData); 
-                    window.location.href = "specialist log in.html";
-                }
-
-                return false;
+                reader.readAsDataURL(profilePicture);
             } else {
-                return false;
+                saveToLocalStorage(userData); 
+                window.location.href = "specialist log in.html";
             }
+
+            return false;
         }
     </script>
 </body>
