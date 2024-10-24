@@ -51,10 +51,6 @@
             margin: 10px auto;
         }
 
-        #make-appointment {
-            margin-top: 20px;
-        }
-
         #appointment-form input,
         #appointment-form select {
             width: calc(100% - 20px);
@@ -79,7 +75,6 @@
         }
 
         footer {
-            background-color: transparent;
             text-align: center;
             padding: 20px 0;
             margin-top: 20px;
@@ -106,13 +101,6 @@
             cursor: pointer;
             color: #000000;
             border-radius: 5px;
-        }
-
-        @media (max-width: 768px) {
-            #appointment-form input,
-            #appointment-form select {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -173,7 +161,7 @@
                 reason
             };
 
-            // Store appointment in both users and usersp paths
+            // Store appointment in localStorage
             storeAppointment(appointmentData);
 
             // Go back to the previous page
@@ -182,25 +170,9 @@
         }
 
         function storeAppointment(appointmentData) {
-            const email = localStorage.getItem('currentUserEmail');
-            const usersData = JSON.parse(localStorage.getItem('users')) || {};
-            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
-
-            // Store appointment in users data
-            if (!usersData[email]) {
-                usersData[email] = { appointments: [] };
-            }
-            usersData[email].appointments.push(appointmentData);
-
-            // Store appointment in usersp data
-            if (!userspData[email]) {
-                userspData[email] = { appointments: [] };
-            }
-            userspData[email].appointments.push(appointmentData);
-
-            // Save updated data back to localStorage
-            localStorage.setItem('users', JSON.stringify(usersData));
-            localStorage.setItem('usersp', JSON.stringify(userspData));
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            appointments.push(appointmentData);
+            localStorage.setItem('appointments', JSON.stringify(appointments));
         }
 
         window.onload = function() {
@@ -212,15 +184,6 @@
             const storedPicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedPicture;
         };
-
-        function checkUserLogin() {
-            const userId = localStorage.getItem('currentUserId');
-            if (!userId) {
-                window.location.href = 'sign-up.html';
-            } else {
-                loadUserData();
-            }
-        }
 
         let inactivityTime = function () {
             let timeout;
