@@ -147,8 +147,6 @@
             <input type="text" id="idPassport" name="idPassport" required>
             <label for="workTel">Work Tel. No.</label>
             <input type="tel" id="workTel" name="workTel" required>
-            <label for="workEmailR">Work Email Address</label>
-            <input type="email" id="workEmailR" name="workEmailR" required>
             <label for="institute">Institute Employed</label>
             <input type="text" id="institute" name="institute" required>        
             <button type="submit" id="confirmBtn">Update Profile</button>
@@ -176,7 +174,6 @@
             gender: document.getElementById('gender').value,
             idPassport: document.getElementById('idPassport').value,
             workTel: document.getElementById('workTel').value,
-            workEmailR: document.getElementById('workEmailR').value,
             institute: document.getElementById('institute').value,
             profilePicture: document.getElementById('profilePicPreview').src
         };
@@ -219,7 +216,6 @@
         document.getElementById('gender').value = userData.gender || '';
         document.getElementById('idPassport').value = userData.idPassport || '';
         document.getElementById('workTel').value = userData.workTel || '';
-        document.getElementById('workEmailR').value = userData.workEmailR || '';
         document.getElementById('institute').value = userData.institute || '';
         document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
     });
