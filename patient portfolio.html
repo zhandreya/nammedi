@@ -190,6 +190,12 @@
         </section>
 
         <section class="card" id="appointments">
+            <h2>Appointment Management</h2>
+            <button id="viewAppointments" onclick="redirectTo('patient appointment.html')">View Appointment</button>
+            <button id="makeAppointments" onclick="redirectTo('patient schedule appointment.html')">Schedule Appointment</button>
+        </section>
+
+        <section class="card" id="upcoming-appointments">
             <h2>Upcoming Appointments</h2>
             <div id="calendar-view"></div>
         </section>
@@ -225,63 +231,47 @@
             window.location.href = "patient changes.html";
         }
 
+        // New loadUpcomingAppointments function
         function loadUpcomingAppointments() {
-            const email = localStorage.getItem('currentUserId');
-            const usersData = JSON.parse(localStorage.getItem('users')) || {};
-            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
-            const appointments = usersData[email]?.appointments || [];
-            const additionalAppointments = userspData[email]?.upcomingAppointments || [];
-
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
             const calendarView = document.getElementById('calendar-view');
-            calendarView.innerHTML = '';
-
-            const allAppointments = [...appointments, ...additionalAppointments];
-
-            if (allAppointments.length === 0) {
-                calendarView.innerHTML = '<div>No upcoming appointments</div>';
-                return;
-            }
-
             const today = new Date();
             const currentMonth = today.getMonth();
             const currentYear = today.getFullYear();
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const totalDays = lastDay.getDate();
-            const startDay = firstDay.getDay();
 
-            // Create empty calendar days
-            for (let i = 0; i < startDay; i++) {
-                const emptyDiv = document.createElement('div');
-                calendarView.appendChild(emptyDiv);
+            // Clear previous calendar view
+            calendarView.innerHTML = '';
+
+            // Create calendar for the current month
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+
+            // Add empty cells for days before the first day of the month
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day';
+                calendarView.appendChild(emptyCell);
             }
 
-            // Populate the calendar with days
-            for (let day = 1; day <= totalDays; day++) {
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'calendar-day';
-                dayDiv.textContent = day;
+            // Populate the calendar with the days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
 
-                // Check if there are appointments on this day
-                const dayAppointments = allAppointments.filter(appointment => {
+                // Check for appointments on this day
+                const dateString = `${currentYear}-${currentMonth + 1}-${day}`;
+                const dailyAppointments = appointments.filter(appointment => {
                     const appointmentDate = new Date(appointment.date);
-                    return appointmentDate.getDate() === day && 
-                           appointmentDate.getMonth() === currentMonth && 
-                           appointmentDate.getFullYear() === currentYear;
+                    return appointmentDate.toDateString() === new Date(dateString).toDateString();
                 });
 
-                // If appointments exist for this day, display a tooltip
-                if (dayAppointments.length > 0) {
-                    dayDiv.title = dayAppointments.map(a => a.details).join(', ');
+                if (dailyAppointments.length > 0) {
+                    dayCell.style.backgroundColor = '#dff0d8'; // Highlight days with appointments
+                    dayCell.title = dailyAppointments.map(app => app.details).join(', '); // Show appointment details on hover
                 }
 
-                dayDiv.onclick = function() {
-                    if (dayAppointments.length > 0) {
-                        alert("Appointment Details: " + dayAppointments.map(a => a.details).join('\n'));
-                    }
-                };
-
-                calendarView.appendChild(dayDiv);
+                calendarView.appendChild(dayCell);
             }
         }
 
