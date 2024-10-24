@@ -5,37 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Appointments</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    color: #000000;
-	    margin: 0;
-	    padding: 20px;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            color: #000000;
+            margin: 0;
+            padding: 20px;
+        }
 
-	h1 {
-	    text-align: center;
-	    color: #000000;
-	}
+        h1 {
+            text-align: center;
+            color: #000000;
+        }
 
-	table {
-	    width: 100%;
-	    border-collapse: collapse;
-	    margin-top: 20px;
-	}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
 
-	th, td {
-	    border: 1px solid #ccc;
-	    padding: 10px;
-	    text-align: left;
-	}
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
 
-	th {
-	    background-color: rgba(120, 120, 128, 0.30);
-	}
-
+        th {
+            background-color: rgba(120, 120, 128, 0.30);
+        }
     </style>
 </head>
 <body>
@@ -56,50 +55,51 @@
     </table>
 
     <script>
-       
-        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-        const appointmentList = document.getElementById('appointment-list');
+        function loadAppointments() {
+            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const appointmentList = document.getElementById('appointment-list');
 
-        appointments.forEach(appointment => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${appointment.fullName} ${appointment.surname}</td>
-                <td>${appointment.institution}</td>
-                <td>${appointment.doctor_specialist}</td>
-                <td>${appointment.preferredDate}</td>
-                <td>${appointment.preferredTime}</td>
-                <td>${appointment.visitPurpose}</td>
-            `;
-            appointmentList.appendChild(row);
-        });
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
+            appointments.forEach(appointment => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${appointment.fullName} ${appointment.surname}</td>
+                    <td>${appointment.institution}</td>
+                    <td>${appointment.doctor_specialist}</td>
+                    <td>${appointment.preferredDate}</td>
+                    <td>${appointment.preferredTime}</td>
+                    <td>${appointment.reason}</td>
+                `;
+                appointmentList.appendChild(row);
+            });
+        }
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadAppointments();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
+        checkUserLogin();
     </script>
 </body>
 </html>
