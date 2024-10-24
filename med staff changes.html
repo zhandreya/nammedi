@@ -165,7 +165,7 @@
         reader.readAsDataURL(file);
     }
 
-    function validateEditForm() {
+    function updateProfile() {
         const userId = localStorage.getItem('currentUserId');
         const userData = {
             fullName: document.getElementById('fullName').value,
@@ -179,24 +179,30 @@
             profilePicture: document.getElementById('profilePicPreview').src
         };
 
-        // Store data in "usersm" path
-        let usersm = JSON.parse(localStorage.getItem('usersm')) || {};
         // Store data in "users" path
-        let users = JSON.parse(localStorage.getItem('users')) || {};
+        const usersData = JSON.parse(localStorage.getItem('users')) || {};
+        if (!usersData[userId]) {
+            usersData[userId] = {};
+        }
+        Object.assign(usersData[userId], userData);
+        localStorage.setItem('users', JSON.stringify(usersData));
 
-        usersm[userId] = userData;
-        users[userId] = userData;
-
-        localStorage.setItem('usersm', JSON.stringify(usersm));
-        localStorage.setItem('users', JSON.stringify(users));
+        // Store data in "usersm" path
+        const usersmData = JSON.parse(localStorage.getItem('usersm')) || {};
+        if (!usersmData[userId]) {
+            usersmData[userId] = {};
+        }
+        Object.assign(usersmData[userId], userData);
+        localStorage.setItem('usersm', JSON.stringify(usersmData));
 
         alert('Profile updated successfully!');
-        window.location.href = 'med staff portfolio.html';
+        window.location.href = 'med staff portfolio.html'; // Redirect after update
         return false; 
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const userData = JSON.parse(localStorage.getItem('usersm'))[localStorage.getItem('currentUserId')] || {};
+        const userId = localStorage.getItem('currentUserId');
+        const userData = JSON.parse(localStorage.getItem('usersm'))[userId] || {};
         document.getElementById('fullName').value = userData.fullName || '';
         document.getElementById('surname').value = userData.surname || '';
         document.getElementById('dob').value = userData.dob || '';
@@ -208,5 +214,6 @@
         document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
     });
 </script>
+
 </body>
 </html>
