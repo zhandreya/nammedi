@@ -5,150 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Specialist Dashboard</title>
     <style>
-	body {
-	    font-family: Lato, sans-serif;
-	    background-image: url('Desert Scope.jpeg');
-	    background-size: cover;
-	    background-position: center;
-	    line-height: 1.6;
-	    color: #000000;
-	    margin: 0;
-	    padding: 0;
-	}
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
 
-	.container {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    border-radius: 5px;
-	    margin: 0 auto;
-	    padding: 20px;
-	}
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-	header {
-	    background-color: rgba(120, 120, 128, 0.30);
-	    color: white;
-	    padding: 20px;
-	    border-radius: 5px;
-	    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-	    width: 90%;
-	    max-width: 1200px;
-	    margin: 50px auto;
-	    text-align: center;
-	}
+        header {
+            background-color: rgba(120, 120, 128, 0.30);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            margin: 50px auto;
+            text-align: center;
+        }
 
-	header h1 {
-	    margin-bottom: 10px;
-	    color: #000000;
-	}
+        header h1 {
+            margin-bottom: 10px;
+            color: #000000;
+        }
 
-	#profile-pic {
-	    width: 100px;
-	    height: 100px;
-	    border-radius: 50%;
-	    display: block;
-	    margin: 10px auto;
-	}
+        #profile-pic {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 10px auto;
+        }
 
-	header button {
-	    background-color: #0066cc;
-	    color: white;
-	    border: none;
-	    padding: 10px 15px;
-	    margin: 5px;
-	    cursor: pointer;
-	    border-radius: 5px;
-	    transition: background-color 0.3s;
-	}
+        header button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
 
-	header button:hover {
-	    background-color: #4CAF50;
-	}
+        header button:hover {
+            background-color: #4CAF50;
+        }
 
-	main {
-	    display: grid;
-	    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-	    gap: 20px;
-	    padding: 20px 0;
-	}
+        main {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
 
-	.card {
-	    background-color: white;
-	    border-radius: 8px;
-	    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-	    padding: 20px;
-	    margin-bottom: 20px;
-	}
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
 
-	.card h2 {
-	    color: #000000;
-	    border-bottom: 2px solid #ecf0f1;
-	    padding-bottom: 10px;
-	    margin-top: 0;
-	}
+        .card h2 {
+            color: #000000;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
 
-	.card button {
-	    background-color: #0066cc;
-	    color: white; 
-	    padding: 10px 15px; 
-	    border: none; 
-	    border-radius: 5px; 
-	    cursor: pointer; 
-	    font-size: 16px;
-	    transition: background-color 0.3s; 
-	    margin-top: 10px;
-	}
+        .card button {
+            background-color: #0066cc;
+            color: white; 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 16px;
+            transition: background-color 0.3s; 
+            margin-top: 10px;
+        }
 
-	.card button:hover {
-	    background-color: #4CAF50; 
-	}
+        .card button:hover {
+            background-color: #4CAF50; 
+        }
 
-	footer {
-	    background-color: transparent;
-	    text-align: center;
-	    padding: 20px 0;
-	    margin-top: 20px;
-	}
+        footer {
+            background-color: transparent;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: 20px;
+        }
 
-	footer a {
-	    color: #0066cc;
-	    text-decoration: none;
-	    margin: 0 10px;
-	}
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
 
-	footer a:hover {
-	    text-decoration: underline;
-	    color: #4CAF50;
-	}
-		
-	#backBtn {
-	    position: absolute;
-	    top: 10px;
-	    left: 10px;
-	    padding: 5px 10px;
-	    background-color: transparent;
-	    border: 1px solid #333;
-	    cursor: pointer;
-	    color: #000000;
-	    border-radius: 5px;
-	}
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
+        }
+        
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
 
-	@media (max-width: 768px) {
-	    main {
-	        grid-template-columns: 1fr;
-	    }
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+            }
 
-	    header {
-	        padding: 10px 0;
-	    }
-	
-	    #profile-pic {
-	        width: 80px;
-	        height: 80px;
-	    }
-	}
-
+            header {
+                padding: 10px 0;
+            }
+    
+            #profile-pic {
+                width: 80px;
+                height: 80px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -164,7 +163,7 @@
             <h2>Patient Management</h2>
             <input type="text" id="search-patient" placeholder="Search patients" oninput="showStoredPatients()">
             <div id="storedPatients"></div>
-            <button id="addPatient" onclick="redirectT('specialist add patient.html')">Add Patient</button>
+            <button id="addPatient" onclick="redirectTo('specialist add patient.html')">Add Patient</button>
         </section>
 
         <section class="card" id="appointmentManagement">
@@ -188,11 +187,11 @@
         </section>
     </main>
 
-<footer>
-    <a href="Privacy Policy.html">Privacy Policy</a> | 
-    <a href="Terms of Service.html">Terms of Service</a> | 
-    <a href="Help_Contact.html">Help/Contact</a>
-</footer>
+    <footer>
+        <a href="Privacy Policy.html">Privacy Policy</a> | 
+        <a href="Terms of Service.html">Terms of Service</a> | 
+        <a href="Help_Contact.html">Help/Contact</a>
+    </footer>
 
     <script>
         function changeProfilePicture(input) {
@@ -227,9 +226,9 @@
 
             const fullName = user.fullName || '';
             const surname = user.surname || '';
-            const fullName = fullName + (fullName ? ' ' : '') + surname; 
+            const fullNameDisplay = fullName + (fullName ? ' ' : '') + surname; 
 
-            document.getElementById('user-name').textContent = fullName;
+            document.getElementById('user-name').textContent = fullNameDisplay;
 
             const storedProfilePicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedProfilePicture;
@@ -249,7 +248,6 @@
             const users = Object.values(userData);
             const institute = currentUser.institute; 
 
-           
             const filteredPatients = users.filter(user => 
                 user.institute === institute &&
                 (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
@@ -267,34 +265,33 @@
                 storedPatientsDiv.innerHTML = 'No matching patients found.';
             }
         }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        function checkUserLogin() {
+            const userId = localStorage.getItem('currentUserId');
+            if (!userId) {
+                window.location.href = 'sign-up.html';
+            } else {
+                loadUserData();
+            }
+        }
 
-let inactivityTime = function () {
-    let timeout;
+        let inactivityTime = function () {
+            let timeout;
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+            const resetTimer = () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    localStorage.removeItem('currentUserId');
+                    window.location.href = 'sign-up.html';
+                }, 3600000);
+            };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+            window.onload = resetTimer;
+            window.onmousemove = resetTimer;
+            window.onkeydown = resetTimer;
+        };
 
-inactivityTime();
-
+        inactivityTime();
     </script>
 </body>
 </html>
