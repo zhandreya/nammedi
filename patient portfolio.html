@@ -197,6 +197,8 @@
 
         <section class="card" id="upcoming-appointments">
             <h2>Upcoming Appointments</h2>
+            <button id="prevMonth" onclick="changeMonth(-1)">Previous Month</button>
+            <button id="nextMonth" onclick="changeMonth(1)">Next Month</button>
             <div id="calendar-view"></div>
         </section>
     </main>
@@ -208,6 +210,9 @@
     </footer>
 
     <script>
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+
         document.addEventListener('DOMContentLoaded', function() {
             checkUserLogin();
             loadUpcomingAppointments();
@@ -231,15 +236,24 @@
             window.location.href = "patient changes.html";
         }
 
+        function changeMonth(direction) {
+            currentMonth += direction;
+            if (currentMonth < 0) {
+                currentMonth = 11; // December
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0; // January
+                currentYear++;
+            }
+            loadUpcomingAppointments(); // Re-load appointments for the new month
+        }
+
         function loadUpcomingAppointments() {
             const email = localStorage.getItem('currentUserEmail');
             const usersData = JSON.parse(localStorage.getItem('users')) || {};
             const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
             const appointments = [...(usersData[email]?.appointments || []), ...(userspData[email]?.appointments || [])];
             const calendarView = document.getElementById('calendar-view');
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
 
             // Clear previous calendar view
             calendarView.innerHTML = '';
@@ -278,7 +292,7 @@
         }
 
         function checkUserLogin() {
-            const email = localStorage.getItem('currentUserEmail');
+            const email = localStorage.getItem('currentUserId');
             if (!email) {
                 alert('You are not logged in.');
                 window.location.href = 'patient log in.html';
