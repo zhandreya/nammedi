@@ -98,22 +98,24 @@
         </div>
     </form>
 
-    <script>
-        function validateLoginForm() {
-            const email = document.getElementById("workEmailM").value;
-            const password = document.getElementById("password").value;
+<script>
+    function validateLoginForm() {
+        const email = document.getElementById("workEmailM").value; // Changed ID to workEmailS
+        const password = document.getElementById("password").value;
 
-            const users = JSON.parse(localStorage.getItem('usersm')) || {};
+        const users = JSON.parse(localStorage.getItem('usersm')) || {}; // Changed from usersp to usersd
 
-            if (users[email] && users[email].password === password) {
-                sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-                window.location.href = "med staff portfolio.html";
-                return false;
-            } else {
-                document.getElementById("loginError").style.display = "block";
-                return false;
-            }
+        if (users[email] && users[email].password === password) {
+            localStorage.setItem('currentUserId', email); // Fixed to use setItem
+            sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
+            window.location.href = "med staff portfolio.html"; // Updated URL
+            return false;
+        } else {
+            document.getElementById("loginError").style.display = "block";
+            return false;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
