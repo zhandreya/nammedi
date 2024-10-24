@@ -109,7 +109,8 @@
                 <tr>
                     <th>Date</th>
                     <th>Time</th>
-                    <th>Doctor/Specialist</th>
+                    <th>Patient Fullame</th>
+                    <th>Patient Surname</th>
                     <th>Reason</th>
                     <th>Actions</th>
                 </tr>
@@ -153,7 +154,8 @@
             row.innerHTML = `
                 <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
                 <td>${appointment.preferredTime}</td>
-                <td>${appointment.doctor_specialist || localStorage.getItem('doctor_specialist')}</td>
+                <td>${appointment.fullName}</td>
+                <td>${appointment.surname}</td>
                 <td>${appointment.reason}</td>
                 <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
             `;
