@@ -96,22 +96,24 @@
         </div>
     </form>
 
-    <script>
-        function validateLoginForm() {
-            const email = document.getElementById("workEmailS").value;
-            const password = document.getElementById("password").value;
+<script>
+    function validateLoginForm() {
+        const email = document.getElementById("workEmailS").value; // Changed ID to workEmailS
+        const password = document.getElementById("password").value;
 
-            const users = JSON.parse(localStorage.getItem('usersd')) || {};
+        const users = JSON.parse(localStorage.getItem('usersd')) || {}; // Changed from usersp to usersd
 
-            if (users[email] && users[email].password === password) {
-                sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-                window.location.href = "specialist portfolio.html"; 
-                return false;
-            } else {
-                document.getElementById("loginError").style.display = "block";
-                return false;
-            }
+        if (users[email] && users[email].password === password) {
+            localStorage.setItem('currentUserId', email); // Fixed to use setItem
+            sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
+            window.location.href = "specialist portfolio.html"; // Updated URL
+            return false;
+        } else {
+            document.getElementById("loginError").style.display = "block";
+            return false;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
