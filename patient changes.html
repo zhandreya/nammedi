@@ -181,9 +181,7 @@
             };
 
             const usersp = JSON.parse(localStorage.getItem('usersp')) || {};
-
             usersp[email] = userData; // Use email as the key
-
             localStorage.setItem('usersp', JSON.stringify(usersp));
 
             const users = JSON.parse(localStorage.getItem('users')) || {};
@@ -191,13 +189,12 @@
             localStorage.setItem('users', JSON.stringify(users));
 
             alert('Profile updated successfully!');
-            
             window.location.href = 'patient portfolio.html';
             return false; 
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const email = localStorage.getItem('currentUserEmail'); // Assuming you store the current user's email
+            const email = localStorage.getItem('currentUserId'); // Assuming the user ID is stored in localStorage
             const userData = JSON.parse(localStorage.getItem('usersp'))[email] || {};
             document.getElementById('fullName').value = userData.fullName || '';
             document.getElementById('surname').value = userData.surname || '';
