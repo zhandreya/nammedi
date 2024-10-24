@@ -68,9 +68,7 @@
 
         function loadMedicalHistory(email) {
             const usersData = JSON.parse(localStorage.getItem('users')) || {};
-            const userspData = JSON.parse(localStorage.getItem('usersp')) || {};
             const medicalHistory = usersData[email]?.medicalHistory || [];
-            const additionalData = userspData[email]?.additionalInfo || []; // Adjust this as per your data structure
 
             const tableBody = document.getElementById('medical-history-body');
             medicalHistory.forEach(entry => {
@@ -85,8 +83,6 @@
                 `;
                 tableBody.appendChild(row);
             });
-
-            // You can also process and display data from userspData if needed
         }
 
         let inactivityTime = function () {
@@ -96,7 +92,7 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
                     localStorage.removeItem('currentUserEmail');
-                    window.location.href = 'sign-up.html';
+                    window.location.href = 'signup.html';
                 }, 3600000); // 1 hour
             };
 
