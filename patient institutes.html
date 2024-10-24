@@ -56,11 +56,7 @@
 
         function checkUserLogin() {
             const email = localStorage.getItem('currentUserEmail');
-            if (!email) {
-                window.location.href = 'sign-up.html';
-            } else {
-                loadInstitutesVisited(email);
-            }
+            loadInstitutesVisited(email); // Load institutes regardless of login status
         }
 
         function loadInstitutesVisited(email) {
@@ -79,23 +75,23 @@
             });
         }
 
-        let inactivityTime = function () {
+        function startInactivityTimer() {
             let timeout;
 
             const resetTimer = () => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserEmail'); // Update key here
-                    window.location.href = 'sign-up.html';
+                    // Do nothing on timeout, just for tracking if needed
+                    console.log('User is inactive for 1 hour');
                 }, 3600000); // 1 hour
             };
 
             window.onload = resetTimer;
             window.onmousemove = resetTimer;
             window.onkeydown = resetTimer;
-        };
+        }
 
-        inactivityTime();
+        startInactivityTimer(); // Start the inactivity timer
     </script>
 </body>
 </html>
