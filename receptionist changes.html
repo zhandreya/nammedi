@@ -155,74 +155,75 @@
         </form>
     </main>
 
-    <script>
-        function previewProfilePicture(input) {
-            const file = input.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('profilePicPreview').src = e.target.result;
-            }
-            reader.readAsDataURL(file);
+<script>
+    function previewProfilePicture(input) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('profilePicPreview').src = e.target.result;
         }
+        reader.readAsDataURL(file);
+    }
 
-        function validateEditForm() {
-            const email = localStorage.getItem('currentUserEmail');
-            const userId = localStorage.getItem('currentUserId');
+    function validateEditForm() {
+        const email = localStorage.getItem('currentUserEmail');
+        const userId = localStorage.getItem('currentUserId');
 
-            const updatedUserData = {
-                fullName: document.getElementById('fullName').value,
-                surname: document.getElementById('surname').value,
-                dateOfBirth: document.getElementById('dob').value,
-                gender: document.getElementById('gender').value,
-                idPassport: document.getElementById('idPassport').value,
-                workTel: document.getElementById('workTel').value,
-                workEmailR: document.getElementById('workEmailR').value,
-                institute: document.getElementById('institute').value,
-                profilePicture: document.getElementById('profilePicPreview').src
-            };
+        const updatedUserData = {
+            fullName: document.getElementById('fullName').value,
+            surname: document.getElementById('surname').value,
+            dateOfBirth: document.getElementById('dob').value,
+            gender: document.getElementById('gender').value,
+            idPassport: document.getElementById('idPassport').value,
+            workTel: document.getElementById('workTel').value,
+            workEmailR: document.getElementById('workEmailR').value,
+            institute: document.getElementById('institute').value,
+            profilePicture: document.getElementById('profilePicPreview').src
+        };
 
-            // Store the updated data in both paths
-            storeUserData(email, updatedUserData);
+        // Store the updated data in both paths
+        storeUserData(email, updatedUserData);
 
-            alert('Profile updated successfully!');
-            window.location.href = 'receptionist portfolio.html';
-            return false; 
+        alert('Profile updated successfully!');
+        window.location.href = 'receptionist portfolio.html';
+        return false; 
+    }
+
+    function storeUserData(email, updatedUserData) {
+        const usersData = JSON.parse(localStorage.getItem('users')) || {};
+        const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
+
+        // Update users data
+        if (!usersData[email]) {
+            usersData[email] = {};
         }
+        usersData[email] = { ...usersData[email], ...updatedUserData };
 
-        function storeUserData(email, updatedUserData) {
-            const usersData = JSON.parse(localStorage.getItem('users')) || {};
-            const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
-
-            // Update users data
-            if (!usersData[email]) {
-                usersData[email] = {};
-            }
-            usersData[email] = { ...usersData[email], ...updatedUserData };
-
-            // Update usersr data
-            if (!usersrData[email]) {
-                usersrData[email] = {};
-            }
-            usersrData[email] = { ...usersrData[email], ...updatedUserData };
-
-            // Save updated data back to localStorage
-            localStorage.setItem('users', JSON.stringify(usersData));
-            localStorage.setItem('usersr', JSON.stringify(usersrData));
+        // Update usersr data
+        if (!usersrData[email]) {
+            usersrData[email] = {};
         }
+        usersrData[email] = { ...usersrData[email], ...updatedUserData };
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('usersr'))[userId] || {};
-            document.getElementById('fullName').value = userData.fullName || '';
-            document.getElementById('surname').value = userData.surname || '';
-            document.getElementById('dob').value = userData.dateOfBirth || '';
-            document.getElementById('gender').value = userData.gender || '';
-            document.getElementById('idPassport').value = userData.idPassport || '';
-            document.getElementById('workTel').value = userData.workTel || '';
-            document.getElementById('workEmailR').value = userData.workEmailR || '';
-            document.getElementById('institute').value = userData.institute || '';
-            document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
-        });
-    </script>
+        // Save updated data back to localStorage
+        localStorage.setItem('users', JSON.stringify(usersData));
+        localStorage.setItem('usersr', JSON.stringify(usersrData));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const userId = localStorage.getItem('currentUserId');
+        const userData = JSON.parse(localStorage.getItem('usersr'))[userId] || {};
+        document.getElementById('fullName').value = userData.fullName || '';
+        document.getElementById('surname').value = userData.surname || '';
+        document.getElementById('dob').value = userData.dateOfBirth || '';
+        document.getElementById('gender').value = userData.gender || '';
+        document.getElementById('idPassport').value = userData.idPassport || '';
+        document.getElementById('workTel').value = userData.workTel || '';
+        document.getElementById('workEmailR').value = userData.workEmailR || '';
+        document.getElementById('institute').value = userData.institute || '';
+        document.getElementById('profilePicPreview').src = userData.profilePicture || 'default-profile.png';
+    });
+</script>
+
 </body>
 </html>
