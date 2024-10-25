@@ -134,20 +134,21 @@ function loadUserData() {
 
     if (currentUser) {
         const doctor_specialist = `${currentUser.fullName} ${currentUser.surname}`;
-        loadAppointments(doctor_specialist);
+        const institution = currentUser.institution; // Assuming institution is stored here
+        loadAppointments(doctor_specialist, institution);
     } else {
         console.error('User not found');
     }
 }
 
-function loadAppointments(doctor_specialist) {
+function loadAppointments(doctor_specialist, institution) {
     const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
     const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
     tableBody.innerHTML = ''; // Clear existing rows
 
     appointments.forEach(appointment => {
-        // Check if the appointment matches the doctor's specialist name
-        if (`${appointment.fullName} ${appointment.surname}` === doctor_specialist) {
+        // Check if the appointment matches the doctor's specialist name and institution
+        if (`${appointment.fullName} ${appointment.surname}` === doctor_specialist && appointment.institution === institution) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
@@ -168,7 +169,7 @@ function cancelAppointment(id) {
     localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
     // Reload the appointments in the table
-    loadAppointments(localStorage.getItem('doctor_specialist'));
+    loadUserData(); // Reload user data to refresh appointments
     alert('Appointment canceled successfully!'); // Notify the user
 }
 </script>
