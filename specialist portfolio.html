@@ -224,9 +224,9 @@
             const userData = JSON.parse(localStorage.getItem('usersd')) || {};
             const user = userData[userId] || {};
 
-            const fullName = user.fullName || '';
-            const surname = user.surname || '';
-            const fullNameDisplay = fullName + (fullName ? ' ' : '') + surname; 
+            const fullNameD = user.fullNameD || '';
+            const surnameD = user.surnameD || '';
+            const fullNameDisplay = fullNameD + (fullNameD ? ' ' : '') + surnameD; 
 
             document.getElementById('user-name').textContent = fullNameDisplay;
 
@@ -242,7 +242,7 @@
             const input = document.getElementById('search-patient').value.toLowerCase();
             const storedPatientsDiv = document.getElementById('storedPatients');
             const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
+            const userData = JSON.parse(localStorage.getItem('usersd')) || {};
             const currentUser = userData[userId] || {};
 
             const users = Object.values(userData);
@@ -250,14 +250,14 @@
 
             const filteredPatients = users.filter(user => 
                 user.institute === institute &&
-                (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
+                (user.fullNameD.toLowerCase().includes(input) || user.surnameD.toLowerCase().includes(input))
             );
 
             storedPatientsDiv.innerHTML = '';
 
             filteredPatients.forEach(user => {
                 const patientDiv = document.createElement('div');
-                patientDiv.textContent = `${user.fullName} ${user.surname}`;
+                patientDiv.textContent = `${user.fullNameD} ${user.surnameD}`;
                 storedPatientsDiv.appendChild(patientDiv);
             });
 
@@ -269,7 +269,7 @@
         function checkUserLogin() {
             const userId = localStorage.getItem('currentUserId');
             if (!userId) {
-                window.location.href = 'sign-up.html';
+                window.location.href = 'signup.html';
             } else {
                 loadUserData();
             }
@@ -282,7 +282,7 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
                     localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
+                    window.location.href = 'signup.html';
                 }, 3600000);
             };
 
