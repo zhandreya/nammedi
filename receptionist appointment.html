@@ -133,9 +133,9 @@
         const userEmail = localStorage.getItem('currentUserEmail');
         const userInstitute = localStorage.getItem('currentUserInstitute');
 
+        // Removed redirect logic
         if (!userId || !userEmail || !userInstitute) {
-            window.location.href = 'sign-up.html';
-            return;
+            return; // Simply return if any data is missing
         }
 
         loadAppointments();
@@ -190,6 +190,8 @@
         loadAppointments(); // Reload the appointments in the table
         alert('Appointment canceled successfully!'); // Notify the user
     }
+</script>
+
 </script>
 </body>
 </html>
