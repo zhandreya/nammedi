@@ -165,8 +165,7 @@
 
     function updateProfile() {
         const userId = localStorage.getItem('currentUserId');
-
-        const updatedUserData = {
+        const userData = {
             fullName: document.getElementById('fullName').value,
             surname: document.getElementById('surname').value,
             dob: document.getElementById('dob').value,
@@ -177,33 +176,25 @@
             profilePicture: document.getElementById('profilePicPreview').src
         };
 
-        // Store the updated data in both paths
-        storeUserData(userId, updatedUserData);
+        // Store data in "users" path
+        const usersData = JSON.parse(localStorage.getItem('users')) || {};
+        if (!usersData[userId]) {
+            usersData[userId] = {};
+        }
+        Object.assign(usersData[userId], userData);
+        localStorage.setItem('users', JSON.stringify(usersData));
+
+        // Store data in "usersr" path
+        const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
+        if (!usersrData[userId]) {
+            usersrData[userId] = {};
+        }
+        Object.assign(usersrData[userId], userData);
+        localStorage.setItem('usersr', JSON.stringify(usersrData));
 
         alert('Profile updated successfully!');
         window.location.href = 'receptionist portfolio.html'; // Redirect after update
         return false; 
-    }
-
-    function storeUserData(userId, updatedUserData) {
-        const usersData = JSON.parse(localStorage.getItem('users')) || {};
-        const usersrData = JSON.parse(localStorage.getItem('usersr')) || {};
-
-        // Update users data
-        if (!usersData[userId]) {
-            usersData[userId] = {};
-        }
-        usersData[userId] = { ...usersData[userId], ...updatedUserData };
-
-        // Update usersr data
-        if (!usersrData[userId]) {
-            usersrData[userId] = {};
-        }
-        usersrData[userId] = { ...usersrData[userId], ...updatedUserData };
-
-        // Save updated data back to localStorage
-        localStorage.setItem('users', JSON.stringify(usersData));
-        localStorage.setItem('usersr', JSON.stringify(usersrData));
     }
 
     document.addEventListener('DOMContentLoaded', function() {
