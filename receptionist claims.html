@@ -114,14 +114,14 @@
             const userDetails = Object.entries(usersData).find(([key]) => key.startsWith(currentUserEmail));
             const userFullName = userDetails ? `${userDetails[1].fullName} ${userDetails[1].surname}` : 'User Not Found';
 
-            const claimsData = JSON.parse(localStorage.getItem('insuranceData')) || [];
+            const claimsData = JSON.parse(localStorage.getItem('claims'))[currentUserEmail] || [];
             const tableBody = document.getElementById('claimsTable').querySelector('tbody');
 
             claimsData.forEach((claim) => {
                 const row = tableBody.insertRow();
                 row.insertCell(0).textContent = claim.date;
                 row.insertCell(1).textContent = userFullName; // Current user's full name
-                row.insertCell(2).textContent = claim.patientFullName || 'N/A'; // Assuming patientFullName is stored
+                row.insertCell(2).textContent = claim.fullname || 'N/A'; // Assuming patientFullName is stored
                 const downloadCell = row.insertCell(3);
                 const downloadButton = document.createElement('button');
                 downloadButton.textContent = 'Download';
