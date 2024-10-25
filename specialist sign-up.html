@@ -97,10 +97,10 @@
     <form id="signupForm" onsubmit="return validateSignupForm();">
         <div class="form-columns">
             <div class="column">
-                <label for="fullName">First Name(s)</label>
-                <input type="text" id="fullName" name="fullName" required>
-                <label for="surname">Surname</label>
-                <input type="text" id="surname" name="surname" required>
+                <label for="fullNameD">First Name(s)</label>
+                <input type="text" id="fullNameD" name="fullNameD" required>
+                <label for="surnameD">Surname</label>
+                <input type="text" id="surnameD" name="surnameD" required>
                 <label for="dob">Date of Birth</label>
                 <input type="date" id="dob" name="dob" required>
                 <label for="gender">Gender</label>
@@ -205,8 +205,8 @@
 
             const profilePicture = document.getElementById("profilePicture").files[0];
             const userData = {
-                fullName: document.getElementById("fullName").value,
-                surname: document.getElementById("surname").value,
+                fullNameD: document.getElementById("fullNameD").value,
+                surnameD: document.getElementById("surnameD").value,
                 dob: document.getElementById("dob").value,
                 gender: document.getElementById("gender").value,
                 idPassport: document.getElementById("idPassport").value,
