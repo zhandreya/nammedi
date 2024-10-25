@@ -127,62 +127,69 @@
         </table>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const userId = localStorage.getItem('currentUserId');
-            const userEmail = localStorage.getItem('currentUserEmail');
-            const userInstitute = localStorage.getItem('currentUserInstitute');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userId = localStorage.getItem('currentUserId');
+        const userEmail = localStorage.getItem('currentUserEmail');
+        const userInstitute = localStorage.getItem('currentUserInstitute');
 
-            if (!userId || !userEmail || !userInstitute) {
-                window.location.href = 'sign-up.html';
-                return;
-            }
+        if (!userId || !userEmail || !userInstitute) {
+            window.location.href = 'sign-up.html';
+            return;
+        }
 
-            const usersrAppointments = JSON.parse(localStorage.getItem('usersr')) || [];
-            const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
+        loadAppointments();
+    });
 
-            const filteredAppointments = [
-                ...usersrAppointments.filter(patient => patient.email === userEmail && patient.institute === userInstitute),
-                ...usersAppointments.filter(patient => patient.institute === userInstitute)
-            ];
+    function loadAppointments() {
+        const usersrAppointments = JSON.parse(localStorage.getItem('usersr')) || [];
+        const usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
 
-            const tableBody = document.getElementById('appointmentsTable').querySelector('tbody');
-            const currentDate = new Date();
+        const userEmail = localStorage.getItem('currentUserEmail');
+        const userInstitute = localStorage.getItem('currentUserInstitute');
 
-            filteredAppointments.forEach((patient, index) => {
-                const row = tableBody.insertRow();
-                
-                const futureDate = new Date(currentDate);
-                futureDate.setDate(currentDate.getDate() + (index + 1) * 7);
+        const filteredAppointments = [
+            ...usersrAppointments.filter(appointment => appointment.email === userEmail && appointment.institute === userInstitute),
+            ...usersAppointments.filter(appointment => appointment.institute === userInstitute)
+        ];
 
-                row.insertCell(0).textContent = futureDate.toLocaleDateString();
-                row.insertCell(1).textContent = patient.time;
-                row.insertCell(2).textContent = patient.doctor_specialist;
-                row.insertCell(3).textContent = patient.dob; 
-                row.insertCell(4).textContent = patient.fullName;
-                row.insertCell(5).textContent = patient.surname;
-                row.insertCell(6).textContent = patient.gender; 
-                row.insertCell(7).textContent = patient.reason; 
-            });
+        const tableBody = document.getElementById('appointmentsTable').querySelector('tbody');
+        tableBody.innerHTML = ''; // Clear existing rows
+
+        filteredAppointments.forEach((appointment, index) => {
+            const row = document.createElement('tr');
+
+            const futureDate = new Date();
+            futureDate.setDate(futureDate.getDate() + (index + 1) * 7);
+
+            row.innerHTML = `
+                <td>${futureDate.toLocaleDateString()}</td>
+                <td>${appointment.time}</td>
+                <td>${appointment.doctor_specialist}</td>
+                <td>${appointment.dob}</td>
+                <td>${appointment.fullName}</td>
+                <td>${appointment.surname}</td>
+                <td>${appointment.gender}</td>
+                <td>${appointment.reason}</td>
+                <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
+            `;
+            tableBody.appendChild(row);
         });
+    }
 
-        let inactivityTime = function () {
-            let timeout;
+    function cancelAppointment(id) {
+        let usersrAppointments = JSON.parse(localStorage.getItem('usersr')) || [];
+        let usersAppointments = JSON.parse(localStorage.getItem('users')) || [];
 
-            const resetTimer = () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
-                }, 3600000);
-            };
+        usersrAppointments = usersrAppointments.filter(appointment => appointment.id !== id);
+        usersAppointments = usersAppointments.filter(appointment => appointment.id !== id); // Adjust this if needed
 
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onkeydown = resetTimer;
-        };
+        localStorage.setItem('usersr', JSON.stringify(usersrAppointments)); // Update local storage
+        localStorage.setItem('users', JSON.stringify(usersAppointments)); // Update users if needed
 
-        inactivityTime();
-    </script>
+        loadAppointments(); // Reload the appointments in the table
+        alert('Appointment canceled successfully!'); // Notify the user
+    }
+</script>
 </body>
 </html>
