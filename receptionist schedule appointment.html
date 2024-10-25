@@ -117,7 +117,7 @@
             <h2>Appointment Form</h2>
             <form id="appointment-form" onsubmit="return submitForm(event);">
                 <input type="text" id="doctor_specialist" name="doctor_specialist" placeholder="Doctor/Specialist" required>
-                <input type="text" id="specialty" name="specialty" placeholder="Specialty" required>
+                <input type="text" id="specialtiy" name="speciality" placeholder="Specialty" required>
                 <input type="text" id="fullName" name="fullName" placeholder="Patient's First Name" required>
                 <input type="text" id="surname" name="surname" placeholder="Patient's Surname" required>
                 <input type="text" id="institution" name="institution" placeholder="Institution Name" required>
@@ -146,8 +146,8 @@
             event.preventDefault();
             
             // Get form values
-            const doctorSpecialist = document.getElementById('doctor_specialist').value;
-            const specialty = document.getElementById('specialty').value;
+            const doctor_specialist = document.getElementById('doctor_specialist').value;
+            const specialtiy = document.getElementById('speciality').value;
             const fullName = document.getElementById('fullName').value;
             const surname = document.getElementById('surname').value;
             const institution = document.getElementById('institution').value;
@@ -209,7 +209,7 @@
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
                     localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
+                    window.location.href = 'signup.html';
                 }, 3600000);
             };
 
