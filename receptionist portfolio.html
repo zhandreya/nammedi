@@ -198,107 +198,108 @@
     <a href="Help_Contact.html">Help/Contact</a>
 </footer>
 
-    <script>
-        function changeProfilePicture(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageSrc = e.target.result;
-                    document.getElementById('profile-pic').src = imageSrc;
-                    const userId = localStorage.getItem('currentUserId');
-                    if (userId) {
-                        const userData = JSON.parse(localStorage.getItem('usersr')) || {};
-                        userData[userId].profilePicture = imageSrc;
-                        localStorage.setItem('usersr', JSON.stringify(userData));
-                    }
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
+<script>
+    function changeProfilePicture(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageSrc = e.target.result;
+                document.getElementById('profile-pic').src = imageSrc;
+                const userId = localStorage.getItem('currentUserId');
+                if (userId) {
+                    const userData = JSON.parse(localStorage.getItem('usersr')) || {};
+                    userData[userId].profilePicture = imageSrc;
+                    localStorage.setItem('usersr', JSON.stringify(userData));
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
         }
-        function editPersonalDetails() {
-            window.location.href = "patient changes.html";
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
+    }
+
+    function editPersonalDetails() {
+        window.location.href = "patient changes.html";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadUserData();
+    });
+
+    function loadUserData() {
+        const userId = localStorage.getItem('currentUserId');
+        if (!userId) return;
+
+        const userData = JSON.parse(localStorage.getItem('users')) || {};
+        const user = userData[userId] || {};
+
+        const fullName = user.fullName || '';
+        const surname = user.surname || '';
+        const fullNameDisplay = fullName + (fullName ? ' ' : '') + surname;
+
+        document.getElementById('user-name').textContent = fullNameDisplay;
+
+        const storedProfilePicture = user.profilePicture || 'default-profile.png';
+        document.getElementById('profile-pic').src = storedProfilePicture;
+    }
+
+    function redirectTo(page) {
+        window.location.href = page;
+    }
+
+    function showStoredPatients() {
+        const input = document.getElementById('search-patient').value.toLowerCase();
+        const storedPatientsDiv = document.getElementById('storedPatients');
+        const userId = localStorage.getItem('currentUserId');
+        const userData = JSON.parse(localStorage.getItem('users')) || {};
+        const currentUser = userData[userId] || {};
+
+        const users = Object.values(userData);
+        const institute = currentUser.institute; 
+
+        const filteredPatients = users.filter(user => 
+            user.institute === institute &&
+            (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
+        );
+
+        storedPatientsDiv.innerHTML = '';
+
+        filteredPatients.forEach(user => {
+            const patientDiv = document.createElement('div');
+            patientDiv.textContent = `${user.fullName} ${user.surname}`;
+            storedPatientsDiv.appendChild(patientDiv);
         });
 
-        function loadUserData() {
-            const userId = localStorage.getItem('currentUserId');
-            if (!userId) return;
-
-            const userData = JSON.parse(localStorage.getItem('usersr')) || {};
-            const user = userData[userId] || {};
-
-            const fullName = user.fullName || '';
-            const surname = user.surname || '';
-            const fullName = fullName + (fullName ? ' ' : '') + surname; 
-
-            document.getElementById('user-name').textContent = fullName;
-
-            const storedProfilePicture = user.profilePicture || 'default-profile.png';
-            document.getElementById('profile-pic').src = storedProfilePicture;
+        if (filteredPatients.length === 0) {
+            storedPatientsDiv.innerHTML = 'No matching patients found.';
         }
-
-        function redirectTo(page) {
-            window.location.href = page;
-        }
-
-        function showStoredPatients() {
-            const input = document.getElementById('search-patient').value.toLowerCase();
-            const storedPatientsDiv = document.getElementById('storedPatients');
-            const userId = localStorage.getItem('currentUserId');
-            const userData = JSON.parse(localStorage.getItem('usersm')) || {};
-            const currentUser = userData[userId] || {};
-
-            const users = Object.values(userData);
-            const institute = currentUser.institute; 
-
-           
-            const filteredPatients = users.filter(user => 
-                user.institute === institute &&
-                (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
-            );
-
-            storedPatientsDiv.innerHTML = '';
-
-            filteredPatients.forEach(user => {
-                const patientDiv = document.createElement('div');
-                patientDiv.textContent = `${user.fullName} ${user.surname}`;
-                storedPatientsDiv.appendChild(patientDiv);
-            });
-
-            if (filteredPatients.length === 0) {
-                storedPatientsDiv.innerHTML = 'No matching patients found.';
-            }
-        }
-	           function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
-
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
     }
-}
 
-let inactivityTime = function () {
-    let timeout;
-
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
+    function checkUserLogin() {
+        const userId = localStorage.getItem('currentUserId');
+        if (!userId) {
             window.location.href = 'sign-up.html';
-        }, 3600000);
+        } else {
+            loadUserData();
+        }
+    }
+
+    let inactivityTime = function () {
+        let timeout;
+
+        const resetTimer = () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                localStorage.removeItem('currentUserId');
+                window.location.href = 'sign-up.html';
+            }, 3600000);
+        };
+
+        window.onload = resetTimer;
+        window.onmousemove = resetTimer;
+        window.onkeydown = resetTimer;
     };
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+    inactivityTime();
+</script>
 
-inactivityTime();
-
-    </script>
 </body>
 </html>
