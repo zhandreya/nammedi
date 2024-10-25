@@ -112,22 +112,23 @@
 
 <script>
     function validateLoginForm() {
-        const email = document.getElementById("workEmailR").value; // Changed ID to workEmailS
+        const email = document.getElementById("workEmailR").value; // Use the appropriate ID
         const password = document.getElementById("password").value;
 
-        const users = JSON.parse(localStorage.getItem('usersr')) || {}; // Changed from usersp to usersd
+        const users = JSON.parse(localStorage.getItem('usersr')) || {}; // Retrieve from usersr
 
         if (users[email] && users[email].password === password) {
-            localStorage.setItem('currentUserId', email); // Fixed to use setItem
-            sessionStorage.setItem('currentUser', JSON.stringify(users[email]));
-            window.location.href = "receptionist portfolio.html"; // Updated URL
+            localStorage.setItem('currentUserId', email); // Store email in localStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(users[email])); // Store user data in sessionStorage
+            window.location.href = "receptionist portfolio.html"; // Redirect to the correct URL
             return false;
         } else {
-            document.getElementById("loginError").style.display = "block";
+            document.getElementById("loginError").style.display = "block"; // Show error if login fails
             return false;
         }
     }
 </script>
+
 
 </body>
 </html>
