@@ -136,8 +136,7 @@ function loadUserData() {
         const doctor_specialist = `${currentUser.fullName} ${currentUser.surname}`;
         const institution = currentUser.institution; // Assuming institution is stored here
         loadAppointments(doctor_specialist, institution);
-    } else {
-        console.error('User not found');
+
     }
 }
 
@@ -168,9 +167,6 @@ function cancelAppointment(id) {
     appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
     localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
-    // Reload the appointments in the table
-    loadUserData(); // Reload user data to refresh appointments
-    alert('Appointment canceled successfully!'); // Notify the user
 }
 </script>
 
