@@ -134,20 +134,20 @@ function loadUserData() {
 
     if (currentUser) {
         const doctor_specialist = `${currentUser.fullName} ${currentUser.surname}`;
-        const institution = currentUser.institution; // Assuming institution is stored here
-        loadAppointments(doctor_specialist, institution);
-
+        loadAppointments(doctor_specialist);
+    } else {
+        console.error('User not found');
     }
 }
 
-function loadAppointments(doctor_specialist, institution) {
+function loadAppointments(doctor_specialist) {
     const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
     const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
     tableBody.innerHTML = ''; // Clear existing rows
 
     appointments.forEach(appointment => {
-        // Check if the appointment matches the doctor's specialist name and institution
-        if (`${appointment.fullName} ${appointment.surname}` === doctor_specialist && appointment.institution === institution) {
+        // Check if the appointment matches the doctor's specialist name
+        if (`${appointment.fullName} ${appointment.surname}` === doctor_specialist) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
@@ -167,8 +167,17 @@ function cancelAppointment(id) {
     appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
     localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
+    // Reload the appointments in the table after canceling
+    const currentUserId = localStorage.getItem('currentUserId');
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const currentUser = users.find(user => user.id === currentUserId);
+    if (currentUser) {
+        const doctor_specialist = `${currentUser.fullName} ${currentUser.surname}`;
+        loadAppointments(doctor_specialist);
+    }
+
+    alert('Appointment canceled successfully!'); // Notify the user
 }
 </script>
-
 </body>
 </html>
