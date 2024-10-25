@@ -224,9 +224,9 @@
             const userData = JSON.parse(localStorage.getItem('usersd')) || {};
             const user = userData[userId] || {};
 
-            const fullNameD = user.fullNameD || '';
-            const surnameD = user.surnameD || '';
-            const fullNameDisplay = fullNameD + (fullNameD ? ' ' : '') + surnameD; 
+            const fullName = user.fullName || '';
+            const surname = user.surname || '';
+            const fullNameDisplay = fullName + (fullName ? ' ' : '') + surname; 
 
             document.getElementById('user-name').textContent = fullNameDisplay;
 
@@ -250,14 +250,14 @@
 
             const filteredPatients = users.filter(user => 
                 user.institute === institute &&
-                (user.fullNameD.toLowerCase().includes(input) || user.surnameD.toLowerCase().includes(input))
+                (user.fullName.toLowerCase().includes(input) || user.surname.toLowerCase().includes(input))
             );
 
             storedPatientsDiv.innerHTML = '';
 
             filteredPatients.forEach(user => {
                 const patientDiv = document.createElement('div');
-                patientDiv.textContent = `${user.fullNameD} ${user.surnameD}`;
+                patientDiv.textContent = `${user.fullName} ${user.surname}`;
                 storedPatientsDiv.appendChild(patientDiv);
             });
 
