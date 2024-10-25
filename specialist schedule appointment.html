@@ -143,6 +143,7 @@
         function submitForm(event) {
             event.preventDefault();
             
+            // Get form values
             const doctor_specialist = document.getElementById('doctor_specialist').value;
             const speciality = document.getElementById('speciality').value;
             const fullName = document.getElementById('fullName').value;
@@ -154,7 +155,7 @@
 
             const appointmentData = {
                 doctor_specialist,
-                speciality,
+                specialty,
                 fullName,
                 surname,
                 institution,
@@ -164,39 +165,19 @@
             };
 
             const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const usersdAppointments = JSON.parse(localStorage.getItem('usersdAppointments')) || [];
+
+            // Add to both arrays
             appointments.push(appointmentData);
+            usersdAppointments.push(appointmentData);
+
+            // Save back to local storage
             localStorage.setItem('appointments', JSON.stringify(appointments));
+            localStorage.setItem('usersdAppointments', JSON.stringify(usersdAppointments));
 
-            // Store user data in both 'users' and 'usersd'
-            storeUserData(fullName, surname, doctor_specialist);
-
+            // Redirect or inform user
             window.history.back();
             return false;
-        }
-
-        function storeUserData(fullName, surname, doctor_specialist) {
-            const userId = localStorage.getItem('currentUserId');
-            if (!userId) return;
-
-            // Get existing user data or initialize empty objects
-            const users = JSON.parse(localStorage.getItem('users')) || {};
-            const usersd = JSON.parse(localStorage.getItem('usersd')) || {};
-
-            // Example of how to structure user data
-            const userData = {
-                fullName,
-                surname,
-                doctor_specialist,
-                profilePicture: 'default-profile.png' // Add appropriate path if needed
-            };
-
-            // Store user data in both objects
-            users[userId] = userData;
-            usersd[userId] = userData;
-
-            // Save updated user data back to local storage
-            localStorage.setItem('users', JSON.stringify(users));
-            localStorage.setItem('usersd', JSON.stringify(usersd));
         }
 
         window.onload = function() {
@@ -212,12 +193,15 @@
         function checkUserLogin() {
             const userId = localStorage.getItem('currentUserId');
             if (!userId) {
-                window.location.href = 'sign-up.html';
+                window.location.href = 'signup.html';
+            } else {
+                loadUserData();
             }
         }
 
         let inactivityTime = function () {
             let timeout;
+
             const resetTimer = () => {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
