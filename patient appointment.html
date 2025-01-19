@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -149,9 +149,10 @@
         appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
         localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
-        const rowToRemove = document.querySelector(`tr[data-id='${id}']`); // Find the row with the matching id
+        // Remove the row from the DOM
+        const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
         if (rowToRemove) {
-            rowToRemove.remove(); // Remove the row from the DOM
+            rowToRemove.remove();
         }
 
         alert('Appointment canceled successfully!'); // Notify the user
