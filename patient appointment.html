@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -132,6 +132,7 @@
 
         appointments.forEach(appointment => {
             const row = document.createElement('tr');
+            row.setAttribute('data-id', appointment.id);  // Add data-id for row identification
             row.innerHTML = `
                 <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
                 <td>${appointment.preferredTime}</td>
@@ -148,7 +149,11 @@
         appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
         localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
 
-        loadAppointments(); // Reload the appointments in the table
+        const rowToRemove = document.querySelector(`tr[data-id='${id}']`); // Find the row with the matching id
+        if (rowToRemove) {
+            rowToRemove.remove(); // Remove the row from the DOM
+        }
+
         alert('Appointment canceled successfully!'); // Notify the user
     }
 </script>
