@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -121,12 +121,22 @@
     </div>
 
 <script>
+    // Simulate getting the userID from a login system (e.g., via session, cookie, or global variable)
+    // In a real-world application, this ID should be dynamically fetched after the user logs in
+    const userID = getUserID();  // This function will simulate retrieving a logged-in user's ID
+
     document.addEventListener('DOMContentLoaded', function() {
         loadAppointments();
     });
 
+    function getUserID() {
+        // Example: Fetch the user ID from session storage or a cookie
+        // For testing, we'll hardcode it here. In real use, this would come from your backend system or frontend session.
+        return sessionStorage.getItem('userID') || 'default_user';  // Example default user ID
+    }
+
     function loadAppointments() {
-        const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+        const appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
         const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
         tableBody.innerHTML = ''; // Clear existing rows
 
@@ -145,9 +155,9 @@
     }
 
     function cancelAppointment(id) {
-        let appointments = JSON.parse(localStorage.getItem('appointments')) || [];
-        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the appointment
-        localStorage.setItem('appointments', JSON.stringify(appointments)); // Update local storage
+        let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
+        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the canceled appointment
+        localStorage.setItem('appointments_' + userID, JSON.stringify(appointments)); // Save updated appointments to localStorage
 
         // Remove the row from the DOM
         const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
@@ -155,7 +165,7 @@
             rowToRemove.remove();
         }
 
-        alert('Appointment canceled successfully!'); // Notify the user
+       
     }
 </script>
 
