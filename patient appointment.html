@@ -136,7 +136,7 @@
     }
 
     function loadAppointments() {
-        const appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
+        const appointments = JSON.parse(localStorage.getItem('appointments' + userID)) || [];
         const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
         tableBody.innerHTML = ''; // Clear existing rows
 
@@ -144,20 +144,20 @@
             const row = document.createElement('tr');
             row.setAttribute('data-id', appointment.id);  // Add data-id for row identification
             row.innerHTML = `
-                <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
-                <td>${appointment.preferredTime}</td>
-                <td>${appointment.doctor_specialist}</td>
-                <td>${appointment.reason}</td>
-                <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
+                <td>${new Date(appointments.preferredDate).toLocaleDateString()}</td>
+                <td>${appointments.preferredTime}</td>
+                <td>${appointments.doctor_specialist}</td>
+                <td>${appointments.reason}</td>
+                <td><button class="button" onclick="cancelAppointment('${appointments.id}')">Cancel</button></td>
             `;
             tableBody.appendChild(row);
         });
     }
 
     function cancelAppointment(id) {
-        let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
-        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the canceled appointment
-        localStorage.setItem('appointments_' + userID, JSON.stringify(appointments)); // Save updated appointments to localStorage
+        let appointments = JSON.parse(localStorage.getItem('appointments' + userID)) || [];
+        appointments = appointments.filter(appointment => appointments.id !== id); // Remove the canceled appointment
+        localStorage.setItem('appointments' + userID, JSON.stringify(appointments)); // Save updated appointments to localStorage
 
         // Remove the row from the DOM
         const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
