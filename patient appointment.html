@@ -152,7 +152,7 @@
             appointments.forEach(appointment => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-id', appointment.id);
-                row.innerHTML = ` 
+                row.innerHTML = `
                     <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
                     <td>${appointment.preferredTime}</td>
                     <td>${appointment.doctor_specialist}</td>
@@ -178,7 +178,7 @@
             // Filter out the canceled appointment by id
             let remainingAppointments = appointments.filter(appointment => appointment.id !== id);
 
-            // Save updated appointments back to localStorage
+            // Save updated appointments back to localStorage under the specific userID
             localStorage.setItem('appointments_' + userID, JSON.stringify(remainingAppointments));
             console.log('Remaining appointments after cancellation:', remainingAppointments); // Log remaining
 
