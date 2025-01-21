@@ -144,6 +144,11 @@
 
             tableBody.innerHTML = ''; // Clear existing rows
 
+            if (appointments.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5">No appointments found.</td></tr>';
+                return;
+            }
+
             appointments.forEach(appointment => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-id', appointment.id);
@@ -160,13 +165,23 @@
 
         function cancelAppointment(id) {
             let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
-            appointments = appointments.filter(appointment => appointment.id !== id); // Remove canceled appointment
+
+            // Filter out the canceled appointment by id
+            appointments = appointments.filter(appointment => appointment.id !== id);
+
+            // Save updated appointments back to localStorage
             localStorage.setItem('appointments_' + userID, JSON.stringify(appointments));
 
-            // Remove the row from DOM
+            // Remove the row from the DOM immediately after deletion
             const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
             if (rowToRemove) {
                 rowToRemove.remove();
+            }
+
+            // If no more appointments are left, display a message
+            if (appointments.length === 0) {
+                const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '<tr><td colspan="5">No appointments found.</td></tr>';
             }
         }
     </script>
