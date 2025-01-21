@@ -161,7 +161,7 @@
                 reason
             };
 
-            // Store appointment in localStorage
+            // Store appointment in localStorage with userID
             storeAppointment(appointmentData);
 
             // Go back to the previous page
@@ -170,13 +170,14 @@
         }
 
         function storeAppointment(appointmentData) {
-            const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+            const userID = sessionStorage.getItem('userID') || 'default_user'; // Get userID from session or set a default
+            const appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
             appointments.push(appointmentData);
-            localStorage.setItem('appointments', JSON.stringify(appointments));
+            localStorage.setItem('appointments_' + userID, JSON.stringify(appointments)); // Store under user-specific key
         }
 
         window.onload = function() {
-            const userId = localStorage.getItem('currentUserId');
+            const userId = sessionStorage.getItem('userID');
             if (!userId) return;
 
             const userData = JSON.parse(localStorage.getItem('usersp')) || {};
@@ -184,24 +185,6 @@
             const storedPicture = user.profilePicture || 'default-profile.png';
             document.getElementById('profile-pic').src = storedPicture;
         };
-
-        let inactivityTime = function () {
-            let timeout;
-
-            const resetTimer = () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    localStorage.removeItem('currentUserId');
-                    window.location.href = 'sign-up.html';
-                }, 3600000);
-            };
-
-            window.onload = resetTimer;
-            window.onmousemove = resetTimer;
-            window.onkeydown = resetTimer;
-        };
-
-        inactivityTime();
     </script>
 </body>
 </html>
