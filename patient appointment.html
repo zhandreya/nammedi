@@ -174,10 +174,15 @@
             let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
 
             // Filter out the canceled appointment by id
-            appointments = appointments.filter(appointment => appointment.id !== id);
+            let remainingAppointments = appointments.filter(appointment => appointment.id !== id);
 
-            // Save updated appointments back to localStorage
-            localStorage.setItem('appointments_' + userID, JSON.stringify(appointments));
+            // Remove the entire key from localStorage if all appointments are cancelled
+            if (remainingAppointments.length === 0) {
+                localStorage.removeItem('appointments_' + userID);
+            } else {
+                // Save updated appointments back to localStorage
+                localStorage.setItem('appointments_' + userID, JSON.stringify(remainingAppointments));
+            }
 
             // Remove the row from the DOM immediately after deletion
             const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
@@ -186,7 +191,7 @@
             }
 
             // If no more appointments are left, display a message
-            if (appointments.length === 0) {
+            if (remainingAppointments.length === 0) {
                 const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
                 tableBody.innerHTML = '<tr><td colspan="5">No appointments found.</td></tr>';
             }
