@@ -1,345 +1,175 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Appointment Management</title>
-
-    <style>
-
-        body {
-
-            font-family: Lato, sans-serif;
-
-            background-image: url('Desert Scope.jpeg');
-
-            background-size: cover;
-
-            background-position: center;
-
-            color: #000000;
-
-            margin: 0;
-
-            padding: 0;
-
-        }
-
-
-
-        .container {
-
-            background-color: rgba(120, 120, 128, 0.30);
-
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-
-            width: 90%;
-
-            max-width: 1200px;
-
-            border-radius: 5px;
-
-            margin: 50px auto;
-
-            padding: 20px;
-
-        }
-
-
-
-        header {
-
-            text-align: center;
-
-            padding: 20px;
-
-        }
-
-
-
-        header h1 {
-
-            color: #000000;
-
-        }
-
-
-
-        table {
-
-            width: 100%;
-
-            border-collapse: collapse;
-
-            margin-top: 20px;
-
-        }
-
-
-
-        table, th, td {
-
-            border: 1px solid #333;
-
-        }
-
-
-
-        th, td {
-
-            padding: 15px;
-
-            text-align: left;
-
-        }
-
-
-
-        th {
-
-            background-color: #f2f2f2;
-
-        }
-
-
-
-        .button {
-
-            background-color: #0066cc;
-
-            color: white;
-
-            border: none;
-
-            padding: 10px 15px;
-
-            cursor: pointer;
-
-            border-radius: 5px;
-
-            transition: background-color 0.3s;
-
-        }
-
-
-
-        .button:hover {
-
-            background-color: #4CAF50;
-
-        }
-
-
-
-        footer {
-
-            text-align: center;
-
-            margin-top: 20px;
-
-        }
-
-
-
-        footer a {
-
-            color: #0066cc;
-
-            text-decoration: none;
-
-            margin: 0 10px;
-
-        }
-
-
-
-        footer a:hover {
-
-            text-decoration: underline;
-
-            color: #4CAF50;
-
-        }
-
-
-
-        #backBtn {
-
-            position: absolute;
-
-            top: 10px;
-
-            left: 10px;
-
-            padding: 5px 10px;
-
-            background-color: transparent;
-
-            border: 1px solid #333;
-
-            cursor: pointer;
-
-            color: #000000;
-
-            border-radius: 5px;
-
-        }
-
-    </style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Management</title>
+    <style>
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+        }
+
+        header h1 {
+            color: #000000;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #333;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .button {
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #4CAF50;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        footer a {
+            color: #0066cc;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+            color: #4CAF50;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+        }
+    </style>
 </head>
 
 <body>
-
-    <button id="backBtn" onclick="window.history.back()">Back</button>
-
-    <header>
-
-        <h1>Appointment Management</h1>
-
-    </header>
-
-
-
-    <div class="container">
-
-        <h2>Your Appointments</h2>
-
-        <table id="appointments-table">
-
-            <thead>
-
-                <tr>
-
-                    <th>Date</th>
-
-                    <th>Time</th>
-
-                    <th>Doctor/Specialist</th>
-
-                    <th>Reason</th>
-
-                    <th>Actions</th>
-
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <!-- Appointment rows will be populated here -->
-
-            </tbody>
-
-        </table>
-
-    </div>
-
-
-
-<script>
-
-    // Simulate getting the userID from a login system (e.g., via session, cookie, or global variable)
-
-    // In a real-world application, this ID should be dynamically fetched after the user logs in
-
-    const userID = getUserID();  // This function will simulate retrieving a logged-in user's ID
-
-
-
-    document.addEventListener('DOMContentLoaded', function() {
-
-        loadAppointments();
-
-    });
-
-
-
-    function getUserID() {
-
-        // Example: Fetch the user ID from session storage or a cookie
-
-        // For testing, we'll hardcode it here. In real use, this would come from your backend system or frontend session.
-
-        return sessionStorage.getItem('userID') || 'default_user';  // Example default user ID
-
-    }
-
-
-
-    function loadAppointments() {
-
-        const appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
-
-        const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
-
-        tableBody.innerHTML = ''; // Clear existing rows
-
-
-
-        appointments.forEach(appointment => {
-
-            const row = document.createElement('tr');
-
-            row.setAttribute('data-id', appointment.id);  // Add data-id for row identification
-
-            row.innerHTML = `
-
-                <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
-
-                <td>${appointment.preferredTime}</td>
-
-                <td>${appointment.doctor_specialist}</td>
-
-                <td>${appointment.reason}</td>
-
-                <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
-
-            `;
-
-            tableBody.appendChild(row);
-
-        });
-
-    }
-
-
-
-    function cancelAppointment(id) {
-
-        let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
-
-        appointments = appointments.filter(appointment => appointment.id !== id); // Remove the canceled appointment
-
-        localStorage.setItem('appointments_' + userID, JSON.stringify(appointments)); // Save updated appointments to localStorage
-
-
-
-        // Remove the row from the DOM
-
-        const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
-
-        if (rowToRemove) {
-
-            rowToRemove.remove();
-
-        }
-
-
-
-       
-
-    }
-
-</script>
-
-
-
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+
+    <header>
+        <h1>Appointment Management</h1>
+    </header>
+
+    <div class="container">
+        <h2>Your Appointments</h2>
+        <table id="appointments-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Doctor/Specialist</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Appointment rows will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Get the userID
+        const userID = getUserID();
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadAppointments();
+        });
+
+        function getUserID() {
+            return sessionStorage.getItem('userID') || 'default_user';  // Default user for testing
+        }
+
+        function loadAppointments() {
+            const appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
+            const tableBody = document.getElementById('appointments-table').getElementsByTagName('tbody')[0];
+
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            appointments.forEach(appointment => {
+                const row = document.createElement('tr');
+                row.setAttribute('data-id', appointment.id);
+                row.innerHTML = `
+                    <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
+                    <td>${appointment.preferredTime}</td>
+                    <td>${appointment.doctor_specialist}</td>
+                    <td>${appointment.reason}</td>
+                    <td><button class="button" onclick="cancelAppointment('${appointment.id}')">Cancel</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function cancelAppointment(id) {
+            let appointments = JSON.parse(localStorage.getItem('appointments_' + userID)) || [];
+            appointments = appointments.filter(appointment => appointment.id !== id); // Remove canceled appointment
+            localStorage.setItem('appointments_' + userID, JSON.stringify(appointments));
+
+            // Remove the row from DOM
+            const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
+            if (rowToRemove) {
+                rowToRemove.remove();
+            }
+        }
+    </script>
 </body>
 
 </html>
