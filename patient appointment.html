@@ -175,7 +175,7 @@ function cancelAppointment(id) {
     console.log('Before cancellation:', appointments); // Log before cancellation
 
     // Filter out the canceled appointment by id
-    let remainingAppointments = appointments.filter(appointment => appointment.id !== id);
+    let remainingAppointments = appointments.filter(appointment => appointment.preferredDate !== id);
 
     // Remove the entire key from localStorage if all appointments are cancelled
     if (remainingAppointments.length === 0) {
@@ -192,6 +192,9 @@ function cancelAppointment(id) {
     if (rowToRemove) {
         rowToRemove.remove();
     }
+
+    // Update the UI
+    loadAppointments();
 
     // If no more appointments are left, display a message
     if (remainingAppointments.length === 0) {
