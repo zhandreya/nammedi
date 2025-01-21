@@ -152,7 +152,7 @@
             appointments.forEach(appointment => {
                 const row = document.createElement('tr');
                 row.setAttribute('data-id', appointment.id);
-                row.innerHTML = `
+                row.innerHTML = ` 
                     <td>${new Date(appointment.preferredDate).toLocaleDateString()}</td>
                     <td>${appointment.preferredTime}</td>
                     <td>${appointment.doctor_specialist}</td>
@@ -161,7 +161,14 @@
                 `;
                 tableBody.appendChild(row);
             });
+        }
 
+        function confirmCancelAppointment(id) {
+            // Confirm cancellation with the user
+            const confirmation = confirm("Are you sure you want to cancel this appointment?");
+            if (confirmation) {
+                cancelAppointment(id); // Proceed to cancel if confirmed
+            }
         }
 
         function cancelAppointment(id) {
