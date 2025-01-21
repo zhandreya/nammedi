@@ -171,15 +171,9 @@
             // Filter out the canceled appointment by id
             let remainingAppointments = appointments.filter(appointment => appointment.id !== id);
 
-            // Remove the entire key from localStorage if all appointments are cancelled
-            if (remainingAppointments.length === 0) {
-                localStorage.removeItem('appointments_' + userID);
-                console.log('All appointments cancelled. Local storage cleared.'); // Log when cleared
-            } else {
-                // Save updated appointments back to localStorage
-                localStorage.setItem('appointments_' + userID, JSON.stringify(remainingAppointments));
-                console.log('Remaining appointments after cancellation:', remainingAppointments); // Log remaining
-            }
+            // Save updated appointments back to localStorage
+            localStorage.setItem('appointments_' + userID, JSON.stringify(remainingAppointments));
+            console.log('Remaining appointments after cancellation:', remainingAppointments); // Log remaining
 
             // Remove the row from the DOM immediately after deletion
             const rowToRemove = document.querySelector(`tr[data-id='${id}']`);
