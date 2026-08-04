@@ -1,0 +1,507 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ========================================================================
+    // HELPER FUNCTIONS
+    // ========================================================================
+    
+    // Get current user's profile data
+    function getUserProfile(uid) {
+      return get(/databases/$(database)/documents/users/$(uid)).data;
+    }
+    
+    // Get current user's role
+    function getUserRole(uid) {
+      return getUserProfile(uid).role;
+    }
+    
+    // Get current user's institute
+    function getUserInstitute(uid) {
+      return getUserProfile(uid).institute;
+    }
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns the document
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    
+    // Check if user is medical staff (doctor, nurse, specialist, etc.)
+    function isMedicalStaff() {
+      return isAuthenticated() && 
+        getUserRole(request.auth.uid) in ['medical_staff', 'specialist'];
+    }
+    
+    // Check if user is receptionist
+    function isReceptionist() {
+      return isAuthenticated() && 
+        getUserRole(request.auth.uid) == 'receptionist';
+    }
+    
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        getUserRole(request.auth.uid) == 'admin';
+    }
+    
+    // Check if user is patient
+    function isPatient() {
+      return isAuthenticated() && 
+        getUserRole(request.auth.uid) == 'patient';
+    }
+    
+    // Check if users share the same institute
+    function sameInstitute(uid) {
+      return isAuthenticated() && 
+        getUserInstitute(request.auth.uid) == getUserInstitute(uid) &&
+        getUserInstitute(request.auth.uid) != '';
+    }
+    
+    // Check if staff created the patient
+    function isPatientCreator(patientData) {
+      return isAuthenticated() && 
+        patientData.createdBy == request.auth.uid;
+    }
+    
+    // Check if staff is assigned to patient
+    function isAssignedToPatient(patientData) {
+      return isAuthenticated() && 
+        patientData.assignedDoctor == request.auth.uid;
+    }
+    
+    // Check if staff has access to patient (creator OR assigned doctor
+    function hasPatientAccess(patientData) {
+      return isAuthenticated() && (
+        isPatientCreator(patientData) || 
+        isAssignedToPatient(patientData) ||
+        isReceptionist() ||
+        isAdmin()
+      );
+    }
+    
+    // Check if staff can access patient within same institute
+    function hasInstitutePatientAccess(patientData) {
+      return isAuthenticated() && (
+        isMedicalStaff() && sameInstitute(patientData.createdBy) ||
+        isReceptionist() && sameInstitute(patientData.createdBy) ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // USERS COLLECTION
+    // ========================================================================
+    match /users/{userId} {
+      // Users can read/write their own profile
+      allow read, write: if isOwner(userId);
+      
+      // Medical staff can read other staff profiles in same institute
+      allow read: if isMedicalStaff() && sameInstitute(userId);
+      
+      // Receptionists can read all profiles in same institute
+      allow read: if isReceptionist() && sameInstitute(userId);
+      
+      // Admins can read/write all
+      allow read, write: if isAdmin();
+    }
+    
+    // ========================================================================
+    // PATIENTS COLLECTION
+    // ========================================================================
+    match /patients/{patientId} {
+      // Patients can read their own record (by ID matching)
+      allow read: if isAuthenticated() && (
+        // Patient accessing their own record
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        // Staff who created the patient
+        isPatientCreator(resource.data) ||
+        // Staff assigned to patient
+        isAssignedToPatient(resource.data) ||
+        // Receptionist at same institute
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        // Medical staff at same institute (read-only for care coordination)
+        (isMedicalStaff() && sameInstitute(resource.data.createdBy)) ||
+        // Admin
+        isAdmin()
+      );
+      
+      // Write access - only creators, assigned doctors, receptionists, admins
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isReceptionist() || 
+        isAdmin()
+      );
+      
+      allow update, delete: if isAuthenticated() && (
+        isPatientCreator(resource.data) ||
+        isAssignedToPatient(resource.data) ||
+        isReceptionist() && sameInstitute(resource.data.createdBy) ||
+        isAdmin()
+      );
+      
+      // Allow listing for staff
+      allow list: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isReceptionist() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // APPOINTMENTS COLLECTION
+    // ========================================================================
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (
+        // Patient accessing their own appointments
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        // Staff who created the appointment
+        resource.data.createdBy == request.auth.uid ||
+        // Staff assigned to patient
+        isAssignedToPatient(resource.data) ||
+        // Receptionist at same institute
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        // Medical staff at same institute
+        (isMedicalStaff() && sameInstitute(resource.data.createdBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isReceptionist() || 
+        (isPatient() && request.resource.data.patientUserId == request.auth.uid) ||
+        isAdmin()
+      );
+      
+      allow update: if isAuthenticated() && (
+        // Creator can update
+        resource.data.createdBy == request.auth.uid ||
+        // Assigned doctor can update
+        isAssignedToPatient(resource.data) ||
+        // Receptionist at same institute
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        // Patient can cancel their own
+        (isPatient() && resource.data.patientUserId == request.auth.uid && 
+         request.resource.data.status == 'cancelled') ||
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // DOCUMENTS COLLECTION
+    // ========================================================================
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() && (
+        // Patient accessing their own documents
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        // Staff who uploaded
+        resource.data.uploadedBy == request.auth.uid ||
+        // Staff with patient access
+        (isMedicalStaff() && hasInstitutePatientAccessForDocument(resource.data)) ||
+        (isReceptionist() && hasInstitutePatientAccessForDocument(resource.data)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isReceptionist() || 
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        resource.data.uploadedBy == request.auth.uid ||
+        isAdmin()
+      );
+    }
+    
+    // Helper for document access
+    function hasInstitutePatientAccessForDocument(docData) {
+      // Would need to check patient record - simplified here
+      return getUserInstitute(docData.uploadedBy) == getUserInstitute(request.auth.uid);
+    }
+    
+    // ========================================================================
+    // PRESCRIPTIONS COLLECTION
+    // ========================================================================
+    match /prescriptions/{prescriptionId} {
+      allow read: if isAuthenticated() && (
+        // Patient accessing their own prescriptions
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        // Prescribing doctor
+        resource.data.prescribedBy == request.auth.uid ||
+        // Assigned doctor
+        isAssignedToPatient(resource.data) ||
+        // Receptionist/medical staff at same institute
+        (isMedicalStaff() && sameInstitute(resource.data.prescribedBy)) ||
+        (isReceptionist() && sameInstitute(resource.data.prescribedBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isAdmin()
+      );
+      
+      allow update: if isAuthenticated() && (
+        resource.data.prescribedBy == request.auth.uid ||
+        isAdmin()
+      );
+      
+      allow delete: if isAuthenticated() && (
+        resource.data.prescribedBy == request.auth.uid ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // MEDICATION RECORDS COLLECTION
+    // ========================================================================
+    match /medicationRecords/{recordId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.administeredBy == request.auth.uid ||
+        isAssignedToPatient(resource.data) ||
+        (isMedicalStaff() && sameInstitute(resource.data.administeredBy)) ||
+        (isReceptionist() && sameInstitute(resource.data.administeredBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isAdmin()
+      );
+      
+      allow update, delete: if isAuthenticated() && (
+        resource.data.administeredBy == request.auth.uid ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // MEDICATION INVENTORY COLLECTION
+    // ========================================================================
+    match /medicationInventory/{inventoryId} {
+      // Per-staff inventory
+      allow read, write: if isOwner(inventoryId) || isAdmin();
+      
+      // Institute-level inventory (shared)
+      allow read: if isAuthenticated() && (
+        sameInstitute(inventoryId) && isMedicalStaff()
+      );
+    }
+    
+    // ========================================================================
+    // TASKS COLLECTION
+    // ========================================================================
+    match /tasks/{taskId} {
+      allow read, write: if isOwner(taskId) || isAdmin();
+      
+      // Receptionists can see staff tasks in same institute
+      allow read: if isAuthenticated() && (
+        isReceptionist() && sameInstitute(resource.data.userId)
+      );
+    }
+    
+    // ========================================================================
+    // REMINDERS COLLECTION
+    // ========================================================================
+    match /reminders/{reminderId} {
+      allow read, write: if isOwner(reminderId) || isAdmin();
+    }
+    
+    // ========================================================================
+    // EMERGENCY CONTACTS COLLECTION
+    // ========================================================================
+    match /emergencyContacts/{contactId} {
+      allow read, write: if isOwner(contactId) || isAdmin();
+    }
+    
+    // ========================================================================
+    // MEDICAL INFO COLLECTION
+    // ========================================================================
+    match /medicalInfo/{userId} {
+      allow read: if isOwner(userId) || 
+        (isMedicalStaff() && sameInstitute(userId)) ||
+        isAdmin();
+      
+      allow write: if isOwner(userId) || isAdmin();
+    }
+    
+    // ========================================================================
+    // REPORTS COLLECTION
+    // ========================================================================
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.generatedBy == request.auth.uid ||
+        isAssignedToPatient(resource.data) ||
+        (isMedicalStaff() && sameInstitute(resource.data.generatedBy)) ||
+        (isReceptionist() && sameInstitute(resource.data.generatedBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isReceptionist() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // INSURANCE VERIFICATIONS COLLECTION
+    // ========================================================================
+    match /insuranceVerifications/{verificationId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.verifiedBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.verifiedBy)) ||
+        isAdmin()
+      );
+      
+      allow create, update: if isAuthenticated() && (
+        isReceptionist() || 
+        isMedicalStaff() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // INVOICES COLLECTION
+    // ========================================================================
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.createdBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isReceptionist() || 
+        isAdmin()
+      );
+      
+      allow update: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // PAYMENTS COLLECTION
+    // ========================================================================
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.processedBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.processedBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isReceptionist() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // CLAIMS COLLECTION
+    // ========================================================================
+    match /claims/{claimId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.createdBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.createdBy)) ||
+        isAdmin()
+      );
+      
+      allow create, update: if isAuthenticated() && (
+        isReceptionist() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // REFILL REQUESTS COLLECTION
+    // ========================================================================
+    match /refillRequests/{requestId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        (isMedicalStaff() && sameInstitute(resource.data.prescribedBy)) ||
+        (isReceptionist() && sameInstitute(resource.data.prescribedBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isPatient() || 
+        isAdmin()
+      );
+      
+      allow update: if isAuthenticated() && (
+        (isMedicalStaff() && sameInstitute(resource.data.prescribedBy)) ||
+        (isReceptionist() && sameInstitute(resource.data.prescribedBy)) ||
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // AILMENTS & TREATMENTS COLLECTION
+    // ========================================================================
+    match /ailmentsTreatments/{recordId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.recordedBy == request.auth.uid ||
+        isAssignedToPatient(resource.data) ||
+        (isMedicalStaff() && sameInstitute(resource.data.recordedBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isMedicalStaff() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // INSTITUTES VISITED COLLECTION
+    // ========================================================================
+    match /institutesVisited/{visitId} {
+      allow read, write: if isOwner(visitId) || isAdmin();
+    }
+    
+    // ========================================================================
+    // CHECK-INS COLLECTION
+    // ========================================================================
+    match /checkIns/{checkInId} {
+      allow read: if isAuthenticated() && (
+        (isPatient() && resource.data.patientUserId == request.auth.uid) ||
+        resource.data.checkedInBy == request.auth.uid ||
+        (isReceptionist() && sameInstitute(resource.data.checkedInBy)) ||
+        isAdmin()
+      );
+      
+      allow create: if isAuthenticated() && (
+        isReceptionist() || 
+        isMedicalStaff() || 
+        isAdmin()
+      );
+    }
+    
+    // ========================================================================
+    // DEFAULT DENY ALL
+    // ========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
