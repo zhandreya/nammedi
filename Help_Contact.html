@@ -4,74 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Help & Contact - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: Lato, sans-serif;
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-image: url('Desert Scope.jpeg');
             background-size: cover;
             background-position: center;
+            background-attachment: fixed;
             line-height: 1.6;
-            color: #000000;
+            color: #1a1a1a;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
         .container {
-            background-color: rgba(120, 120, 128, 0.30);
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
             width: 90%;
             max-width: 800px;
-            border-radius: 5px;
+            border-radius: 12px;
             margin: 50px auto;
-            padding: 20px;
+            padding: 32px;
+            backdrop-filter: blur(4px);
         }
-
         #backBtn {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            padding: 5px 10px;
-            background-color: transparent;
-            border: 1px solid #333;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background-color: #fff;
+            border: 1px solid #ddd;
             cursor: pointer;
-            color: #000000;
-            border-radius: 5px;
-        }
-
-
-        h1 {
-            text-align: center;
             color: #333;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
         }
-        h2 {
-            color: #0066cc;
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        h1 { text-align: center; color: #1a1a1a; margin-bottom: 24px; font-weight: 700; }
+        h2 { color: #0066cc; margin-top: 32px; margin-bottom: 12px; font-weight: 700; }
+        p { margin: 12px 0; color: #333; }
+        ol, ul { padding-left: 24px; }
+        li { margin: 8px 0; color: #333; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        footer { text-align: center; padding: 24px 0; margin-top: 32px; border-top: 1px solid #eee; }
+        footer a { color: #0066cc; text-decoration: none; margin: 0 12px; font-size: 14px; }
+        footer a:hover { text-decoration: underline; color: #4CAF50; }
+        .user-info-card {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
+            display: none;
         }
-        p {
-            margin: 10px 0;
-        }
-        footer {
-            text-align: center;
-            padding: 20px 0;
-            margin-top: 20px;
-        }
-        footer a {
-            color: #0066cc;
-            text-decoration: none;
-            margin: 0 10px;
-        }
-        footer a:hover {
-            text-decoration: underline;
-            color: #4CAF50;
-        }
+        .user-info-card.visible { display: block; }
+        .user-info-card h3 { margin: 0 0 16px 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .user-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .user-detail:last-child { border-bottom: none; }
+        .user-label { opacity: 0.9; font-size: 14px; }
+        .user-value { font-weight: 600; }
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: none; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: white; color: #0066cc; }
+        .btn-primary:hover { background: #f0f7ff; transform: translateY(-1px); }
+        .btn-danger { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); }
+        .btn-danger:hover { background: rgba(255,255,255,0.3); }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 600px) { .container { margin: 20px auto; padding: 20px; } #backBtn { top: 10px; left: 10px; padding: 8px 12px; } }
     </style>
 </head>
 <body>
-    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
     <div class="container">
+        <div id="userInfoCard" class="user-info-card">
+            <h3>👤 Welcome, <span id="displayName">User</span></h3>
+            <div class="user-detail"><span class="user-label">Email</span><span class="user-value" id="userEmail">-</span></div>
+            <div class="user-detail"><span class="user-label">Phone</span><span class="user-value" id="userPhone">-</span></div>
+            <div class="user-detail"><span class="user-label">Last Login</span><span class="user-value" id="userLastLogin">-</span></div>
+            <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
+                <button class="btn btn-danger" onclick="signOutUser()">Sign Out</button>
+            </div>
+        </div>
+
         <h1>Help & Contact</h1>
+
         <h2>Contacting Health Services in Namibia</h2>
         <p>If you need to reach health services in Namibia, please follow these steps:</p>
         <ol>
-            <li>Identify the nearest health facility by visiting the <a href="https://www.mhss.gov.na/" target="_blank">Ministry of Health and Social Services</a> website or using a map application.</li>
+            <li>Identify the nearest health facility by visiting the <a href="https://www.mhss.gov.na/" target="_blank" rel="noopener noreferrer">Ministry of Health and Social Services</a> website or using a map application.</li>
             <li>Gather necessary information, including your health insurance details if applicable.</li>
             <li>Contact the facility directly via phone or visit during working hours to inquire about services, appointment availability, or specific health concerns.</li>
         </ol>
@@ -86,42 +121,97 @@
             <li><strong>Windhoek Central Hospital:</strong> (061) 203 200</li>
             <li><strong>Health Care Complaints:</strong> 0800 200 200</li>
         </ul>
+
+        <h2>Need More Help?</h2>
+        <p>If you're logged in, you can <button class="btn btn-primary" onclick="requestSupport()">Request Support</button> from our team.</p>
+
+        <footer>
+            <a href="privacy-policy.html">Privacy Policy</a> | 
+            <a href="terms-of-service.html">Terms of Service</a> | 
+        </footer>
     </div>
 
-    <footer>
-        <a href="Privacy Policy.html">Privacy Policy</a> | 
-        <a href="Terms of Service.html">Terms of Service</a> | 
-    </footer>
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
-</body>
-    <script>
-        function checkUserLogin() {
-    const userId = localStorage.getItem('currentUserId');
-    if (!userId) {
+    <script type="module">
+        import { 
+            getCurrentUser, 
+            onAuthChange, 
+            signOut, 
+            getUserProfile, 
+            formatTimestamp,
+            initInactivityTimer 
+        } from './firebase-health-services.js';
 
-        window.location.href = 'sign-up.html';
-    } else {
-        loadUserData();
-    }
-}
+        // DOM Elements
+        const userInfoCard = document.getElementById('userInfoCard');
+        const displayNameEl = document.getElementById('displayName');
+        const userEmailEl = document.getElementById('userEmail');
+        const userPhoneEl = document.getElementById('userPhone');
+        const userLastLoginEl = document.getElementById('userLastLogin');
 
-let inactivityTime = function () {
-    let timeout;
+        // Initialize inactivity timer (1 hour for authenticated pages)
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired due to inactivity. Redirecting to sign in...', 'info');
+            await signOut();
+            setTimeout(() => window.location.href = 'sign-up.html', 2000);
+        });
 
-    const resetTimer = () => {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            localStorage.removeItem('currentUserId');
-            window.location.href = 'sign-up.html';
-        }, 3600000);
-    };
+        // Check authentication state on load
+        onAuthChange(async (user) => {
+            if (user) {
+                await loadUserProfile(user.uid);
+            } else {
+                showToast('Please sign in to access this page.', 'info');
+                setTimeout(() => window.location.href = 'sign-up.html', 1500);
+            }
+        });
 
-    window.onload = resetTimer;
-    window.onmousemove = resetTimer;
-    window.onkeydown = resetTimer;
-};
+        async function loadUserProfile(uid) {
+            try {
+                const profile = await getUserProfile(uid);
+                if (profile) {
+                    displayNameEl.textContent = profile.fullName || profile.displayName || 'User';
+                    userEmailEl.textContent = profile.email || 'Not provided';
+                    userPhoneEl.textContent = profile.workTel || profile.phone || 'Not provided';
+                    userLastLoginEl.textContent = profile.lastLoginAt 
+                        ? formatTimestamp(profile.lastLoginAt) 
+                        : 'First visit';
+                    userInfoCard.classList.add('visible');
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                showToast('Failed to load profile', 'error');
+            }
+        }
 
-inactivityTime();
+        async function signOutUser() {
+            try {
+                await signOut();
+                showToast('Signed out successfully', 'success');
+                setTimeout(() => window.location.href = 'sign-up.html', 1000);
+            } catch (error) {
+                showToast('Failed to sign out: ' + error.message, 'error');
+            }
+        }
 
+        function editProfile() {
+            window.location.href = 'edit-profile.html';
+        }
+
+        function requestSupport() {
+            showToast('Support request feature coming soon!', 'info');
+        }
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const toast = document.getElementById('globalToast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => cleanupInactivity());
     </script>
+</body>
 </html>
