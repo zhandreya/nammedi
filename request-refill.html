@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Refill - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 10px 16px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            color: #333;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            border-radius: 5px;
+            margin: 20px auto 50px;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+        .section-header h2 { margin: 0; color: #1a1a1a; }
+        .info-card {
+            background: #f0f7ff;
+            border: 1px solid #d0e8ff;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .info-card h3 { margin: 0 0 16px; color: #0066cc; display: flex; align-items: center; gap: 8px; }
+        .info-row { display: grid; grid-template-columns: 200px 1fr; gap: 12px 24px; margin-bottom: 12px; }
+        .info-label { font-weight: 600; color: #333; }
+        .info-value { color: #666; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .required::after { content: ' *'; color: #f44336; }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+        }
+        .input-error { border-color: #f44336 !important; }
+        .error-message { color: #f44336; font-size: 13px; margin-top: 6px; display: none; }
+        .error-message.visible { display: block; }
+        .btn-group { display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-primary:disabled { background: #99c2e8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 600px) {
+            .container { margin: 20px auto; padding: 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+            .info-row { grid-template-columns: 1fr; gap: 4px; }
+            .btn-group { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar">
+            <div class="header-info">
+                <h1 id="headerName">Loading...</h1>
+                <div class="role">Patient</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='patient-prescriptions.html'">Back to Prescriptions</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Request Refill</h2>
+        </div>
+
+        <!-- Prescription Info Card -->
+        <div class="info-card" id="prescriptionInfo" style="display: none;">
+            <h3>📋 Selected Prescription</h3>
+            <div class="info-row">
+                <span class="info-label">Prescription:</span>
+                <span class="info-value" id="refillPrescriptionName">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Prescribed by:</span>
+                <span class="info-value" id="refillDoctor">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Date Prescribed:</span>
+                <span class="info-value" id="refillDate">-</span>
+            </div>
+        </div>
+
+        <!-- Refill Request Form -->
+        <form id="refillForm" novalidate>
+            <div class="form-group">
+                <label class="required">Select Prescription to Refill</label>
+                <select id="refillPrescription" name="prescriptionId" required>
+                    <option value="">Select a prescription to refill</option>
+                </select>
+                <div class="error-message" id="refillPrescriptionError"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Refill Duration</label>
+                <input type="text" id="refillDuration" name="duration" required placeholder="e.g., 30 days, 3 months" autocomplete="off">
+                <div class="error-message" id="refillDurationError"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="required">Next Available Date</label>
+                <input type="date" id="refillNextDate" name="nextAvailableDate" required min="">
+                <div class="error-message" id="refillNextDateError"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Additional Notes</label>
+                <textarea id="refillNotes" name="notes" rows="3" placeholder="Any special instructions for the pharmacy..."></textarea>
+            </div>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='patient-prescriptions.html'">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Submit Refill Request</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            getMyPrescriptions,
+            requestRefill,
+            initInactivityTimer,
+            showToast,
+            formatDate
+        } from './firebase-health-services.js';
+
+        // Initialize inactivity timer
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired. Redirecting...', 'info');
+            await signOut();
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // DOM Elements
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+        const refillForm = document.getElementById('refillForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const refillPrescription = document.getElementById('refillPrescription');
+        const refillDuration = document.getElementById('refillDuration');
+        const refillNextDate = document.getElementById('refillNextDate');
+        const refillNotes = document.getElementById('refillNotes');
+        const prescriptionInfo = document.getElementById('prescriptionInfo');
+        const refillPrescriptionName = document.getElementById('refillPrescriptionName');
+        const refillDoctor = document.getElementById('refillDoctor');
+        const refillDate = document.getElementById('refillDate');
+
+        // Check for pre-selected prescription from prescriptions page
+        const preSelectedPrescriptionId = sessionStorage.getItem('refillPrescriptionId');
+        const preSelectedPrescriptionText = sessionStorage.getItem('refillPrescriptionText');
+
+        // Set min date for next available date
+        refillNextDate.min = new Date().toISOString().split('T')[0];
+
+        // Check authentication
+        onAuthChange(async (user) => {
+            if (user) {
+                const profile = await getUserProfile(user.uid);
+                if (profile && profile.role === 'patient') {
+                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
+                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
+                    await loadRefillPage(user.uid);
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadRefillPage(uid) {
+            try {
+                const prescriptions = await getMyPrescriptions();
+
+                // Populate prescription dropdown
+                refillPrescription.innerHTML = '<option value="">Select a prescription to refill</option>';
+                prescriptions.filter(p => p.status === 'active' || !p.status).forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = `${p.prescription || p.prescriptionText || 'Prescription'} (Dr. ${p.doctorSpecialist || p.doctor_specialist || 'Doctor'})`;
+                    option.dataset.prescription = p.prescription || p.prescriptionText || '';
+                    option.dataset.doctor = p.doctorSpecialist || p.doctor_specialist || '';
+                    option.dataset.date = p.date;
+                    refillPrescription.appendChild(option);
+                });
+
+                // Pre-select if coming from prescriptions page
+                if (preSelectedPrescriptionId) {
+                    refillPrescription.value = preSelectedPrescriptionId;
+                    updatePrescriptionInfo();
+                    sessionStorage.removeItem('refillPrescriptionId');
+                    sessionStorage.removeItem('refillPrescriptionText');
+                }
+
+                // Update prescription info when selection changes
+                refillPrescription.addEventListener('change', updatePrescriptionInfo);
+
+            } catch (error) {
+                console.error('Error loading refill page:', error);
+                showToast('Failed to load refill page', 'error');
+            }
+        }
+
+        function updatePrescriptionInfo() {
+            const selectedOption = refillPrescription.options[refillPrescription.selectedIndex];
+            if (selectedOption.value) {
+                refillPrescriptionName.textContent = selectedOption.dataset.prescription || '-';
+                refillDoctor.textContent = selectedOption.dataset.doctor || '-';
+                refillDate.textContent = selectedOption.dataset.date ? formatDate(selectedOption.dataset.date) : '-';
+                prescriptionInfo.style.display = 'block';
+            } else {
+                prescriptionInfo.style.display = 'none';
+            }
+        }
+
+        // Form validation
+        function setError(input, errorEl, message) {
+            input.classList.add('input-error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearError(input, errorEl) {
+            input.classList.remove('input-error');
+            errorEl.classList.remove('visible');
+        }
+
+        function clearAllErrors() {
+            [refillPrescription, refillDuration, refillNextDate].forEach(input => {
+                clearError(input, document.getElementById(input.id + 'Error'));
+            });
+        }
+
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+
+            if (!refillPrescription.value) {
+                setError(refillPrescription, document.getElementById('refillPrescriptionError'), 'Please select a prescription');
+                isValid = false;
+            }
+
+            if (!refillDuration.value.trim()) {
+                setError(refillDuration, document.getElementById('refillDurationError'), 'Duration is required');
+                isValid = false;
+            }
+
+            if (!refillNextDate.value) {
+                setError(refillNextDate, document.getElementById('refillNextDateError'), 'Next available date is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Clear errors on input
+        [refillPrescription, refillDuration, refillNextDate].forEach(input => {
+            input.addEventListener('input', () => clearError(input, document.getElementById(input.id + 'Error')));
+        });
+
+        // Form submission
+        refillForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const refillData = {
+                    prescriptionId: refillPrescription.value,
+                    prescription: refillPrescription.options[refillPrescription.selectedIndex].dataset.prescription,
+                    duration: refillDuration.value.trim(),
+                    nextAvailableDate: refillNextDate.value,
+                    notes: refillNotes.value.trim()
+                };
+
+                await requestRefill(refillData);
+                showToast('Refill request submitted successfully!', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'patient-prescriptions.html';
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error submitting refill:', error);
+                showToast('Failed to submit refill request: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Refill Request';
+            }
+        });
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+    </script>
+</body>
+</html>
