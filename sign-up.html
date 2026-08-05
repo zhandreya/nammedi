@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: rgba(120, 120, 128, 0.30);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+        }
+        h1 { color: #1a1a1a; text-align: center; margin-bottom: 8px; font-weight: 700; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 32px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        .input-wrapper { position: relative; }
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: #0066cc; }
+        input.error, select.error { border-color: #f44336; }
+        .error-message { color: #f44336; font-size: 13px; margin-top: 6px; display: none; }
+        .error-message.visible { display: block; }
+        .password-requirements { font-size: 12px; color: #888; margin-top: 4px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+        .checkbox-group { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 24px; }
+        .checkbox-group input { width: auto; margin-top: 4px; }
+        .checkbox-group label { font-weight: 400; font-size: 14px; margin: 0; cursor: pointer; }
+        .checkbox-group a { color: #0066cc; text-decoration: none; }
+        .checkbox-group a:hover { text-decoration: underline; }
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button[type="submit"]:hover:not(:disabled) { background: #0052a3; }
+        button[type="submit"]:disabled { background: #99c2e8; cursor: not-allowed; }
+        .divider { text-align: center; margin: 24px 0; position: relative; color: #999; }
+        .divider::before { content: ''; position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: #e0e0e0; }
+        .divider span { background: white; padding: 0 16px; position: relative; }
+        .link-button {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            color: #0066cc;
+            border: 2px solid #0066cc;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .link-button:hover { background: #f0f7ff; }
+        .footer-links { text-align: center; margin-top: 24px; font-size: 14px; }
+        .footer-links a { color: #0066cc; text-decoration: none; margin: 0 8px; }
+        .footer-links a:hover { text-decoration: underline; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        .role-select { margin-top: 16px; }
+        .role-info { font-size: 13px; color: #666; margin-top: 8px; padding: 12px; background: #f5f5f5; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Create Account</h1>
+        <p class="subtitle">Namibia Health Services Portal</p>
+
+        <form id="signupForm" novalidate>
+            <div class="form-group">
+                <label for="role">I am registering as:</label>
+                <select id="role" name="role" required class="role-select">
+                    <option value="" disabled selected>Select role</option>
+                    <option value="patient">Patient / Member of Public</option>
+                    <option value="medical_staff">Medical Staff / Healthcare Professional</option>
+                </select>
+                <div class="error-message" id="roleError"></div>
+            </div>
+
+            <div id="medicalStaffFields" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fullName">First Name(s) *</label>
+                        <input type="text" id="fullName" name="fullName" autocomplete="given-name" placeholder="John">
+                        <div class="error-message" id="fullNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="surname">Surname *</label>
+                        <input type="text" id="surname" name="surname" autocomplete="family-name" placeholder="Doe">
+                        <div class="error-message" id="surnameError"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required autocomplete="email" placeholder="john.doe@clinic.na">
+                    <div class="error-message" id="emailError"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="061 123 4567" autocomplete="tel">
+                        <div class="error-message" id="phoneError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="idPassport">ID/Passport Number *</label>
+                        <input type="text" id="idPassport" name="idPassport" required placeholder="12345678901">
+                        <div class="error-message" id="idPassportError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dob">Date of Birth *</label>
+                        <input type="date" id="dob" name="dob" required>
+                        <div class="error-message" id="dobError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Gender *</label>
+                        <select id="gender" name="gender" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="genderError"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="profession">Profession *</label>
+                    <input type="text" id="profession" name="profession" required placeholder="e.g., Registered Nurse, Doctor, Pharmacist">
+                    <div class="error-message" id="professionError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="institute">Institution/Employer *</label>
+                    <input type="text" id="institute" name="institute" required placeholder="e.g., Windhoek Central Hospital">
+                    <div class="error-message" id="instituteError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="workTel">Work Telephone</label>
+                    <input type="tel" id="workTel" name="workTel" placeholder="061 203 200">
+                    <div class="error-message" id="workTelError"></div>
+                </div>
+
+                <div class="role-info">
+                    <strong>Medical Staff Registration:</strong> This creates a professional account allowing you to manage patient records, appointments, and documents. Your professional details will be verified.
+                </div>
+            </div>
+
+            <div id="patientFields" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pFullName">First Name(s) *</label>
+                        <input type="text" id="pFullName" name="pFullName" autocomplete="given-name" placeholder="John">
+                        <div class="error-message" id="pFullNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pSurname">Surname *</label>
+                        <input type="text" id="pSurname" name="pSurname" autocomplete="family-name" placeholder="Doe">
+                        <div class="error-message" id="pSurnameError"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="pEmail">Email Address *</label>
+                    <input type="email" id="pEmail" name="pEmail" required autocomplete="email" placeholder="john@example.com">
+                    <div class="error-message" id="pEmailError"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pPhone">Phone Number *</label>
+                        <input type="tel" id="pPhone" name="pPhone" required placeholder="081 123 4567" autocomplete="tel">
+                        <div class="error-message" id="pPhoneError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pIdPassport">ID/Passport Number *</label>
+                        <input type="text" id="pIdPassport" name="pIdPassport" required placeholder="12345678901">
+                        <div class="error-message" id="pIdPassportError"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pDob">Date of Birth *</label>
+                        <input type="date" id="pDob" name="pDob" required>
+                        <div class="error-message" id="pDobError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pGender">Gender *</label>
+                        <select id="pGender" name="pGender" required>
+                            <option value="" disabled selected>Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="pGenderError"></div>
+                    </div>
+                </div>
+
+                <div class="role-info">
+                    <strong>Patient Registration:</strong> This creates a patient account for accessing health services, viewing your medical records, and managing appointments.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password *</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" name="password" required autocomplete="new-password" placeholder="At least 6 characters">
+                </div>
+                <div class="password-requirements">Minimum 6 characters</div>
+                <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password *</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" placeholder="Confirm your password">
+                <div class="error-message" id="confirmPasswordError"></div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="terms" name="terms" required>
+                <label for="terms">I agree to the <a href="terms-of-service.html" target="_blank">Terms of Service</a> and <a href="privacy-policy.html" target="_blank">Privacy Policy</a> *</label>
+            </div>
+            <div class="error-message" id="termsError"></div>
+
+            <button type="submit" id="submitBtn">Create Account</button>
+        </form>
+
+        <div class="divider"><span>Already have an account?</span></div>
+        <button type="button" class="link-button" onclick="window.location.href='login.html'">Sign In Instead</button>
+
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a> |
+            <a href="terms-of-service.html">Terms of Service</a>
+        </div>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            signUp, 
+            isValidEmail, 
+            isValidNamibianPhone,
+            isValidNamibianId,
+            initInactivityTimer,
+            showToast 
+        } from './firebase-health-services.js';
+
+        // Initialize inactivity timer for auth pages (30 min)
+        initInactivityTimer(30 * 60 * 1000, () => {
+            showToast('Session expired. Please try again.', 'info');
+            setTimeout(() => window.location.reload(), 2000);
+        });
+
+        // DOM Elements
+        const form = document.getElementById('signupForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const roleSelect = document.getElementById('role');
+        const medicalStaffFields = document.getElementById('medicalStaffFields');
+        const patientFields = document.getElementById('patientFields');
+
+        // Medical staff inputs
+        const fullNameInput = document.getElementById('fullName');
+        const surnameInput = document.getElementById('surname');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        const idPassportInput = document.getElementById('idPassport');
+        const dobInput = document.getElementById('dob');
+        const genderInput = document.getElementById('gender');
+        const professionInput = document.getElementById('profession');
+        const instituteInput = document.getElementById('institute');
+        const workTelInput = document.getElementById('workTel');
+
+        // Patient inputs
+        const pFullNameInput = document.getElementById('pFullName');
+        const pSurnameInput = document.getElementById('pSurname');
+        const pEmailInput = document.getElementById('pEmail');
+        const pPhoneInput = document.getElementById('pPhone');
+        const pIdPassportInput = document.getElementById('pIdPassport');
+        const pDobInput = document.getElementById('pDob');
+        const pGenderInput = document.getElementById('pGender');
+
+        // Common inputs
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const termsInput = document.getElementById('terms');
+
+        // Error elements
+        const roleError = document.getElementById('roleError');
+        const fullNameError = document.getElementById('fullNameError');
+        const surnameError = document.getElementById('surnameError');
+        const emailError = document.getElementById('emailError');
+        const phoneError = document.getElementById('phoneError');
+        const idPassportError = document.getElementById('idPassportError');
+        const dobError = document.getElementById('dobError');
+        const genderError = document.getElementById('genderError');
+        const professionError = document.getElementById('professionError');
+        const instituteError = document.getElementById('instituteError');
+        const workTelError = document.getElementById('workTelError');
+        const pFullNameError = document.getElementById('pFullNameError');
+        const pSurnameError = document.getElementById('pSurnameError');
+        const pEmailError = document.getElementById('pEmailError');
+        const pPhoneError = document.getElementById('pPhoneError');
+        const pIdPassportError = document.getElementById('pIdPassportError');
+        const pDobError = document.getElementById('pDobError');
+        const pGenderError = document.getElementById('pGenderError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmPasswordError = document.getElementById('confirmPasswordError');
+        const termsError = document.getElementById('termsError');
+
+        // Show/hide fields based on role
+        roleSelect.addEventListener('change', () => {
+            const role = roleSelect.value;
+            medicalStaffFields.style.display = role === 'medical_staff' ? 'block' : 'none';
+            patientFields.style.display = role === 'patient' ? 'block' : 'none';
+            clearAllErrors();
+        });
+
+        // Set max date for DOB (today)
+        const today = new Date().toISOString().split('T')[0];
+        dobInput.max = today;
+        pDobInput.max = today;
+
+        // Clear errors on input
+        const allInputs = [
+            fullNameInput, surnameInput, emailInput, phoneInput, idPassportInput,
+            dobInput, genderInput, professionInput, instituteInput, workTelInput,
+            pFullNameInput, pSurnameInput, pEmailInput, pPhoneInput, pIdPassportInput,
+            pDobInput, pGenderInput, passwordInput, confirmPasswordInput, termsInput,
+            roleSelect
+        ];
+        allInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const errorEl = document.getElementById(input.id + 'Error');
+                if (errorEl) clearError(input, errorEl);
+            });
+            input.addEventListener('change', () => {
+                const errorEl = document.getElementById(input.id + 'Error');
+                if (errorEl) clearError(input, errorEl);
+            });
+        });
+
+        function setError(input, errorEl, message) {
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearError(input, errorEl) {
+            input.classList.remove('error');
+            errorEl.classList.remove('visible');
+        }
+
+        function clearAllErrors() {
+            allInputs.forEach(input => {
+                const errorEl = document.getElementById(input.id + 'Error');
+                if (errorEl) clearError(input, errorEl);
+            });
+        }
+
+        function calculateAge(dob) {
+            const today = new Date();
+            const birth = new Date(dob);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+            return age;
+        }
+
+        function validateMedicalStaffFields() {
+            let isValid = true;
+
+            if (!fullNameInput.value.trim()) {
+                setError(fullNameInput, fullNameError, 'First name is required');
+                isValid = false;
+            } else if (fullNameInput.value.trim().length < 2) {
+                setError(fullNameInput, fullNameError, 'Name must be at least 2 characters');
+                isValid = false;
+            }
+
+            if (!surnameInput.value.trim()) {
+                setError(surnameInput, surnameError, 'Surname is required');
+                isValid = false;
+            }
+
+            if (!emailInput.value.trim()) {
+                setError(emailInput, emailError, 'Email is required');
+                isValid = false;
+            } else if (!isValidEmail(emailInput.value.trim())) {
+                setError(emailInput, emailError, 'Please enter a valid email address');
+                isValid = false;
+            }
+
+            if (!phoneInput.value.trim()) {
+                setError(phoneInput, phoneError, 'Phone number is required');
+                isValid = false;
+            } else if (!isValidNamibianPhone(phoneInput.value.trim())) {
+                setError(phoneInput, phoneError, 'Enter a valid Namibian phone (e.g., 061 123 4567)');
+                isValid = false;
+            }
+
+            if (!idPassportInput.value.trim()) {
+                setError(idPassportInput, idPassportError, 'ID/Passport is required');
+                isValid = false;
+            } else if (!isValidNamibianId(idPassportInput.value.trim())) {
+                setError(idPassportInput, idPassportError, 'Enter a valid Namibian ID (11 digits)');
+                isValid = false;
+            }
+
+            if (!dobInput.value) {
+                setError(dobInput, dobError, 'Date of birth is required');
+                isValid = false;
+            } else {
+                const age = calculateAge(dobInput.value);
+                if (age < 18) {
+                    setError(dobInput, dobError, 'Must be at least 18 years old');
+                    isValid = false;
+                } else if (age > 100) {
+                    setError(dobInput, dobError, 'Please enter a valid date');
+                    isValid = false;
+                }
+            }
+
+            if (!genderInput.value) {
+                setError(genderInput, genderError, 'Please select gender');
+                isValid = false;
+            }
+
+            if (!professionInput.value.trim()) {
+                setError(professionInput, professionError, 'Profession is required');
+                isValid = false;
+            }
+
+            if (!instituteInput.value.trim()) {
+                setError(instituteInput, instituteError, 'Institution is required');
+                isValid = false;
+            }
+
+            if (workTelInput.value.trim() && !isValidNamibianPhone(workTelInput.value.trim())) {
+                setError(workTelInput, workTelError, 'Enter a valid Namibian phone number');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validatePatientFields() {
+            let isValid = true;
+
+            if (!pFullNameInput.value.trim()) {
+                setError(pFullNameInput, pFullNameError, 'First name is required');
+                isValid = false;
+            } else if (pFullNameInput.value.trim().length < 2) {
+                setError(pFullNameInput, pFullNameError, 'Name must be at least 2 characters');
+                isValid = false;
+            }
+
+            if (!pSurnameInput.value.trim()) {
+                setError(pSurnameInput, pSurnameError, 'Surname is required');
+                isValid = false;
+            }
+
+            if (!pEmailInput.value.trim()) {
+                setError(pEmailInput, pEmailError, 'Email is required');
+                isValid = false;
+            } else if (!isValidEmail(pEmailInput.value.trim())) {
+                setError(pEmailInput, pEmailError, 'Please enter a valid email address');
+                isValid = false;
+            }
+
+            if (!pPhoneInput.value.trim()) {
+                setError(pPhoneInput, pPhoneError, 'Phone number is required');
+                isValid = false;
+            } else if (!isValidNamibianPhone(pPhoneInput.value.trim())) {
+                setError(pPhoneInput, pPhoneError, 'Enter a valid Namibian phone (e.g., 081 123 4567)');
+                isValid = false;
+            }
+
+            if (!pIdPassportInput.value.trim()) {
+                setError(pIdPassportInput, pIdPassportError, 'ID/Passport is required');
+                isValid = false;
+            } else if (!isValidNamibianId(pIdPassportInput.value.trim())) {
+                setError(pIdPassportInput, pIdPassportError, 'Enter a valid Namibian ID (11 digits)');
+                isValid = false;
+            }
+
+            if (!pDobInput.value) {
+                setError(pDobInput, pDobError, 'Date of birth is required');
+                isValid = false;
+            } else {
+                const age = calculateAge(pDobInput.value);
+                if (age < 0 || age > 120) {
+                    setError(pDobInput, pDobError, 'Please enter a valid date');
+                    isValid = false;
+                }
+            }
+
+            if (!pGenderInput.value) {
+                setError(pGenderInput, pGenderError, 'Please select gender');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateCommonFields() {
+            let isValid = true;
+
+            if (!passwordInput.value) {
+                setError(passwordInput, passwordError, 'Password is required');
+                isValid = false;
+            } else if (passwordInput.value.length < 6) {
+                setError(passwordInput, passwordError, 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            if (!confirmPasswordInput.value) {
+                setError(confirmPasswordInput, confirmPasswordError, 'Please confirm your password');
+                isValid = false;
+            } else if (passwordInput.value !== confirmPasswordInput.value) {
+                setError(confirmPasswordInput, confirmPasswordError, 'Passwords do not match');
+                isValid = false;
+            }
+
+            if (!termsInput.checked) {
+                termsError.textContent = 'You must agree to the Terms and Privacy Policy';
+                termsError.classList.add('visible');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+
+            if (!roleSelect.value) {
+                setError(roleSelect, roleError, 'Please select your role');
+                isValid = false;
+            }
+
+            const role = roleSelect.value;
+            if (role === 'medical_staff') {
+                isValid = validateMedicalStaffFields() && isValid;
+            } else if (role === 'patient') {
+                isValid = validatePatientFields() && isValid;
+            }
+
+            isValid = validateCommonFields() && isValid;
+
+            return isValid;
+        }
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            try {
+                const role = roleSelect.value;
+                let profileData = { role };
+
+                if (role === 'medical_staff') {
+                    profileData = {
+                        role: 'medical_staff',
+                        fullName: fullNameInput.value.trim(),
+                        surname: surnameInput.value.trim(),
+                        email: emailInput.value.trim(),
+                        phone: phoneInput.value.trim(),
+                        idPassport: idPassportInput.value.trim(),
+                        dob: dobInput.value,
+                        gender: genderInput.value,
+                        profession: professionInput.value.trim(),
+                        institute: instituteInput.value.trim(),
+                        workTel: workTelInput.value.trim()
+                    };
+                } else {
+                    profileData = {
+                        role: 'patient',
+                        fullName: pFullNameInput.value.trim(),
+                        surname: pSurnameInput.value.trim(),
+                        email: pEmailInput.value.trim(),
+                        phone: pPhoneInput.value.trim(),
+                        idPassport: pIdPassportInput.value.trim(),
+                        dob: pDobInput.value,
+                        gender: pGenderInput.value
+                    };
+                }
+
+                const password = passwordInput.value;
+
+                // Create account
+                const userCredential = await signUp(
+                    profileData.email,
+                    password,
+                    profileData
+                );
+
+                showToast('Account created successfully!', 'success');
+
+                // Redirect based on role
+                setTimeout(() => {
+                    if (role === 'medical_staff') {
+                        window.location.href = 'med-staff-portfolio.html';
+                    } else {
+                        window.location.href = 'help-contact.html';
+                    }
+                }, 1500);
+
+            } catch (error) {
+                showToast(error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>
