@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        header { text-align: center; padding: 20px 0; margin-bottom: 20px; border-bottom: 1px solid #eee; }
+        header h1 { margin: 0; color: #1a1a1a; font-weight: 700; font-size: 2.5rem; }
+        .last-updated { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 30px; }
+        .section { margin-bottom: 32px; }
+        .section h2 { color: #0066cc; margin-bottom: 12px; font-weight: 700; font-size: 1.5rem; }
+        .section h3 { color: #333; margin: 20px 0 10px; font-size: 1.1rem; }
+        .section p { margin: 12px 0; color: #333; line-height: 1.7; }
+        .section ul { padding-left: 24px; }
+        .section li { margin: 8px 0; color: #333; }
+        .section ol { padding-left: 24px; }
+        .section ol li { margin: 8px 0; color: #333; }
+        .important-box {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .important-box strong { color: #e65100; }
+        footer { text-align: center; padding: 20px 0; margin-top: 32px; border-top: 1px solid #eee; }
+        footer a { color: #0066cc; text-decoration: none; margin: 0 12px; font-size: 14px; }
+        footer a:hover { text-decoration: underline; color: #4CAF50; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 600px) { .container { margin: 20px auto; padding: 20px; } header h1 { font-size: 1.8rem; } #backBtn { top: 10px; left: 10px; padding: 8px 12px; } }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+    <div class="container">
+        <header>
+            <h1>Terms of Service</h1>
+        </header>
+        <p class="last-updated">Last updated: July 2026</p>
+
+        <div class="section">
+            <div class="important-box">
+                <strong>Please read these terms carefully.</strong> By accessing or using Namibia Health Services ("the Service"), you agree to be bound by these Terms of Service. If you disagree with any part, you may not use the Service.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>1. Acceptance of Terms</h2>
+            <p>These Terms of Service ("Terms") constitute a legally binding agreement between you ("User") and the Ministry of Health and Social Services, Namibia ("Ministry", "we", "us", "our") governing your use of the Namibia Health Services digital platform ("Service").</p>
+            <p>By creating an account, logging in, or otherwise using the Service, you acknowledge that you have read, understood, and agree to be bound by these Terms and our Privacy Policy.</p>
+        </div>
+
+        <div class="section">
+            <h2>2. Eligibility</h2>
+            <p>You must be at least 16 years old to create an account. By using the Service, you represent and warrant that:</p>
+            <ul>
+                <li>You are 16 years of age or older</li>
+                <li>You have the legal capacity to enter into these Terms</li>
+                <li>You are not prohibited from using the Service under applicable law</li>
+                <li>If you are a healthcare professional, you are duly licensed in Namibia</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>3. Account Registration</h2>
+            <h3>3.1 Registration</h3>
+            <p>To access certain features, you must register for an account. You agree to:</p>
+            <ul>
+                <li>Provide accurate, current, and complete information</li>
+                <li>Maintain and update your information to keep it accurate</li>
+                <li>Not impersonate another person or entity</li>
+                <li>Not use another's account without permission</li>
+            </ul>
+            <h3>3.2 Account Security</h3>
+            <ul>
+                <li>You are responsible for maintaining the confidentiality of your password</li>
+                <li>You are responsible for all activities under your account</li>
+                <li>Notify us immediately of any unauthorized use</li>
+                <li>We may suspend accounts suspected of compromise</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>4. Services Provided</h2>
+            <p>The Service provides:</p>
+            <ul>
+                <li>Patient record management for authorized healthcare staff</li>
+                <li>Appointment scheduling and management</li>
+                <li>Document storage and retrieval</li>
+                <li>Health service contact information</li>
+                <li>Profile management for healthcare professionals</li>
+            </ul>
+            <p>We reserve the right to modify, suspend, or discontinue any part of the Service at any time.</p>
+        </div>
+
+        <div class="section">
+            <h2>5. User Responsibilities</h2>
+            <h3>5.1 Acceptable Use</h3>
+            <p>You agree not to:</p>
+            <ul>
+                <li>Violate any applicable Namibian or international law</li>
+                <li>Access or attempt to access data you're not authorized for</li>
+                <li>Share your login credentials with others</li>
+                <li>Interfere with the Service's security features</li>
+                <li>Upload malware, viruses, or harmful code</li>
+                <li>Use the Service for commercial purposes without authorization</li>
+                <li>Harass, threaten, or intimidate other users</li>
+            </ul>
+            <h3>5.2 Patient Data (For Healthcare Staff)</h3>
+            <ul>
+                <li>Only access patient records for patients under your direct care</li>
+                <li>Maintain patient confidentiality per Namibian health regulations</li>
+                <li>Ensure data accuracy when creating/updating records</li>
+                <li>Report data breaches immediately</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>6. Intellectual Property</h2>
+            <p>The Service and its original content (excluding user-provided content), features, and functionality are owned by the Ministry and are protected by international copyright, trademark, and other intellectual property laws.</p>
+            <p>You retain ownership of content you submit. By submitting content, you grant us a license to use, store, and display it solely for providing the Service.</p>
+        </div>
+
+        <div class="section">
+            <h2>7. Medical Disclaimer</h2>
+            <div class="important-box">
+                <strong>IMPORTANT:</strong> This Service is a records management and information tool. It does not provide medical advice, diagnosis, or treatment. Always consult qualified healthcare professionals for medical concerns. Emergency services: Call 10111.
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>8. Data Privacy</h2>
+            <p>Your use of the Service is also governed by our <a href="privacy-policy.html">Privacy Policy</a>. By using the Service, you consent to the collection and use of your data as described therein.</p>
+        </div>
+
+        <div class="section">
+            <h2>9. Termination</h2>
+            <p>We may terminate or suspend your account immediately, without prior notice, for breach of these Terms. Upon termination:</p>
+            <ul>
+                <li>Your right to use the Service ceases</li>
+                <li>We may delete your account data after 30 days</li>
+                <li>Medical records are retained per legal requirements</li>
+                <li>Provisions that should survive termination will survive</li>
+            </ul>
+            <p>You may terminate your account at any time via the profile settings.</p>
+        </div>
+
+        <div class="section">
+            <h2>10. Limitation of Liability</h2>
+            <p>To the maximum extent permitted by law:</p>
+            <ul>
+                <li>The Service is provided "as is" and "as available"</li>
+                <li>We make no warranties of uninterrupted or error-free operation</li>
+                <li>We are not liable for indirect, incidental, or consequential damages</li>
+                <li>Our total liability shall not exceed the amount you paid (if any)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>11. Indemnification</h2>
+            <p>You agree to indemnify and hold harmless the Ministry, its officers, employees, and agents from any claims, damages, losses, or expenses arising from your use of the Service, violation of these Terms, or violation of any third-party rights.</p>
+        </div>
+
+        <div class="section">
+            <h2>12. Governing Law & Dispute Resolution</h2>
+            <p>These Terms are governed by the laws of the Republic of Namibia. Any disputes shall be resolved in the courts of Windhoek, Namibia.</p>
+        </div>
+
+        <div class="section">
+            <h2>13. Changes to Terms</h2>
+            <p>We may modify these Terms at any time. Material changes will be notified via email or prominent notice. Continued use after changes constitutes acceptance.</p>
+        </div>
+
+        <div class="section">
+            <h2>14. Contact Information</h2>
+            <p>For questions about these Terms:</p>
+            <ul>
+                <li>Email: legal@mhss.gov.na</li>
+                <li>Phone: (061) 203 200</li>
+                <li>Address: Ministry of Health & Social Services, Private Bag 13198, Windhoek, Namibia</li>
+            </ul>
+        </div>
+
+        <footer>
+            <a href="privacy-policy.html">Privacy Policy</a> | 
+            <a href="help-contact.html">Help/Contact</a>
+        </footer>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { onAuthChange, initInactivityTimer } from './firebase-health-services.js';
+
+        initInactivityTimer(4 * 60 * 60 * 1000, () => location.reload());
+
+        function showToast(message, type = 'info', duration = 4000) {
+            const toast = document.getElementById('globalToast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+    </script>
+</body>
+</html>
