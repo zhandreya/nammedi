@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Patient - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            color: #333;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            width: 90%;
+            max-width: 900px;
+            border-radius: 12px;
+            margin: 50px auto;
+            padding: 32px;
+            backdrop-filter: blur(4px);
+        }
+        header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        header h2 { margin: 0; color: #1a1a1a; font-weight: 700; font-size: 1.8rem; }
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f7ff;
+            border: 1px solid #d0e8ff;
+            border-radius: 20px;
+            padding: 6px 16px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #0066cc;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        label { margin-bottom: 6px; font-weight: 600; color: #333; font-size: 14px; }
+        .required::after { content: ' *'; color: #f44336; }
+        input, select, textarea {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #0066cc;
+            box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+        }
+        input.error, select.error, textarea.error { border-color: #f44336; }
+        .error-message { color: #f44336; font-size: 12px; margin-top: 6px; display: none; }
+        .error-message.visible { display: block; }
+        textarea { min-height: 100px; resize: vertical; }
+        .btn-group { display: flex; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-primary:disabled { background: #99c2e8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 600px) { 
+            .container { margin: 20px auto; padding: 20px; } 
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; } 
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+    <div class="container">
+        <header>
+            <h2>Add New Patient</h2>
+            <div class="user-badge" id="userBadge">
+                <span>👤</span>
+                <span id="staffName">Loading...</span>
+                <span id="staffInstitute" style="color: #666;"></span>
+            </div>
+        </header>
+
+        <form id="patientForm" novalidate>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="required">Full Name(s)</label>
+                    <input type="text" id="fullName" name="fullName" required autocomplete="given-name" placeholder="John">
+                    <div class="error-message" id="fullNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Surname</label>
+                    <input type="text" id="surname" name="surname" required autocomplete="family-name" placeholder="Doe">
+                    <div class="error-message" id="surnameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Date of Birth</label>
+                    <input type="date" id="dob" name="dob" required max="">
+                    <div class="error-message" id="dobError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Age</label>
+                    <input type="number" id="age" name="age" required min="0" max="150" placeholder="Auto-calculated" readonly>
+                    <div class="error-message" id="ageError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="" disabled selected>Select Gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="genderError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">ID / Passport Number</label>
+                    <input type="text" id="idPassport" name="idPassport" required placeholder="Namibian ID or Passport">
+                    <div class="error-message" id="idPassportError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Cellphone Number</label>
+                    <input type="tel" id="cellphone" name="cellphone" required placeholder="081 123 4567 or +264 81 123 4567">
+                    <div class="error-message" id="cellphoneError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Medical Insurance</label>
+                    <select id="insurance" name="insurance" required>
+                        <option value="" disabled selected>Has Insurance?</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                    <div class="error-message" id="insuranceError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Institution Name</label>
+                    <input type="text" id="institution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <div class="error-message" id="institutionError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="required">Reason for Visit</label>
+                    <select id="reason" name="reason" required>
+                        <option value="" disabled selected>Select Reason</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="reasonError"></div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Notes</label>
+                    <textarea id="notes" name="notes" placeholder="Additional notes..."></textarea>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <span>Add Patient</span>
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="window.history.back()">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile, 
+            createPatient, 
+            isValidNamibianPhone,
+            initInactivityTimer,
+            showToast,
+            formatTimestamp
+        } from './firebase-health-services.js';
+
+        // Initialize inactivity timer
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired. Redirecting...', 'info');
+            setTimeout(() => window.location.href = 'sign-up.html', 2000);
+        });
+
+        // DOM Elements
+        const form = document.getElementById('patientForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const dobInput = document.getElementById('dob');
+        const ageInput = document.getElementById('age');
+        const staffNameEl = document.getElementById('staffName');
+        const staffInstituteEl = document.getElementById('staffInstitute');
+
+        // Set max date for DOB to today
+        dobInput.max = new Date().toISOString().split('T')[0];
+
+        // Auto-calculate age from DOB
+        dobInput.addEventListener('change', () => {
+            if (dobInput.value) {
+                const dob = new Date(dobInput.value);
+                const today = new Date();
+                let age = today.getFullYear() - dob.getFullYear();
+                const monthDiff = today.getMonth() - dob.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                    age--;
+                }
+                ageInput.value = age;
+                clearError(ageInput, document.getElementById('ageError'));
+            }
+        });
+
+        // Check authentication
+        let currentUser = null;
+        onAuthChange(async (user) => {
+            if (user) {
+                currentUser = user;
+                const profile = await getUserProfile(user.uid);
+                if (profile) {
+                    staffNameEl.textContent = profile.fullName || profile.displayName || 'Staff Member';
+                    staffInstituteEl.textContent = profile.institute || 'Ministry of Health';
+                }
+            } else {
+                showToast('Please sign in to access this page.', 'info');
+                setTimeout(() => window.location.href = 'sign-up.html', 1500);
+            }
+        });
+
+        // Form validation
+        function setError(input, errorEl, message) {
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearError(input, errorEl) {
+            input.classList.remove('error');
+            errorEl.classList.remove('visible');
+        }
+
+        function validateForm() {
+            clearAllErrors();
+            let isValid = true;
+
+            const fullName = document.getElementById('fullName');
+            const surname = document.getElementById('surname');
+            const dob = document.getElementById('dob');
+            const age = document.getElementById('age');
+            const gender = document.getElementById('gender');
+            const idPassport = document.getElementById('idPassport');
+            const cellphone = document.getElementById('cellphone');
+            const insurance = document.getElementById('insurance');
+            const institution = document.getElementById('institution');
+            const reason = document.getElementById('reason');
+
+            if (!fullName.value.trim()) { setError(fullName, document.getElementById('fullNameError'), 'Full name is required'); isValid = false; }
+            else if (fullName.value.trim().length < 2) { setError(fullName, document.getElementById('fullNameError'), 'Name must be at least 2 characters'); isValid = false; }
+
+            if (!surname.value.trim()) { setError(surname, document.getElementById('surnameError'), 'Surname is required'); isValid = false; }
+            else if (surname.value.trim().length < 2) { setError(surname, document.getElementById('surnameError'), 'Surname must be at least 2 characters'); isValid = false; }
+
+            if (!dob.value) { setError(dob, document.getElementById('dobError'), 'Date of birth is required'); isValid = false; }
+
+            if (!age.value || parseInt(age.value) < 0) { setError(age, document.getElementById('ageError'), 'Valid age required'); isValid = false; }
+
+            if (!gender.value) { setError(gender, document.getElementById('genderError'), 'Please select gender'); isValid = false; }
+
+            if (!idPassport.value.trim()) { setError(idPassport, document.getElementById('idPassportError'), 'ID/Passport is required'); isValid = false; }
+
+            if (!cellphone.value.trim()) { setError(cellphone, document.getElementById('cellphoneError'), 'Phone number is required'); isValid = false; }
+            else if (!isValidNamibianPhone(cellphone.value.trim())) { setError(cellphone, document.getElementById('cellphoneError'), 'Enter valid Namibian number (e.g., 081 123 4567)'); isValid = false; }
+
+            if (!insurance.value) { setError(insurance, document.getElementById('insuranceError'), 'Please select insurance status'); isValid = false; }
+
+            if (!institution.value.trim()) { setError(institution, document.getElementById('institutionError'), 'Institution is required'); isValid = false; }
+
+            if (!reason.value) { setError(reason, document.getElementById('reasonError'), 'Please select reason'); isValid = false; }
+
+            return isValid;
+        }
+
+        function clearAllErrors() {
+            document.querySelectorAll('input.error, select.error, textarea.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.error-message.visible').forEach(el => el.classList.remove('visible'));
+        }
+
+        // Clear errors on input
+        form.querySelectorAll('input, select, textarea').forEach(input => {
+            input.addEventListener('input', () => {
+                const errorEl = document.getElementById(`${input.id}Error`);
+                if (errorEl) clearError(input, errorEl);
+            });
+        });
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm()) return;
+            if (!currentUser) {
+                showToast('Session expired. Please sign in again.', 'error');
+                setTimeout(() => window.location.href = 'sign-up.html', 1500);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.querySelector('span').textContent = 'Adding Patient...';
+
+            try {
+                const patientData = {
+                    fullName: document.getElementById('fullName').value.trim(),
+                    surname: document.getElementById('surname').value.trim(),
+                    dob: document.getElementById('dob').value,
+                    age: parseInt(document.getElementById('age').value),
+                    gender: document.getElementById('gender').value,
+                    idPassport: document.getElementById('idPassport').value.trim(),
+                    cellphone: document.getElementById('cellphone').value.trim(),
+                    insurance: document.getElementById('insurance').value,
+                    institution: document.getElementById('institution').value.trim(),
+                    reason: document.getElementById('reason').value,
+                    notes: document.getElementById('notes').value.trim()
+                };
+
+                const patient = await createPatient(currentUser.uid, patientData);
+                
+                showToast('Patient added successfully!', 'success');
+                form.reset();
+                ageInput.value = '';
+                
+                setTimeout(() => {
+                    window.location.href = 'med-staff-portfolio.html';
+                }, 1500);
+
+            } catch (error) {
+                console.error('Error creating patient:', error);
+                showToast('Failed to add patient: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('span').textContent = 'Add Patient';
+            }
+        });
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+    </script>
+</body>
+</html>

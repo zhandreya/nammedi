@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receptionist Dashboard - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #1a1a1a;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 10px 16px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            color: #333;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-info .institute { color: #666; font-size: 14px; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .btn-danger { background: #fce4ec; color: #c62828; }
+        .btn-danger:hover { background: #f8bbd0; }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 12px;
+            margin: 20px auto 50px;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #f0f7ff; border: 1px solid #d0e8ff; border-radius: 10px; padding: 20px; text-align: center; }
+        .stat-card .label { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { color: #0066cc; font-weight: 700; font-size: 2rem; margin-top: 4px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 2px solid #eee; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; background: none; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab:hover { color: #0066cc; }
+        .tab.active { color: #0066cc; border-bottom-color: #0066cc; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+        .section-header h2 { margin: 0; color: #1a1a1a; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 700; color: #333; position: sticky; top: 0; z-index: 1; }
+        tr:hover { background-color: #f8f9fa; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+        .status-scheduled { background: #e3f2fd; color: #1565c0; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #fce4ec; color: #c62828; }
+        .status-pending { background: #fff8e1; color: #f57f17; }
+        .status-verified { background: #e8f5e9; color: #2e7d32; }
+        .status-rejected { background: #fce4ec; color: #c62828; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-view { background: #e3f2fd; color: #1565c0; }
+        .btn-view:hover { background: #bbdefb; }
+        .btn-edit { background: #e8f5e9; color: #2e7d32; }
+        .btn-edit:hover { background: #c8e6c9; }
+        .btn-delete { background: #fce4ec; color: #c62828; }
+        .btn-delete:hover { background: #f8bbd0; }
+        .btn-verify { background: #e8f5e9; color: #2e7d32; }
+        .btn-verify:hover { background: #c8e6c9; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state h3 { color: #333; margin-bottom: 8px; }
+        .filter-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-weight: 600; color: #333; font-size: 14px; white-space: nowrap; }
+        .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { margin: 0; color: #1a1a1a; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 4px; }
+        .modal-close:hover { color: #333; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar">
+            <div class="header-info">
+                <h1 id="headerName">Loading...</h1>
+                <div class="role" id="headerRole">Receptionist</div>
+                <div class="institute" id="headerInstitute">Ministry of Health</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openPatientModal()"><span>+</span> Add Patient</button>
+            <button class="btn btn-primary" onclick="openAppointmentModal()"><span>+</span> New Appointment</button>
+            <button class="btn btn-secondary" onclick="openVerifyInsuranceModal()"><span>🏥</span> Verify Insurance</button>
+            <button class="btn btn-secondary" onclick="openInvoiceModal()"><span>🧾</span> Generate Invoice</button>
+            <button class="btn btn-secondary" onclick="openPaymentModal()"><span>💳</span> Process Payment</button>
+            <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="patients">Patients</button>
+            <button class="tab" data-tab="appointments">Appointments</button>
+            <button class="tab" data-tab="insurance">Insurance</button>
+            <button class="tab" data-tab="billing">Billing</button>
+            <button class="tab" data-tab="reports">Reports</button>
+        </div>
+
+        <!-- Patients Tab -->
+        <div class="tab-panel active" id="patientsPanel">
+            <div class="section-header">
+                <h2>Patient Management</h2>
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" id="patientSearch" placeholder="Name, ID, phone..." oninput="filterPatients()">
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="patientsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>DOB / Age</th>
+                            <th>Gender</th>
+                            <th>ID / Passport</th>
+                            <th>Phone</th>
+                            <th>Insurance</th>
+                            <th>Institution</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="patientsEmpty" style="display: none;">
+                <h3>No patients yet</h3>
+                <p>Click "Add Patient" to register your first patient.</p>
+            </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div class="tab-panel" id="appointmentsPanel">
+            <div class="section-header">
+                <h2>Appointment Management</h2>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="apptStatusFilter" onchange="filterAppointments()">
+                        <option value="">All</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>From:</label>
+                    <input type="date" id="apptDateFrom" onchange="filterAppointments()">
+                </div>
+                <div class="filter-group">
+                    <label>To:</label>
+                    <input type="date" id="apptDateTo" onchange="filterAppointments()">
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="appointmentsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>DOB</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="appointmentsEmpty" style="display: none;">
+                <h3>No appointments</h3>
+                <p>Click "New Appointment" to schedule one.</p>
+            </div>
+        </div>
+
+        <!-- Insurance Tab -->
+        <div class="tab-panel" id="insurancePanel">
+            <div class="section-header">
+                <h2>Insurance Verification</h2>
+                <button class="btn btn-primary" onclick="openVerifyInsuranceModal()">Verify Insurance</button>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="insuranceStatusFilter" onchange="filterInsurance()">
+                        <option value="">All</option>
+                        <option value="pending">Pending</option>
+                        <option value="verified">Verified</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="insuranceTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient Name</th>
+                            <th>ID / Passport</th>
+                            <th>Medical Aid #</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="insuranceEmpty" style="display: none;">
+                <h3>No insurance verifications</h3>
+                <p>Click "Verify Insurance" to start a new verification.</p>
+            </div>
+        </div>
+
+        <!-- Billing Tab -->
+        <div class="tab-panel" id="billingPanel">
+            <div class="section-header">
+                <h2>Billing & Payments</h2>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="openInvoiceModal()">Generate Invoice</button>
+                    <button class="btn btn-secondary" onclick="openPaymentModal()">Process Payment</button>
+                </div>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>View:</label>
+                    <select id="billingFilter" onchange="filterBilling()">
+                        <option value="invoices">Invoices</option>
+                        <option value="payments">Payments</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="invoicesTable">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="table-container" id="paymentsTableContainer" style="display: none;">
+                <table id="paymentsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>ID / Passport</th>
+                            <th>Phone</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="billingEmpty" style="display: none;">
+                <h3>No billing records</h3>
+                <p>Generate an invoice or process a payment.</p>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div class="tab-panel" id="reportsPanel">
+            <div class="section-header">
+                <h2>Reports</h2>
+                <button class="btn btn-primary" onclick="openReportModal()">Generate Report</button>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Type:</label>
+                    <select id="reportTypeFilter" onchange="filterReports()">
+                        <option value="">All</option>
+                        <option value="daily">Daily Summary</option>
+                        <option value="patient">Patient Reports</option>
+                        <option value="financial">Financial Reports</option>
+                        <option value="insurance">Insurance Reports</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="reportsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>ID / Passport</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="reportsEmpty" style="display: none;">
+                <h3>No reports generated</h3>
+                <p>Click "Generate Report" to create one.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Modal -->
+    <div class="modal" id="patientModal" role="dialog" aria-labelledby="patientModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="patientModalTitle">Add New Patient</h3>
+                <button class="modal-close" onclick="closePatientModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="patientForm" novalidate>
+                <input type="hidden" id="patientId" name="patientId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">First Name(s)</label>
+                        <input type="text" id="pFullName" name="fullName" required>
+                        <div class="error-message" id="pFullNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Surname</label>
+                        <input type="text" id="pSurname" name="surname" required>
+                        <div class="error-message" id="pSurnameError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date of Birth</label>
+                        <input type="date" id="pDob" name="dob" required max="">
+                        <div class="error-message" id="pDobError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="pAge" name="age" readonly placeholder="Auto-calculated">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Gender</label>
+                        <select id="pGender" name="gender" required>
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="pGenderError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">ID / Passport</label>
+                        <input type="text" id="pIdPassport" name="idPassport" required placeholder="11-digit ID">
+                        <div class="error-message" id="pIdPassportError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Cellphone</label>
+                        <input type="tel" id="pCellphone" name="cellphone" required placeholder="081 123 4567">
+                        <div class="error-message" id="pCellphoneError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Insurance</label>
+                        <select id="pInsurance" name="insurance" required>
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                        <div class="error-message" id="pInsuranceError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Institution</label>
+                    <input type="text" id="pInstitution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <div class="error-message" id="pInstitutionError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Reason for Visit</label>
+                    <select id="pReason" name="reason" required>
+                        <option value="">Select</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="pReasonError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="pNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePatientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointment Modal -->
+    <div class="modal" id="appointmentModal" role="dialog" aria-labelledby="apptModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="apptModalTitle">New Appointment</h3>
+                <button class="modal-close" onclick="closeAppointmentModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="appointmentForm" novalidate>
+                <input type="hidden" id="appointmentId" name="appointmentId">
+                <input type="hidden" id="appointmentPatientId" name="patientId">
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="apptPatient" name="patient" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="apptPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="apptDate" name="date" required min="">
+                        <div class="error-message" id="apptDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Time</label>
+                        <input type="time" id="apptTime" name="time" required>
+                        <div class="error-message" id="apptTimeError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Reason</label>
+                    <select id="apptReason" name="reason" required>
+                        <option value="">Select</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="apptReasonError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="apptNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="apptStatus" name="status">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAppointmentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Insurance Verification Modal -->
+    <div class="modal" id="verifyInsuranceModal" role="dialog" aria-labelledby="verifyInsuranceModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="verifyInsuranceModalTitle">Verify Insurance</h3>
+                <button class="modal-close" onclick="closeVerifyInsuranceModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="verifyInsuranceForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="viPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="viPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Medical Aid Number</label>
+                        <input type="text" id="viMedicalAid" name="medicalAidNumber" required placeholder="Medical Aid Membership #">
+                        <div class="error-message" id="viMedicalAidError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Verification Date</label>
+                        <input type="date" id="viDate" name="date" required max="">
+                        <div class="error-message" id="viDateError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Payment Status</label>
+                        <select id="viPayment" name="paymentStatus" required>
+                            <option value="">Select</option>
+                            <option value="paid">Paid</option>
+                            <option value="pending">Pending</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                        <div class="error-message" id="viPaymentError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="viStatus" name="status">
+                            <option value="pending">Pending Verification</option>
+                            <option value="verified">Verified</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="viNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeVerifyInsuranceModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Verification</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div class="modal" id="invoiceModal" role="dialog" aria-labelledby="invoiceModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="invoiceModalTitle">Generate Invoice</h3>
+                <button class="modal-close" onclick="closeInvoiceModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="invoiceForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="invPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="invPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="invDate" name="date" required max="">
+                        <div class="error-message" id="invDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Reason for Visit</label>
+                        <select id="invReason" name="reason" required>
+                            <option value="">Select</option>
+                            <option value="General Check-Up">General Check-Up</option>
+                            <option value="Follow-Up">Follow-Up</option>
+                            <option value="Specific Ailment">Specific Ailment</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Vaccination">Vaccination</option>
+                            <option value="Maternity">Maternity</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="invReasonError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prescription</label>
+                        <input type="text" id="invPrescription" name="prescription" placeholder="Prescription details">
+                    </div>
+                    <div class="form-group">
+                        <label>Treatment</label>
+                        <input type="text" id="invTreatment" name="treatment" placeholder="Treatment details">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Fee Amount (NAD)</label>
+                        <input type="number" id="invFee" name="fee" required min="0" step="0.01" placeholder="0.00">
+                        <div class="error-message" id="invFeeError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Paid</label>
+                        <select id="invPaid" name="paid">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal" role="dialog" aria-labelledby="paymentModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="paymentModalTitle">Process Payment</h3>
+                <button class="modal-close" onclick="closePaymentModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="paymentForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="payPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="payPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="payDate" name="date" required max="">
+                        <div class="error-message" id="payDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Amount (NAD)</label>
+                        <input type="number" id="payAmount" name="amount" required min="0" step="0.01" placeholder="0.00">
+                        <div class="error-message" id="payAmountError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Payment Method</label>
+                        <select id="payMethod" name="method">
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="insurance">Insurance</option>
+                            <option value="eft">EFT</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reference #</label>
+                        <input type="text" id="payReference" name="reference" placeholder="Transaction reference">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Process Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div class="modal" id="reportModal" role="dialog" aria-labelledby="reportModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="reportModalTitle">Generate Report</h3>
+                <button class="modal-close" onclick="closeReportModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="reportForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Report Type</label>
+                    <select id="rptType" name="type" required>
+                        <option value="">Select</option>
+                        <option value="daily">Daily Summary</option>
+                        <option value="patient">Patient Report</option>
+                        <option value="financial">Financial Report</option>
+                        <option value="insurance">Insurance Report</option>
+                    </select>
+                    <div class="error-message" id="rptTypeError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Patient (for patient reports)</label>
+                        <select id="rptPatient" name="patientId">
+                            <option value="">Select Patient</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="rptDate" name="date" required max="">
+                        <div class="error-message" id="rptDateError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="rptDescription" name="description" rows="3" placeholder="Report details..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            updateUserProfile,
+            signOut,
+            getMyPatients,
+            createPatient,
+            updatePatient,
+            deletePatient,
+            getAppointmentsByStaff,
+            createAppointment,
+            updateAppointment,
+            deleteAppointment,
+            verifyInsurance,
+            createInvoice,
+            processPayment,
+            generateReport,
+            initInactivityTimer,
+            showToast,
+            isValidNamibianPhone,
+            formatDate
+        } from './firebase-health-services.js';
+
+        // Initialize inactivity timer (1 hour)
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            await signOut();
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // State
+        let currentUser = null;
+        let currentProfile = null;
+        let allPatients = [];
+        let allAppointments = [];
+        let allInsurance = [];
+        let allInvoices = [];
+        let allPayments = [];
+        let allReports = [];
+
+        // DOM Elements
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+        const headerRole = document.getElementById('headerRole');
+        const headerInstitute = document.getElementById('headerInstitute');
+        const statsGrid = document.getElementById('statsGrid');
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        // Initialize auth check
+        onAuthChange(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadDashboard();
+            } else {
+                showToast('Please sign in to access this page.', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            }
+        });
+
+        async function loadDashboard() {
+            try {
+                // Load profile
+                currentProfile = await getUserProfile(currentUser.uid);
+                if (currentProfile) {
+                    headerName.textContent = currentProfile.fullName || currentProfile.displayName || 'Receptionist';
+                    headerRole.textContent = currentProfile.profession || 'Receptionist';
+                    headerInstitute.textContent = currentProfile.institute || 'Ministry of Health';
+                    headerAvatar.src = currentProfile.profilePictureUrl || 'default-profile.png';
+                }
+
+                // Load all data in parallel
+                await Promise.all([
+                    loadPatients(),
+                    loadAppointments(),
+                    loadInsurance(),
+                    loadBilling(),
+                    loadReports()
+                ]);
+
+                // Update stats
+                updateStats();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Failed to load dashboard', 'error');
+            }
+        }
+
+        async function loadPatients() {
+            allPatients = await getMyPatients();
+            renderPatients();
+            populatePatientDropdowns();
+        }
+
+        async function loadAppointments() {
+            allAppointments = await getAppointmentsByStaff(currentUser.uid);
+            renderAppointments();
+        }
+
+        async function loadInsurance() {
+            // For now, using a placeholder - in production, query Firestore collection
+            allInsurance = JSON.parse(localStorage.getItem('insuranceVerifications') || '[]');
+            renderInsurance();
+        }
+
+        async function loadBilling() {
+            allInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+            allPayments = JSON.parse(localStorage.getItem('payments') || '[]');
+            renderBilling();
+        }
+
+        async function loadReports() {
+            allReports = JSON.parse(localStorage.getItem('reports') || '[]');
+            renderReports();
+        }
+
+        // ============ STATS ============
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const upcoming = allAppointments.filter(a => a.date >= today && a.status === 'scheduled').length;
+            const todayAppts = allAppointments.filter(a => a.date === today).length;
+            const pendingInsurance = allInsurance.filter(i => i.status === 'pending').length;
+            const unpaidInvoices = allInvoices.filter(inv => inv.paid === false).length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card"><div class="label">Total Patients</div><div class="value">${allPatients.length}</div></div>
+                <div class="stat-card"><div class="label">Upcoming Appointments</div><div class="value">${upcoming}</div></div>
+                <div class="stat-card"><div class="label">Today's Appointments</div><div class="value">${todayAppts}</div></div>
+                <div class="stat-card"><div class="label">Pending Insurance</div><div class="value">${pendingInsurance}</div></div>
+                <div class="stat-card"><div class="label">Unpaid Invoices</div><div class="value">${unpaidInvoices}</div></div>
+                <div class="stat-card"><div class="label">Reports Generated</div><div class="value">${allReports.length}</div></div>
+            `;
+        }
+
+        // ============ TABS ============
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Panel').classList.add('active');
+            });
+        });
+
+        // ============ PATIENTS ============
+        function renderPatients() {
+            const tbody = document.getElementById('patientsTable').querySelector('tbody');
+            const empty = document.getElementById('patientsEmpty');
+
+            if (allPatients.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = allPatients.map(patient => `
+                <tr>
+                    <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
+                    <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
+                    <td>${patient.gender || '-'}</td>
+                    <td>${patient.idPassport || '-'}</td>
+                    <td>${patient.cellphone || patient.phone || '-'}</td>
+                    <td>${patient.insurance || '-'}</td>
+                    <td>${patient.institution || '-'}</td>
+                    <td>${patient.reason || '-'}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeletePatient('${patient.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterPatients() {
+            const search = document.getElementById('patientSearch').value.toLowerCase();
+            const tbody = document.getElementById('patientsTable').querySelector('tbody');
+            const empty = document.getElementById('patientsEmpty');
+
+            const filtered = allPatients.filter(p => {
+                const name = `${p.fullName || ''} ${p.surname || ''}`.toLowerCase();
+                return name.includes(search) || 
+                       (p.idPassport || '').includes(search) || 
+                       (p.cellphone || '').includes(search);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                empty.querySelector('h3').textContent = search ? 'No patients match your search' : 'No patients yet';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(patient => `
+                <tr>
+                    <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
+                    <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
+                    <td>${patient.gender || '-'}</td>
+                    <td>${patient.idPassport || '-'}</td>
+                    <td>${patient.cellphone || patient.phone || '-'}</td>
+                    <td>${patient.insurance || '-'}</td>
+                    <td>${patient.institution || '-'}</td>
+                    <td>${patient.reason || '-'}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeletePatient('${patient.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populatePatientDropdowns() {
+            const selects = ['apptPatient', 'viPatient', 'invPatient', 'payPatient', 'rptPatient'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                if (!select) return;
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select patient</option>';
+                allPatients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.fullName} ${p.surname} (${p.idPassport})`;
+                    select.appendChild(opt);
+                });
+                if (allPatients.some(p => p.id === currentValue)) select.value = currentValue;
+            });
+        }
+
+        window.viewPatient = function(id) {
+            const patient = allPatients.find(p => p.id === id);
+            if (patient) {
+                const details = `
+                    Name: ${patient.fullName} ${patient.surname}
+                    DOB: ${formatDate(patient.dob)} (Age: ${patient.age})
+                    Gender: ${patient.gender}
+                    ID/Passport: ${patient.idPassport}
+                    Phone: ${patient.cellphone || patient.phone}
+                    Insurance: ${patient.insurance}
+                    Institution: ${patient.institution}
+                    Reason: ${patient.reason}
+                    Notes: ${patient.notes || 'None'}
+                    Created: ${formatDate(patient.createdAt)}
+                `;
+                alert(details);
+            }
+        };
+
+        window.editPatient = function(id) {
+            const patient = allPatients.find(p => p.id === id);
+            if (!patient) return;
+            openPatientModal(patient);
+        };
+
+        window.confirmDeletePatient = function(id) {
+            if (confirm('Are you sure you want to delete this patient? This cannot be undone.')) {
+                deletePatient(id);
+            }
+        };
+
+        async function deletePatient(id) {
+            try {
+                await deletePatient(id);
+                showToast('Patient deleted', 'success');
+                await loadPatients();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete patient: ' + error.message, 'error');
+            }
+        }
+
+        // Patient Modal
+        let editingPatientId = null;
+
+        window.openPatientModal = function(patient = null) {
+            editingPatientId = patient?.id || null;
+            const title = document.getElementById('patientModalTitle');
+            const form = document.getElementById('patientForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            form.reset();
+            clearAllErrors('patientForm');
+            document.getElementById('pDob').max = new Date().toISOString().split('T')[0];
+
+            if (patient) {
+                title.textContent = 'Edit Patient';
+                submitBtn.textContent = 'Update Patient';
+                document.getElementById('patientId').value = patient.id;
+                document.getElementById('pFullName').value = patient.fullName || '';
+                document.getElementById('pSurname').value = patient.surname || '';
+                document.getElementById('pDob').value = patient.dob || '';
+                document.getElementById('pGender').value = patient.gender || '';
+                document.getElementById('pIdPassport').value = patient.idPassport || '';
+                document.getElementById('pCellphone').value = patient.cellphone || patient.phone || '';
+                document.getElementById('pInsurance').value = patient.insurance || '';
+                document.getElementById('pInstitution').value = patient.institution || '';
+                document.getElementById('pReason').value = patient.reason || '';
+                document.getElementById('pNotes').value = patient.notes || '';
+                calculateAge();
+            } else {
+                title.textContent = 'Add New Patient';
+                submitBtn.textContent = 'Save Patient';
+                document.getElementById('patientId').value = '';
+            }
+
+            document.getElementById('patientModal').classList.add('show');
+        };
+
+        window.closePatientModal = function() {
+            document.getElementById('patientModal').classList.remove('show');
+            editingPatientId = null;
+        };
+
+        // Auto-calculate age
+        document.getElementById('pDob').addEventListener('change', calculateAge);
+        function calculateAge() {
+            const dob = document.getElementById('pDob').value;
+            if (dob) {
+                const today = new Date();
+                const birth = new Date(dob);
+                let age = today.getFullYear() - birth.getFullYear();
+                const m = today.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                document.getElementById('pAge').value = age;
+            }
+        }
+
+        document.getElementById('patientForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validatePatientForm()) return;
+
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = editingPatientId ? 'Updating...' : 'Saving...';
+
+            try {
+                const patientData = {
+                    fullName: document.getElementById('pFullName').value.trim(),
+                    surname: document.getElementById('pSurname').value.trim(),
+                    dob: document.getElementById('pDob').value,
+                    age: parseInt(document.getElementById('pAge').value) || 0,
+                    gender: document.getElementById('pGender').value,
+                    idPassport: document.getElementById('pIdPassport').value.trim(),
+                    cellphone: document.getElementById('pCellphone').value.trim(),
+                    insurance: document.getElementById('pInsurance').value,
+                    institution: document.getElementById('pInstitution').value.trim(),
+                    reason: document.getElementById('pReason').value,
+                    notes: document.getElementById('pNotes').value.trim()
+                };
+
+                if (editingPatientId) {
+                    await updatePatient(editingPatientId, patientData);
+                    showToast('Patient updated', 'success');
+                } else {
+                    await createPatient(currentUser.uid, patientData);
+                    showToast('Patient added', 'success');
+                }
+
+                closePatientModal();
+                await loadPatients();
+                updateStats();
+
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = editingPatientId ? 'Update Patient' : 'Save Patient';
+            }
+        });
+
+        function validatePatientForm() {
+            clearAllErrors('patientForm');
+            let valid = true;
+
+            const fields = {
+                pFullName: 'First name required',
+                pSurname: 'Surname required',
+                pDob: 'Date of birth required',
+                pGender: 'Select gender',
+                pIdPassport: 'ID/Passport required',
+                pCellphone: 'Phone required',
+                pInsurance: 'Select insurance',
+                pInstitution: 'Institution required',
+                pReason: 'Select reason'
+            };
+
+            for (const [id, msg] of Object.entries(fields)) {
+                const el = document.getElementById(id);
+                if (!el.value) {
+                    setError(el, document.getElementById(id + 'Error'), msg);
+                    valid = false;
+                }
+            }
+
+            // Validate phone
+            const phone = document.getElementById('pCellphone');
+            if (phone.value && !isValidNamibianPhone(phone.value.trim())) {
+                setError(phone, document.getElementById('pCellphoneError'), 'Valid Namibian phone required');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        // ============ APPOINTMENTS ============
+        function renderAppointments() {
+            const tbody = document.getElementById('appointmentsTable').querySelector('tbody');
+            const empty = document.getElementById('appointmentsEmpty');
+
+            const statusFilter = document.getElementById('apptStatusFilter').value;
+            const dateFrom = document.getElementById('apptDateFrom').value;
+            const dateTo = document.getElementById('apptDateTo').value;
+
+            let filtered = allAppointments.filter(apt => {
+                if (statusFilter && apt.status !== statusFilter) return false;
+                if (dateFrom && apt.date < dateFrom) return false;
+                if (dateTo && apt.date > dateTo) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.time || '').localeCompare(b.time || '');
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(apt => `
+                <tr>
+                    <td>${formatDate(apt.date)}</td>
+                    <td>${apt.time || '-'}</td>
+                    <td>${apt.patientName || ''} ${apt.patientSurname || ''}</td>
+                    <td>${formatDate(apt.patientDob || '')}</td>
+                    <td>${apt.reason || '-'}</td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="editAppointment('${apt.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteAppointment('${apt.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterAppointments() { renderAppointments(); }
+
+        window.editAppointment = function(id) {
+            const apt = allAppointments.find(a => a.id === id);
+            if (apt) openAppointmentModal(apt);
+        };
+
+        window.confirmDeleteAppointment = function(id) {
+            if (confirm('Delete this appointment?')) deleteAppointment(id);
+        };
+
+        // Appointment Modal
+        let editingAppointmentId = null;
+
+        window.openAppointmentModal = function(appointment = null) {
+            editingAppointmentId = appointment?.id || null;
+            const title = document.getElementById('apptModalTitle');
+            const form = document.getElementById('appointmentForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            form.reset();
+            clearAllErrors('appointmentForm');
+            populatePatientDropdowns();
+
+            if (appointment) {
+                title.textContent = 'Edit Appointment';
+                submitBtn.textContent = 'Update Appointment';
+                document.getElementById('appointmentId').value = appointment.id;
+                document.getElementById('appointmentPatientId').value = appointment.patientId || '';
+                document.getElementById('apptPatient').value = appointment.patientId || '';
+                document.getElementById('apptDate').value = appointment.date || '';
+                document.getElementById('apptTime').value = appointment.time || '';
+                document.getElementById('apptReason').value = appointment.reason || '';
+                document.getElementById('apptNotes').value = appointment.notes || '';
+                document.getElementById('apptStatus').value = appointment.status || 'scheduled';
+            } else {
+                title.textContent = 'New Appointment';
+                submitBtn.textContent = 'Save Appointment';
+                document.getElementById('appointmentId').value = '';
+                document.getElementById('appointmentPatientId').value = '';
+                document.getElementById('apptDate').min = new Date().toISOString().split('T')[0];
+                document.getElementById('apptStatus').value = 'scheduled';
+            }
+
+            document.getElementById('appointmentModal').classList.add('show');
+        };
+
+        window.closeAppointmentModal = function() {
+            document.getElementById('appointmentModal').classList.remove('show');
+            editingAppointmentId = null;
+        };
+
+        document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateAppointmentForm()) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = editingAppointmentId ? 'Updating...' : 'Saving...';
+
+            try {
+                const data = {
+                    patientId: document.getElementById('apptPatient').value,
+                    date: document.getElementById('apptDate').value,
+                    time: document.getElementById('apptTime').value,
+                    reason: document.getElementById('apptReason').value,
+                    notes: document.getElementById('apptNotes').value.trim(),
+                    status: document.getElementById('apptStatus').value
+                };
+
+                if (editingAppointmentId) {
+                    await updateAppointment(editingAppointmentId, data);
+                    showToast('Appointment updated', 'success');
+                } else {
+                    await createAppointment(currentUser.uid, data);
+                    showToast('Appointment created', 'success');
+                }
+
+                closeAppointmentModal();
+                await loadAppointments();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = editingAppointmentId ? 'Update Appointment' : 'Save Appointment';
+            }
+        });
+
+        function validateAppointmentForm() {
+            clearAllErrors('appointmentForm');
+            let valid = true;
+
+            if (!document.getElementById('apptPatient').value) {
+                setError(document.getElementById('apptPatient'), document.getElementById('apptPatientError'), 'Select a patient');
+                valid = false;
+            }
+            if (!document.getElementById('apptDate').value) {
+                setError(document.getElementById('apptDate'), document.getElementById('apptDateError'), 'Date required');
+                valid = false;
+            }
+            if (!document.getElementById('apptTime').value) {
+                setError(document.getElementById('apptTime'), document.getElementById('apptTimeError'), 'Time required');
+                valid = false;
+            }
+            if (!document.getElementById('apptReason').value) {
+                setError(document.getElementById('apptReason'), document.getElementById('apptReasonError'), 'Select reason');
+                valid = false;
+            }
+            return valid;
+        }
+
+        // ============ INSURANCE ============
+        function renderInsurance() {
+            const tbody = document.getElementById('insuranceTable').querySelector('tbody');
+            const empty = document.getElementById('insuranceEmpty');
+
+            const statusFilter = document.getElementById('insuranceStatusFilter').value;
+
+            let filtered = allInsurance.filter(i => {
+                if (statusFilter && i.status !== statusFilter) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(ins => `
+                <tr>
+                    <td>${formatDate(ins.date)}</td>
+                    <td>${ins.patientName || 'Unknown'}</td>
+                    <td>${ins.idPassport || '-'}</td>
+                    <td>${ins.medicalAidNumber || '-'}</td>
+                    <td><span class="status-badge status-${ins.status}">${ins.status}</span></td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewInsurance('${ins.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editInsurance('${ins.id}')">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterInsurance() { renderInsurance(); }
+
+        window.openVerifyInsuranceModal = function(insurance = null) {
+            const form = document.getElementById('verifyInsuranceForm');
+            const title = document.getElementById('verifyInsuranceModalTitle');
+            form.reset();
+            clearAllErrors('verifyInsuranceForm');
+            populatePatientDropdowns();
+            document.getElementById('viDate').max = new Date().toISOString().split('T')[0];
+
+            if (insurance) {
+                title.textContent = 'Edit Insurance Verification';
+                document.getElementById('viPatient').value = insurance.patientId || '';
+                document.getElementById('viMedicalAid').value = insurance.medicalAidNumber || '';
+                document.getElementById('viDate').value = insurance.date || '';
+                document.getElementById('viPayment').value = insurance.paymentStatus || '';
+                document.getElementById('viStatus').value = insurance.status || 'pending';
+                document.getElementById('viNotes').value = insurance.notes || '';
+            } else {
+                title.textContent = 'Verify Insurance';
+            }
+
+            document.getElementById('verifyInsuranceModal').classList.add('show');
+        };
+
+        window.closeVerifyInsuranceModal = function() {
+            document.getElementById('verifyInsuranceModal').classList.remove('show');
+        };
+
+        document.getElementById('verifyInsuranceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                patientId: document.getElementById('viPatient').value,
+                medicalAidNumber: document.getElementById('viMedicalAid').value.trim(),
+                date: document.getElementById('viDate').value,
+                paymentStatus: document.getElementById('viPayment').value,
+                status: document.getElementById('viStatus').value,
+                notes: document.getElementById('viNotes').value.trim()
+            };
+
+            if (!data.patientId || !data.medicalAidNumber || !data.date || !data.paymentStatus) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await verifyInsurance(currentUser.uid, data);
+                showToast('Insurance verification submitted', 'success');
+                closeVerifyInsuranceModal();
+                await loadInsurance();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        // ============ BILLING ============
+        function renderBilling() {
+            const filter = document.getElementById('billingFilter').value;
+            const invoicesTable = document.getElementById('invoicesTable');
+            const paymentsTable = document.getElementById('paymentsTable');
+            const invoicesContainer = invoicesTable.parentElement;
+            const paymentsContainer = document.getElementById('paymentsTableContainer');
+            const empty = document.getElementById('billingEmpty');
+
+            if (filter === 'invoices') {
+                invoicesContainer.style.display = 'block';
+                paymentsContainer.style.display = 'none';
+
+                if (allInvoices.length === 0) {
+                    invoicesTable.querySelector('tbody').innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                empty.style.display = 'none';
+                invoicesTable.querySelector('tbody').innerHTML = allInvoices.map(inv => `
+                    <tr>
+                        <td>INV-${inv.id.slice(-8).toUpperCase()}</td>
+                        <td>${inv.patientName || 'Unknown'}</td>
+                        <td>${formatDate(inv.date)}</td>
+                        <td>${inv.reason || '-'}</td>
+                        <td>NAD ${parseFloat(inv.fee || 0).toFixed(2)}</td>
+                        <td><span class="status-badge status-${inv.paid ? 'completed' : 'pending'}">${inv.paid ? 'Paid' : 'Unpaid'}</span></td>
+                        <td>
+                            <button class="btn-sm btn-view" onclick="viewInvoice('${inv.id}')">View</button>
+                            ${!inv.paid ? `<button class="btn-sm btn-verify" onclick="markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                invoicesContainer.style.display = 'none';
+                paymentsContainer.style.display = 'block';
+
+                if (allPayments.length === 0) {
+                    paymentsTable.querySelector('tbody').innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                empty.style.display = 'none';
+                paymentsTable.querySelector('tbody').innerHTML = allPayments.map(pay => `
+                    <tr>
+                        <td>${formatDate(pay.date)}</td>
+                        <td>${pay.patientName || 'Unknown'}</td>
+                        <td>${pay.idPassport || '-'}</td>
+                        <td>${pay.cellPhone || '-'}</td>
+                        <td>NAD ${parseFloat(pay.amount || 0).toFixed(2)}</td>
+                        <td><span class="status-badge status-completed">${pay.method || 'Processed'}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function filterBilling() { renderBilling(); }
+
+        window.openInvoiceModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('invoiceForm').reset();
+            clearAllErrors('invoiceForm');
+            document.getElementById('invDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceModal').classList.add('show');
+        };
+
+        window.closeInvoiceModal = function() {
+            document.getElementById('invoiceModal').classList.remove('show');
+        };
+
+        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                patientId: document.getElementById('invPatient').value,
+                date: document.getElementById('invDate').value,
+                reason: document.getElementById('invReason').value,
+                prescription: document.getElementById('invPrescription').value,
+                treatment: document.getElementById('invTreatment').value,
+                fee: parseFloat(document.getElementById('invFee').value),
+                paid: document.getElementById('invPaid').value === 'true'
+            };
+
+            if (!data.patientId || !data.date || !data.reason || isNaN(data.fee)) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await createInvoice(currentUser.uid, data);
+                showToast('Invoice generated', 'success');
+                closeInvoiceModal();
+                await loadBilling();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        window.openPaymentModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('paymentForm').reset();
+            clearAllErrors('paymentForm');
+            document.getElementById('payDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('paymentModal').classList.add('show');
+        };
+
+        window.closePaymentModal = function() {
+            document.getElementById('paymentModal').classList.remove('show');
+        };
+
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                patientId: document.getElementById('payPatient').value,
+                date: document.getElementById('payDate').value,
+                amount: parseFloat(document.getElementById('payAmount').value),
+                method: document.getElementById('payMethod').value,
+                reference: document.getElementById('payReference').value
+            };
+
+            if (!data.patientId || !data.date || isNaN(data.amount)) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await processPayment(currentUser.uid, data);
+                showToast('Payment processed', 'success');
+                closePaymentModal();
+                await loadBilling();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        // ============ REPORTS ============
+        function renderReports() {
+            const tbody = document.getElementById('reportsTable').querySelector('tbody');
+            const empty = document.getElementById('reportsEmpty');
+
+            const typeFilter = document.getElementById('reportTypeFilter').value;
+
+            let filtered = allReports.filter(r => {
+                if (typeFilter && r.type !== typeFilter) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(rpt => `
+                <tr>
+                    <td>${formatDate(rpt.date)}</td>
+                    <td>${rpt.patientName || 'N/A'}</td>
+                    <td>${rpt.idPassport || '-'}</td>
+                    <td>${rpt.type.replace('_', ' ')}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterReports() { renderReports(); }
+
+        window.openReportModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('reportForm').reset();
+            clearAllErrors('reportForm');
+            document.getElementById('rptDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('reportModal').classList.add('show');
+        };
+
+        window.closeReportModal = function() {
+            document.getElementById('reportModal').classList.remove('show');
+        };
+
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                type: document.getElementById('rptType').value,
+                patientId: document.getElementById('rptPatient').value || null,
+                date: document.getElementById('rptDate').value,
+                description: document.getElementById('rptDescription').value
+            };
+
+            if (!data.type || !data.date) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                await generateReport(currentUser.uid, data);
+                showToast('Report generated', 'success');
+                closeReportModal();
+                await loadReports();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        // ============ SIGN OUT ============
+        async function signOut() {
+            try {
+                await signOut();
+                showToast('Signed out successfully', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1000);
+            } catch (error) {
+                showToast('Sign out failed', 'error');
+            }
+        }
+
+        // ============ HELPER FUNCTIONS ============
+        function setError(input, errorEl, message) {
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearAllErrors(formId) {
+            const form = document.getElementById(formId) || document;
+            form.querySelectorAll('input.error, select.error, textarea.error').forEach(el => el.classList.remove('error'));
+            form.querySelectorAll('.error-message.visible').forEach(el => el.classList.remove('visible'));
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+            }
+        });
+    </script>
+</body>
+</html>
