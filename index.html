@@ -60,6 +60,8 @@
         }
         .content { text-align: center; width: 100%; }
         .start-button {
+            display: inline-block;
+            text-decoration: none;
             padding: 16px 48px;
             font-family: 'Lato', sans-serif;
             font-size: 18px;
@@ -103,33 +105,33 @@
     </div>
 
     <script type="module">
-        import { getCurrentUser, onAuthChange, initInactivityTimer } from './supabase-health-services.js';
+        import { onAuthChange, redirectAfterAuth, initInactivityTimer } from './supabase-health-services.js';
 
-        // Initialize inactivity timer (30 min for public pages)
-        initInactivityTimer(30 * 60 * 1000, () => {
-            // Public page - just refresh
-            window.location.reload();
-        });
+        initInactivityTimer(30 * 60 * 1000, () => window.location.reload());
 
         const startBtn = document.getElementById('startBtn');
 
-        // Check if already logged in
         onAuthChange((user) => {
-            if (user) {
-                // Redirect to dashboard/portfolio
-                window.location.href = 'med-staff-portfolio.html';
-            }
+            if (user) startBtn.href = 'patient-dashboard.html';
         });
 
-        startBtn.addEventListener('click', () => {
-            // Check auth state and redirect appropriately
-            const user = getCurrentUser();
-            if (user) {
-                window.location.href = 'med-staff-portfolio.html';
-            } else {
-                window.location.href = 'sign-up.html';
+        startBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                const { supabase } = await import('./supabase-health-services.js');
+                const { data } = await supabase.auth.getSession();
+                if (data.session?.user) {
+                    await redirectAfterAuth({
+                        uid: data.session.user.id,
+                        ...data.session.user
+                    });
+                    return;
+                }
+            } catch (err) {
+                console.warn(err);
             }
+            window.location.href = 'start.html';
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a07ec8bc9db575',t:'MTc4NjU0ODM1Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
