@@ -134,57 +134,39 @@
         initInactivityTimer(4 * 60 * 60 * 1000, () => location.reload());
 
         // Check if already logged in
-        onAuthChange((user) => {
+        onAuthChange(async (user) => {
             if (user) {
-                // User is logged in, redirect to appropriate dashboard
-                // We'll check their role and redirect
-                window.location.href = 'dashboard.html';
+                const { redirectAfterAuth } = await import('./supabase-health-services.js');
+                await redirectAfterAuth(user);
             }
         });
 
+        const roleMap = {
+            patient: 'patient',
+            receptionist: 'receptionist',
+            medicalStaff: 'medical_staff',
+            specialist: 'specialist'
+        };
+
         document.getElementById('signUpBtn').addEventListener('click', () => {
             const selectedUserType = document.querySelector('input[name="userType"]:checked');
-            if (selectedUserType) {
-                switch (selectedUserType.value) {
-                    case 'patient':
-                        window.location.href = 'patient-signup.html';
-                        break;
-                    case 'receptionist':
-                        window.location.href = 'receptionist-signup.html';
-                        break;
-                    case 'medicalStaff':
-                        window.location.href = 'medical-staff-signup.html';
-                        break;
-                    case 'specialist':
-                        window.location.href = 'specialist-signup.html';
-                        break;
-                }
-            } else {
+            if (!selectedUserType) {
                 alert('Please select a user type');
+                return;
             }
+            const role = roleMap[selectedUserType.value] || 'patient';
+            window.location.href = 'sign-up.html?role=' + encodeURIComponent(role);
         });
 
         document.getElementById('logInBtn').addEventListener('click', () => {
             const selectedUserType = document.querySelector('input[name="userType"]:checked');
-            if (selectedUserType) {
-                switch (selectedUserType.value) {
-                    case 'patient':
-                        window.location.href = 'patient-login.html';
-                        break;
-                    case 'receptionist':
-                        window.location.href = 'receptionist-login.html';
-                        break;
-                    case 'medicalStaff':
-                        window.location.href = 'medical-staff-login.html';
-                        break;
-                    case 'specialist':
-                        window.location.href = 'specialist-login.html';
-                        break;
-                }
-            } else {
+            if (!selectedUserType) {
                 alert('Please select a user type');
+                return;
             }
+            const role = roleMap[selectedUserType.value] || 'patient';
+            window.location.href = 'login.html?role=' + encodeURIComponent(role);
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2a0bc947fcfb578',t:'MTc4NjU1MDg4NA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
