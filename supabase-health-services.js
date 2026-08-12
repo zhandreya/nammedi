@@ -52,6 +52,58 @@ export function resolveProfilePicture(profileOrUrl) {
     return url && String(url).trim() ? url : DEFAULT_AVATAR;
 }
 
+export function dashboardForRole(role) {
+    switch (role) {
+        case USER_ROLES.MEDICAL_STAFF:
+            return 'medical-staff-dashboard.html';
+        case USER_ROLES.RECEPTIONIST:
+            return 'receptionist-dashboard.html';
+        case USER_ROLES.SPECIALIST:
+            return 'specialist-dashboard.html';
+        case USER_ROLES.ADMIN:
+            return 'medical-staff-dashboard.html';
+        case USER_ROLES.PATIENT:
+        default:
+            return 'patient-dashboard.html';
+    }
+}
+
+export async function redirectAfterAuth(user) {
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+    try {
+        const profile = await getUserProfile(user.uid || user.id);
+        window.location.href = dashboardForRole(profile?.role || user.user_metadata?.role);
+    } catch (e) {
+        window.location.href = 'patient-dashboard.html';
+    }
+}
+
+/** Keep the visitor on this page only if their role is allowed; otherwise send them to their dashboard. */
+export async function requireRole(allowedRoles) {
+    const { data } = await supabase.auth.getSession();
+    const user = mapUser(data.session?.user || null);
+    if (!user) {
+        window.location.href = 'login.html';
+        return null;
+    }
+    let profile = null;
+    try {
+        profile = await getUserProfile(user.uid);
+    } catch (e) {
+        console.warn(e);
+    }
+    const role = profile?.role || user.user_metadata?.role || USER_ROLES.PATIENT;
+    const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    if (allowed.length && !allowed.includes(role)) {
+        window.location.href = dashboardForRole(role);
+        return null;
+    }
+    return { user, profile, role };
+}
+
 export const USER_ROLES = {
     PATIENT: 'patient',
     MEDICAL_STAFF: 'medical_staff',
@@ -203,24 +255,23 @@ supabase.auth.getSession().then(({ data }) => {
 export async function createUserProfile(uid, data) {
     const profileData = {
         id: uid,
-        uid,
         email: data.email || '',
         role: data.role || USER_ROLES.PATIENT,
         full_name: data.fullName || '',
         surname: data.surname || '',
         dob: data.dob || null,
-        gender: data.gender || '',
-        id_passport: data.idPassport || '',
-        phone: data.phone || data.cellPhone || data.workTel || '',
-        work_tel: data.workTel || '',
-        profession: data.profession || data.speciality || '',
-        institute: data.institute || data.institution || '',
-        place_of_birth: data.placeOfBirth || '',
-        username: data.username || '',
-        speciality: data.speciality || '',
+        gender: data.gender || null,
+        id_passport: data.idPassport || null,
+        phone: data.phone || data.cellPhone || data.workTel || null,
+        work_tel: data.workTel || null,
+        profession: data.profession || data.speciality || null,
+        institute: data.institute || data.institution || null,
+        place_of_birth: data.placeOfBirth || null,
+        username: data.username || null,
+        speciality: data.speciality || null,
         assigned_doctor: data.assignedDoctor || null,
-        avatar_url: data.avatarUrl || data.profilePictureUrl || '',
-        profile_picture: data.profilePicture || '',
+        avatar_url: data.avatarUrl || data.profilePictureUrl || null,
+        profile_picture: data.profilePicture || null,
         created_at: data.createdAt || nowIso(),
         updated_at: nowIso(),
         last_login_at: nowIso()
@@ -862,5 +913,6 @@ export default {
     addAilmentTreatment, getMyAilmentsTreatments, addInstituteVisited, getMyInstitutesVisited,
     requestRefill, getMyRefillRequests, checkInPatient, getMyCheckIns,
     formatTimestamp, formatDate, formatTime, isValidEmail, isValidNamibianPhone, isValidNamibianId,
-    initInactivityTimer, showToast, DEFAULT_AVATAR, resolveProfilePicture
+    initInactivityTimer, showToast, DEFAULT_AVATAR, resolveProfilePicture,
+    dashboardForRole, redirectAfterAuth, requireRole
 };
