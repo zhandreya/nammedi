@@ -48,7 +48,7 @@ export function resolveProfilePicture(profileOrUrl) {
     if (typeof profileOrUrl === 'string') {
         return profileOrUrl.trim() ? profileOrUrl : DEFAULT_AVATAR;
     }
-    const url = profileOrUrl.profilePictureUrl || profileOrUrl.profile_picture_url || profileOrUrl.profilePicture || profileOrUrl.profile_picture || '';
+    const url = profileOrUrl.profilePictureUrl || profileOrUrl.avatar_url || profileOrUrl.avatarUrl || profileOrUrl.profile_picture_url || profileOrUrl.profilePicture || profileOrUrl.profile_picture || '';
     return url && String(url).trim() ? url : DEFAULT_AVATAR;
 }
 
@@ -218,8 +218,8 @@ export async function createUserProfile(uid, data) {
         place_of_birth: data.placeOfBirth || '',
         username: data.username || '',
         speciality: data.speciality || '',
-        assigned_doctor: data.assignedDoctor || '',
-        profile_picture_url: data.profilePictureUrl || '',
+        assigned_doctor: data.assignedDoctor || null,
+        avatar_url: data.avatarUrl || data.profilePictureUrl || '',
         profile_picture: data.profilePicture || '',
         created_at: data.createdAt || nowIso(),
         updated_at: nowIso(),
@@ -256,7 +256,8 @@ function camelUser(d) {
         username: d.username,
         speciality: d.speciality,
         assignedDoctor: d.assigned_doctor,
-        profilePictureUrl: d.profile_picture_url,
+        profilePictureUrl: d.avatar_url || d.profile_picture_url,
+        avatarUrl: d.avatar_url,
         profilePicture: d.profile_picture,
         createdAt: d.created_at,
         updatedAt: d.updated_at,
@@ -272,7 +273,7 @@ export async function updateUserProfile(uid, data) {
         idPassport: 'id_passport', phone: 'phone', workTel: 'work_tel',
         profession: 'profession', institute: 'institute', placeOfBirth: 'place_of_birth',
         username: 'username', speciality: 'speciality', assignedDoctor: 'assigned_doctor',
-        profilePictureUrl: 'profile_picture_url', profilePicture: 'profile_picture',
+        profilePictureUrl: 'avatar_url', avatarUrl: 'avatar_url', profilePicture: 'profile_picture',
         email: 'email', role: 'role'
     };
     Object.keys(data).forEach(k => {
@@ -289,23 +290,34 @@ export async function updateLastLogin(uid) {
 }
 
 export async function uploadProfilePicture(uid, file) {
-    const path = `profile-pictures/${uid}/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from('profile-pictures').upload(path, file, { upsert: true });
+    const path = `${uid}/${Date.now()}_${file.name}`;
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase.storage.from('profile-pictures').getPublicUrl(path);
+    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
     const downloadUrl = data.publicUrl;
-    await updateUserProfile(uid, { profilePictureUrl: downloadUrl });
+    await updateUserProfile(uid, { avatarUrl: downloadUrl, profilePictureUrl: downloadUrl });
     return downloadUrl;
 }
 
 export async function addPatient(patientData) {
     const user = requireUser();
     const row = {
-        ...patientData,
+        full_name: patientData.fullName || patientData.full_name,
+        surname: patientData.surname,
+        dob: patientData.dob || null,
+        age: patientData.age ?? null,
+        gender: patientData.gender || null,
+        id_passport: patientData.idPassport || patientData.id_passport || null,
+        phone: patientData.phone || patientData.cellphone || null,
+        cellphone: patientData.cellphone || patientData.phone || null,
+        insurance: patientData.insurance || null,
+        institution: patientData.institution || patientData.institute || null,
+        institute: patientData.institute || patientData.institution || null,
+        reason: patientData.reason || null,
+        notes: patientData.notes || null,
         created_by: user.uid,
         created_by_email: user.email,
-        institute: patientData.institute || '',
-        patient_user_id: patientData.patientUserId || '',
+        patient_user_id: patientData.patientUserId || null,
         assigned_doctor: patientData.assignedDoctor || user.uid,
         created_at: nowIso(),
         updated_at: nowIso()
@@ -370,17 +382,28 @@ export async function searchPatients(searchTerm) {
     );
 }
 
-export async function createAppointment(appointmentData) {
+export async function createAppointment(appointmentData, maybeData) {
     const user = requireUser();
+    const src = (maybeData && typeof maybeData === 'object') ? maybeData : appointmentData;
     const data = await insertRow(T.APPOINTMENTS, {
-        ...appointmentData,
+        patient_id: src.patientId || src.patient_id || null,
+        patient_user_id: src.patientUserId || null,
+        patient_name: src.patientName || src.fullName || null,
+        patient_surname: src.patientSurname || src.surname || null,
+        patient_dob: src.patientDob || src.dob || null,
+        doctor_specialist: src.doctorSpecialist || src.doctor || null,
+        institution: src.institution || null,
+        date: src.date,
+        time: src.time || null,
+        reason: src.reason || null,
+        notes: src.notes || null,
         created_by: user.uid,
         created_by_email: user.email,
-        status: appointmentData.status || 'scheduled',
+        status: src.status || 'scheduled',
         created_at: nowIso(),
         updated_at: nowIso()
     });
-    return { id: data.id, ...appointmentData };
+    return { id: data.id, ...src };
 }
 
 export async function getMyAppointments() {
@@ -420,7 +443,7 @@ export async function deleteAppointment(appointmentId) {
 
 export async function uploadDocument(patientId, file, category = 'general') {
     const user = requireUser();
-    const path = `documents/${user.uid}/${patientId}/${Date.now()}_${file.name}`;
+    const path = `documents/${patientId}/${Date.now()}_${file.name}`;
     const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true });
     if (error) throw error;
     const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
@@ -612,7 +635,7 @@ export async function saveMedicalInfo(medicalData) {
 
 export async function getMedicalInfo() {
     const user = requireUser();
-    const { data, error } = await supabase.from(T.MEDICAL_INFO).select('*').eq('id', user.uid).maybeSingle();
+    const { data, error } = await supabase.from(T.MEDICAL_INFO).select('*').eq('user_id', user.uid).maybeSingle();
     if (error) throw error;
     return data;
 }
@@ -814,11 +837,18 @@ export function showToast(message, type = 'info', duration = 4000) {
     }, duration);
 }
 
+export const createPatient = addPatient;
+export const getPatientsByStaff = getMyPatients;
+export const getAppointmentsByStaff = getMyAppointments;
+export const getPatientById = getPatient;
+export const getDocumentsByStaff = getMyDocuments;
+
 export default {
     supabase, auth, db, storage, USER_ROLES,
     signUp, signIn, signOut, resetPassword, changeEmail, changePassword, getCurrentUser, onAuthChange,
     createUserProfile, getUserProfile, updateUserProfile, updateLastLogin, uploadProfilePicture,
-    addPatient, getMyPatients, getAssignedPatients, getInstitutePatients, getPatient, updatePatient,
+    addPatient, createPatient, getMyPatients, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
+    getPatient, getPatientById, updatePatient, getAppointmentsByStaff, getDocumentsByStaff,
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
     updateAppointment, deleteAppointment,
