@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.5rem; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .btn-danger { background: #fce4ec; color: #c62828; }
+        .btn-danger:hover { background: #f8bbd0; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .filter-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-weight: 600; color: #333; font-size: 14px; white-space: nowrap; }
+        .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 700; color: #333; position: sticky; top: 0; z-index: 1; }
+        tr:hover { background-color: #f8f9fa; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+        .status-scheduled { background: #e3f2fd; color: #1565c0; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #fce4ec; color: #c62828; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-view { background: #e3f2fd; color: #1565c0; }
+        .btn-view:hover { background: #bbdefb; }
+        .btn-cancel { background: #fce4ec; color: #c62828; }
+        .btn-cancel:hover { background: #f8bbd0; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state h3 { color: #333; margin-bottom: 8px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { margin: 0; color: #1a1a1a; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 4px; }
+        .modal-close:hover { color: #333; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar">
+            <div class="header-info">
+                <h1>My Appointments</h1>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openScheduleModal()">+ Schedule Appointment</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="statusFilter" onchange="renderAppointments()">
+                    <option value="">All</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>From:</label>
+                <input type="date" id="dateFromFilter" onchange="renderAppointments()">
+            </div>
+            <div class="filter-group">
+                <label>To:</label>
+                <input type="date" id="dateToFilter" onchange="renderAppointments()">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="appointmentsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Doctor / Specialist</th>
+                        <th>Institution</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <h3>No appointments found</h3>
+            <p>Click "Schedule Appointment" to book your first appointment.</p>
+        </div>
+    </div>
+
+    <!-- Schedule Appointment Modal -->
+    <div class="modal" id="scheduleModal" role="dialog" aria-labelledby="scheduleModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="scheduleModalTitle">Schedule New Appointment</h3>
+                <button class="modal-close" onclick="closeScheduleModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="scheduleForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Doctor / Specialist</label>
+                    <input type="text" id="sDoctor" name="doctor" required placeholder="e.g., Dr. Jane Smith">
+                    <div class="error-message" id="sDoctorError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Institution</label>
+                    <input type="text" id="sInstitution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <div class="error-message" id="sInstitutionError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="sDate" name="date" required min="">
+                        <div class="error-message" id="sDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Time</label>
+                        <input type="time" id="sTime" name="time" required>
+                        <div class="error-message" id="sTimeError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Reason for Visit</label>
+                    <select id="sReason" name="reason" required>
+                        <option value="">Select reason</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="sReasonError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="sNotes" name="notes" rows="3" placeholder="Any additional information..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeScheduleModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Schedule Appointment</button>
+                </div>
+            </form>
+        </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            createAppointment,
+            getMyAppointments,
+            updateAppointment,
+            deleteAppointment,
+            initInactivityTimer,
+            showToast,
+            formatDate
+        } from './supabase-health-services.js';
+
+        // Initialize inactivity timer
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired. Redirecting...', 'info');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // DOM Elements
+        const appointmentsTable = document.getElementById('appointmentsTable').querySelector('tbody');
+        const emptyState = document.getElementById('emptyState');
+        const scheduleModal = document.getElementById('scheduleModal');
+
+        // Check authentication
+        onAuthChange(async (user) => {
+            if (user) {
+                const profile = await getUserProfile(user.uid);
+                if (profile && profile.role === 'patient') {
+                    const avatar = document.getElementById('headerAvatar');
+                    if (avatar) avatar.src = profile.profilePictureUrl || profile.profile_picture_url || 'default-profile.png';
+                    await loadAppointments();
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadAppointments() {
+            try {
+                const appointments = await getMyAppointments();
+                // Filter to only show appointments for this patient
+                // In a real app, you'd query by patientId
+                // For now, we'll show all appointments from the user's perspective
+                renderAppointments(appointments);
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showToast('Failed to load appointments', 'error');
+            }
+        }
+
+        function renderAppointments(appointments) {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFrom = document.getElementById('dateFromFilter').value;
+            const dateTo = document.getElementById('dateToFilter').value;
+
+            let filtered = appointments.filter(apt => {
+                if (statusFilter && apt.status !== statusFilter) return false;
+                if (dateFrom && apt.date < dateFrom) return false;
+                if (dateTo && apt.date > dateTo) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.time || '').localeCompare(b.time || '');
+            });
+
+            if (filtered.length === 0) {
+                appointmentsTable.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            appointmentsTable.innerHTML = filtered.map(apt => `
+                <tr>
+                    <td>${formatDate(apt.date)}</td>
+                    <td>${apt.time || '-'}</td>
+                    <td>${apt.doctorSpecialist || apt.doctor_specialist || 'TBA'}</td>
+                    <td>${apt.institution || '-'}</td>
+                    <td>${apt.reason || '-'}</td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td>
+                        ${apt.status === 'scheduled' ? `
+                            <button class="btn-sm btn-cancel" onclick="cancelAppointment('${apt.id}')">Cancel</button>
+                        ` : ''}
+                        <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.openScheduleModal = function() {
+            const form = document.getElementById('scheduleForm');
+            form.reset();
+            clearAllErrors('scheduleForm');
+            document.getElementById('sDate').min = new Date().toISOString().split('T')[0];
+            scheduleModal.classList.add('show');
+        };
+
+        window.closeScheduleModal = function() {
+            scheduleModal.classList.remove('show');
+        };
+
+        window.cancelAppointment = async function(id) {
+            if (!confirm('Are you sure you want to cancel this appointment?')) return;
+            
+            try {
+                await updateAppointment(id, { status: 'cancelled' });
+                showToast('Appointment cancelled', 'success');
+                await loadAppointments();
+            } catch (error) {
+                showToast('Failed to cancel: ' + error.message, 'error');
+            }
+        };
+
+        window.viewAppointment = function(id) {
+            showToast('Appointment details view coming soon', 'info');
+        };
+
+        document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateScheduleForm()) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Scheduling...';
+
+            try {
+                const appointmentData = {
+                    doctorSpecialist: document.getElementById('sDoctor').value.trim(),
+                    institution: document.getElementById('sInstitution').value.trim(),
+                    date: document.getElementById('sDate').value,
+                    time: document.getElementById('sTime').value,
+                    reason: document.getElementById('sReason').value,
+                    notes: document.getElementById('sNotes').value.trim(),
+                    status: 'scheduled'
+                };
+
+                await createAppointment(appointmentData);
+                showToast('Appointment scheduled successfully!', 'success');
+                closeScheduleModal();
+                await loadAppointments();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Schedule Appointment';
+            }
+        });
+
+        function validateScheduleForm() {
+            clearAllErrors('scheduleForm');
+            let valid = true;
+
+            if (!document.getElementById('sDoctor').value.trim()) {
+                setError(document.getElementById('sDoctor'), document.getElementById('sDoctorError'), 'Doctor name required');
+                valid = false;
+            }
+            if (!document.getElementById('sInstitution').value.trim()) {
+                setError(document.getElementById('sInstitution'), document.getElementById('sInstitutionError'), 'Institution required');
+                valid = false;
+            }
+            if (!document.getElementById('sDate').value) {
+                setError(document.getElementById('sDate'), document.getElementById('sDateError'), 'Date required');
+                valid = false;
+            }
+            if (!document.getElementById('sTime').value) {
+                setError(document.getElementById('sTime'), document.getElementById('sTimeError'), 'Time required');
+                valid = false;
+            }
+            if (!document.getElementById('sReason').value) {
+                setError(document.getElementById('sReason'), document.getElementById('sReasonError'), 'Select reason');
+                valid = false;
+            }
+            return valid;
+        }
+
+        // Helper functions
+        function setError(input, errorEl, message) {
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearAllErrors(formId) {
+            const form = document.getElementById(formId) || document;
+            form.querySelectorAll('input.error, select.error, textarea.error').forEach(el => el.classList.remove('error'));
+            form.querySelectorAll('.error-message.visible').forEach(el => el.classList.remove('visible'));
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+            }
+        });
+    </script>
+</body>
+</html>

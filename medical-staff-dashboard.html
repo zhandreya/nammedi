@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Staff Dashboard - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-info .institute { color: #666; font-size: 14px; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .btn-danger { background: #fce4ec; color: #c62828; }
+        .btn-danger:hover { background: #f8bbd0; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #f0f7ff; border: 1px solid #d0e8ff; border-radius: 10px; padding: 20px; text-align: center; }
+        .stat-card .label { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { color: #0066cc; font-weight: 700; font-size: 2rem; margin-top: 4px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 2px solid #eee; flex-wrap: wrap; }
+        .tab { padding: 12px 24px; background: none; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; }
+        .tab:hover { color: #0066cc; }
+        .tab.active { color: #0066cc; border-bottom-color: #0066cc; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+        .section-header h2 { margin: 0; color: #1a1a1a; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 700; color: #333; position: sticky; top: 0; z-index: 1; }
+        tr:hover { background-color: #f8f9fa; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+        .status-scheduled { background: #e3f2fd; color: #1565c0; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-cancelled { background: #fce4ec; color: #c62828; }
+        .status-pending { background: #fff8e1; color: #f57f17; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-view { background: #e3f2fd; color: #1565c0; }
+        .btn-view:hover { background: #bbdefb; }
+        .btn-edit { background: #e8f5e9; color: #2e7d32; }
+        .btn-edit:hover { background: #c8e6c9; }
+        .btn-delete { background: #fce4ec; color: #c62828; }
+        .btn-delete:hover { background: #f8bbd0; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state h3 { color: #333; margin-bottom: 8px; }
+        .filter-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-weight: 600; color: #333; font-size: 14px; white-space: nowrap; }
+        .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { margin: 0; color: #1a1a1a; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 4px; }
+        .modal-close:hover { color: #333; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
+            <div class="header-info">
+                <h1 id="headerName">Loading...</h1>
+                <div class="role" id="headerRole">Medical Staff</div>
+                <div class="institute" id="headerInstitute">Ministry of Health</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openPatientModal()"><span>+</span> Add Patient</button>
+            <button class="btn btn-primary" onclick="openAppointmentModal()"><span>+</span> New Appointment</button>
+            <button class="btn btn-secondary" onclick="openUploadModal()"><span>📄</span> Upload Document</button>
+            <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Tabs -->
+        <div class="tabs" id="tabs">
+            <button class="tab active" data-tab="patients">Patients</button>
+            <button class="tab" data-tab="appointments">Appointments</button>
+            <button class="tab" data-tab="documents">Documents</button>
+            <button class="tab" data-tab="medications">Medications</button>
+            <button class="tab" data-tab="tasks">Tasks & Reminders</button>
+        </div>
+
+        <!-- Patients Tab -->
+        <div class="tab-panel active" id="patientsPanel">
+            <div class="section-header">
+                <h2>My Patients</h2>
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" id="patientSearch" placeholder="Name, ID, phone..." oninput="filterPatients()">
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="patientsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>DOB / Age</th>
+                            <th>Gender</th>
+                            <th>ID / Passport</th>
+                            <th>Phone</th>
+                            <th>Insurance</th>
+                            <th>Institution</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="patientsEmpty" style="display: none;">
+                <h3>No patients yet</h3>
+                <p>Click "Add Patient" to register your first patient.</p>
+            </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div class="tab-panel" id="appointmentsPanel">
+            <div class="section-header">
+                <h2>Appointments</h2>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Status:</label>
+                    <select id="apptStatusFilter" onchange="filterAppointments()">
+                        <option value="">All</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>From:</label>
+                    <input type="date" id="apptDateFrom" onchange="filterAppointments()">
+                </div>
+                <div class="filter-group">
+                    <label>To:</label>
+                    <input type="date" id="apptDateTo" onchange="filterAppointments()">
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="appointmentsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>DOB</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="appointmentsEmpty" style="display: none;">
+                <h3>No appointments</h3>
+                <p>Click "New Appointment" to schedule one.</p>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="tab-panel" id="documentsPanel">
+            <div class="section-header">
+                <h2>Documents</h2>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Category:</label>
+                    <select id="docCategoryFilter" onchange="filterDocuments()">
+                        <option value="">All</option>
+                        <option value="lab_results">Lab Results</option>
+                        <option value="prescriptions">Prescriptions</option>
+                        <option value="referrals">Referrals</option>
+                        <option value="imaging">Imaging</option>
+                        <option value="consent">Consent Forms</option>
+                        <option value="discharge">Discharge Summaries</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Patient:</label>
+                    <select id="docPatientFilter" onchange="filterDocuments()">
+                        <option value="">All Patients</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="documentsTable">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Patient</th>
+                            <th>Category</th>
+                            <th>Upload Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="documentsEmpty" style="display: none;">
+                <h3>No documents uploaded</h3>
+                <p>Click "Upload Document" to add files.</p>
+            </div>
+        </div>
+
+        <!-- Medications Tab -->
+        <div class="tab-panel" id="medicationsPanel">
+            <div class="section-header">
+                <h2>Medication Management</h2>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-primary" onclick="openMedAdminModal()">Record Administration</button>
+                    <button class="btn btn-secondary" onclick="openInventoryModal()">Manage Inventory</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="medAdminTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Ailment</th>
+                            <th>Treatment</th>
+                            <th>Prescription</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="medAdminEmpty" style="display: none;">
+                <h3>No medication records</h3>
+                <p>Click "Record Administration" to add entries.</p>
+            </div>
+        </div>
+
+        <!-- Tasks & Reminders Tab -->
+        <div class="tab-panel" id="tasksPanel">
+            <div class="section-header">
+                <h2>Tasks & Reminders</h2>
+                <button class="btn btn-primary" onclick="openTaskModal()">Add Task</button>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>View:</label>
+                    <select id="taskFilter" onchange="filterTasks()">
+                        <option value="all">All Tasks</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="today">Today Only</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Task</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="tasksEmpty" style="display: none;">
+                <h3>No tasks</h3>
+                <p>Click "Add Task" to create one.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Modal -->
+    <div class="modal" id="patientModal" role="dialog" aria-labelledby="patientModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="patientModalTitle">Add New Patient</h3>
+                <button class="modal-close" onclick="closePatientModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="patientForm" novalidate>
+                <input type="hidden" id="patientId" name="patientId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">First Name(s)</label>
+                        <input type="text" id="pFullName" name="fullName" required>
+                        <div class="error-message" id="pFullNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Surname</label>
+                        <input type="text" id="pSurname" name="surname" required>
+                        <div class="error-message" id="pSurnameError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date of Birth</label>
+                        <input type="date" id="pDob" name="dob" required max="">
+                        <div class="error-message" id="pDobError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Age</label>
+                        <input type="number" id="pAge" name="age" readonly placeholder="Auto-calculated">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Gender</label>
+                        <select id="pGender" name="gender" required>
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="pGenderError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">ID / Passport</label>
+                        <input type="text" id="pIdPassport" name="idPassport" required placeholder="11-digit ID">
+                        <div class="error-message" id="pIdPassportError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Cellphone</label>
+                        <input type="tel" id="pCellphone" name="cellphone" required placeholder="081 123 4567">
+                        <div class="error-message" id="pCellphoneError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Insurance</label>
+                        <select id="pInsurance" name="insurance" required>
+                            <option value="">Select</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                        <div class="error-message" id="pInsuranceError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Institution</label>
+                    <input type="text" id="pInstitution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <div class="error-message" id="pInstitutionError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Reason for Visit</label>
+                    <select id="pReason" name="reason" required>
+                        <option value="">Select</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="pReasonError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="pNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closePatientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Appointment Modal -->
+    <div class="modal" id="appointmentModal" role="dialog" aria-labelledby="apptModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="apptModalTitle">New Appointment</h3>
+                <button class="modal-close" onclick="closeAppointmentModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="appointmentForm" novalidate>
+                <input type="hidden" id="appointmentId" name="appointmentId">
+                <input type="hidden" id="appointmentPatientId" name="patientId">
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="apptPatient" name="patient" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="apptPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="apptDate" name="date" required min="">
+                        <div class="error-message" id="apptDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Time</label>
+                        <input type="time" id="apptTime" name="time" required>
+                        <div class="error-message" id="apptTimeError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Reason</label>
+                    <select id="apptReason" name="reason" required>
+                        <option value="">Select</option>
+                        <option value="General Check-Up">General Check-Up</option>
+                        <option value="Follow-Up">Follow-Up</option>
+                        <option value="Specific Ailment">Specific Ailment</option>
+                        <option value="Surgery">Surgery</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Maternity">Maternity</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div class="error-message" id="apptReasonError"></div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="apptNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="apptStatus" name="status">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAppointmentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Appointment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Document Upload Modal -->
+    <div class="modal" id="uploadModal" role="dialog" aria-labelledby="uploadModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="uploadModalTitle">Upload Document</h3>
+                <button class="modal-close" onclick="closeUploadModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="uploadForm" novalidate enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="docPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="docPatientError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Category</label>
+                    <select id="docCategory" name="category" required>
+                        <option value="">Select</option>
+                        <option value="lab_results">Lab Results</option>
+                        <option value="prescriptions">Prescriptions</option>
+                        <option value="referrals">Referrals</option>
+                        <option value="imaging">Imaging (X-ray, MRI, etc.)</option>
+                        <option value="consent">Consent Forms</option>
+                        <option value="discharge">Discharge Summaries</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <div class="error-message" id="docCategoryError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">File</label>
+                    <input type="file" id="docFile" name="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div class="error-message" id="docFileError"></div>
+                    <small style="color: #666;">Max 10MB. PDF, JPG, PNG, DOC, DOCX</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Medication Administration Modal -->
+    <div class="modal" id="medAdminModal" role="dialog" aria-labelledby="medAdminModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="medAdminModalTitle">Record Medication Administration</h3>
+                <button class="modal-close" onclick="closeMedAdminModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="medAdminForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="maPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="maPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="maDate" name="date" required max="">
+                        <div class="error-message" id="maDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Ailment</label>
+                        <input type="text" id="maAilment" name="ailment" required placeholder="e.g., Hypertension">
+                        <div class="error-message" id="maAilmentError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Treatment</label>
+                        <input type="text" id="maTreatment" name="treatment" required placeholder="e.g., Antihypertensive therapy">
+                        <div class="error-message" id="maTreatmentError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Prescription</label>
+                        <input type="text" id="maPrescription" name="prescription" required placeholder="e.g., Amlodipine 5mg daily">
+                        <div class="error-message" id="maPrescriptionError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Quantity</label>
+                        <input type="number" id="maQuantity" name="quantity" required min="1" placeholder="e.g., 30">
+                        <div class="error-message" id="maQuantityError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" id="maNotes" name="notes" placeholder="Additional notes...">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeMedAdminModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Administration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div class="modal" id="inventoryModal" role="dialog" aria-labelledby="inventoryModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="inventoryModalTitle">Medication Inventory</h3>
+                <button class="modal-close" onclick="closeInventoryModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="inventoryForm" novalidate>
+                <div id="inventoryItems"></div>
+                <button type="button" class="btn btn-secondary" onclick="addInventoryRow()" style="margin-bottom: 16px;">+ Add Medication</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInventoryModal()">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Inventory</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal" role="dialog" aria-labelledby="taskModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">Add Task</h3>
+                <button class="modal-close" onclick="closeTaskModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="taskForm" novalidate>
+                <input type="hidden" id="taskId" name="taskId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="taskDate" name="date" required min="">
+                        <div class="error-message" id="taskDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Time</label>
+                        <input type="time" id="taskTime" name="time" required>
+                        <div class="error-message" id="taskTimeError"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="required">Task Description</label>
+                    <textarea id="taskText" name="text" rows="3" required placeholder="What needs to be done?"></textarea>
+                    <div class="error-message" id="taskTextError"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            updateUserProfile,
+            signOut,
+            getMyPatients,
+            createPatient,
+            getPatientById,
+            updatePatient,
+            deletePatient,
+            getAppointmentsByStaff,
+            createAppointment,
+            updateAppointment,
+            deleteAppointment,
+            getDocumentsByStaff,
+            uploadDocument,
+            deleteDocument,
+            recordMedicationAdministration,
+            getMyMedicationRecords,
+            updateMedicationInventory,
+            getMedicationInventory,
+            addTask,
+            getMyTasks,
+            updateTask,
+            deleteTask,
+            initInactivityTimer,
+            showToast,
+            isValidNamibianPhone,
+            formatDate
+        } from './supabase-health-services.js';
+
+        // Initialize inactivity timer (1 hour)
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            await signOut();
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // State
+        let currentUser = null;
+        let currentProfile = null;
+        let allPatients = [];
+        let allAppointments = [];
+        let allDocuments = [];
+        let allMedRecords = [];
+        let allTasks = [];
+
+        // DOM Elements
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+        const headerRole = document.getElementById('headerRole');
+        const headerInstitute = document.getElementById('headerInstitute');
+        const statsGrid = document.getElementById('statsGrid');
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        // Initialize auth check
+        onAuthChange(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadDashboard();
+            } else {
+                showToast('Please sign in to access this page.', 'info');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            }
+        });
+
+        async function loadDashboard() {
+            try {
+                // Load profile
+                currentProfile = await getUserProfile(currentUser.uid);
+                if (currentProfile) {
+                    headerName.textContent = currentProfile.fullName || currentProfile.displayName || 'Staff Member';
+                    headerRole.textContent = currentProfile.profession || 'Medical Staff';
+                    headerInstitute.textContent = currentProfile.institute || 'Ministry of Health';
+                    headerAvatar.src = currentProfile.profilePictureUrl || 'default-profile.png';
+                }
+
+                // Load all data in parallel
+                await Promise.all([
+                    loadPatients(),
+                    loadAppointments(),
+                    loadDocuments(),
+                    loadMedRecords(),
+                    loadTasks()
+                ]);
+
+                // Update stats
+                updateStats();
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Failed to load dashboard', 'error');
+            }
+        }
+
+        async function loadPatients() {
+            allPatients = await getMyPatients();
+            renderPatients();
+            populatePatientDropdowns();
+        }
+
+        async function loadAppointments() {
+            allAppointments = await getAppointmentsByStaff(currentUser.uid);
+            renderAppointments();
+        }
+
+        async function loadDocuments() {
+            allDocuments = await getDocumentsByStaff(currentUser.uid);
+            renderDocuments();
+        }
+
+        async function loadMedRecords() {
+            allMedRecords = await getMyMedicationRecords();
+            renderMedRecords();
+        }
+
+        async function loadTasks() {
+            allTasks = await getMyTasks();
+            renderTasks();
+        }
+
+        // ============ STATS ============
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const upcoming = allAppointments.filter(a => a.date >= today && a.status === 'scheduled').length;
+            const todayAppts = allAppointments.filter(a => a.date === today).length;
+            const pendingTasks = allTasks.filter(t => !t.completed && t.date >= today).length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card"><div class="label">Total Patients</div><div class="value">${allPatients.length}</div></div>
+                <div class="stat-card"><div class="label">Upcoming Appointments</div><div class="value">${upcoming}</div></div>
+                <div class="stat-card"><div class="label">Today's Appointments</div><div class="value">${todayAppts}</div></div>
+                <div class="stat-card"><div class="label">Documents</div><div class="value">${allDocuments.length}</div></div>
+                <div class="stat-card"><div class="label">Medication Records</div><div class="value">${allMedRecords.length}</div></div>
+                <div class="stat-card"><div class="label">Pending Tasks</div><div class="value">${pendingTasks}</div></div>
+            `;
+        }
+
+        // ============ TABS ============
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabPanels.forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + 'Panel').classList.add('active');
+            });
+        });
+
+        // ============ PATIENTS ============
+        function renderPatients() {
+            const tbody = document.getElementById('patientsTable').querySelector('tbody');
+            const empty = document.getElementById('patientsEmpty');
+
+            if (allPatients.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = allPatients.map(patient => `
+                <tr>
+                    <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
+                    <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
+                    <td>${patient.gender || '-'}</td>
+                    <td>${patient.idPassport || '-'}</td>
+                    <td>${patient.cellphone || patient.phone || '-'}</td>
+                    <td>${patient.insurance || '-'}</td>
+                    <td>${patient.institution || '-'}</td>
+                    <td>${patient.reason || '-'}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeletePatient('${patient.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterPatients() {
+            const search = document.getElementById('patientSearch').value.toLowerCase();
+            const tbody = document.getElementById('patientsTable').querySelector('tbody');
+            const empty = document.getElementById('patientsEmpty');
+
+            const filtered = allPatients.filter(p => {
+                const name = `${p.fullName || ''} ${p.surname || ''}`.toLowerCase();
+                return name.includes(search) || 
+                       (p.idPassport || '').includes(search) || 
+                       (p.cellphone || '').includes(search);
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                empty.querySelector('h3').textContent = search ? 'No patients match your search' : 'No patients yet';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(patient => `
+                <tr>
+                    <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
+                    <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
+                    <td>${patient.gender || '-'}</td>
+                    <td>${patient.idPassport || '-'}</td>
+                    <td>${patient.cellphone || patient.phone || '-'}</td>
+                    <td>${patient.insurance || '-'}</td>
+                    <td>${patient.institution || '-'}</td>
+                    <td>${patient.reason || '-'}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeletePatient('${patient.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function populatePatientDropdowns() {
+            const selects = ['apptPatient', 'docPatient', 'maPatient'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select patient</option>';
+                allPatients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.fullName} ${p.surname} (${p.idPassport})`;
+                    select.appendChild(opt);
+                });
+                if (allPatients.some(p => p.id === currentValue)) select.value = currentValue;
+            });
+
+            // Also populate document patient filter
+            const docFilter = document.getElementById('docPatientFilter');
+            if (docFilter) {
+                const currentVal = docFilter.value;
+                docFilter.innerHTML = '<option value="">All Patients</option>';
+                allPatients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.fullName} ${p.surname}`;
+                    docFilter.appendChild(opt);
+                });
+                if (allPatients.some(p => p.id === currentVal)) docFilter.value = currentVal;
+            }
+        }
+
+        window.viewPatient = function(id) {
+            const patient = allPatients.find(p => p.id === id);
+            if (patient) {
+                const details = `
+                    Name: ${patient.fullName} ${patient.surname}
+                    DOB: ${formatDate(patient.dob)} (Age: ${patient.age})
+                    Gender: ${patient.gender}
+                    ID/Passport: ${patient.idPassport}
+                    Phone: ${patient.cellphone || patient.phone}
+                    Insurance: ${patient.insurance}
+                    Institution: ${patient.institution}
+                    Reason: ${patient.reason}
+                    Notes: ${patient.notes || 'None'}
+                    Created: ${formatDate(patient.createdAt)}
+                `;
+                alert(details);
+            }
+        };
+
+        window.editPatient = function(id) {
+            const patient = allPatients.find(p => p.id === id);
+            if (!patient) return;
+            openPatientModal(patient);
+        };
+
+        window.confirmDeletePatient = function(id) {
+            if (confirm('Are you sure you want to delete this patient? This cannot be undone.')) {
+                deletePatient(id);
+            }
+        };
+
+        async function deletePatient(id) {
+            try {
+                await deletePatient(id);
+                showToast('Patient deleted', 'success');
+                await loadPatients();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete patient: ' + error.message, 'error');
+            }
+        }
+
+        // Patient Modal
+        let editingPatientId = null;
+
+        window.openPatientModal = function(patient = null) {
+            editingPatientId = patient?.id || null;
+            const title = document.getElementById('patientModalTitle');
+            const form = document.getElementById('patientForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            form.reset();
+            clearAllErrors('patientForm');
+            document.getElementById('pDob').max = new Date().toISOString().split('T')[0];
+
+            if (patient) {
+                title.textContent = 'Edit Patient';
+                submitBtn.textContent = 'Update Patient';
+                document.getElementById('patientId').value = patient.id;
+                document.getElementById('pFullName').value = patient.fullName || '';
+                document.getElementById('pSurname').value = patient.surname || '';
+                document.getElementById('pDob').value = patient.dob || '';
+                document.getElementById('pGender').value = patient.gender || '';
+                document.getElementById('pIdPassport').value = patient.idPassport || '';
+                document.getElementById('pCellphone').value = patient.cellphone || patient.phone || '';
+                document.getElementById('pInsurance').value = patient.insurance || '';
+                document.getElementById('pInstitution').value = patient.institution || '';
+                document.getElementById('pReason').value = patient.reason || '';
+                document.getElementById('pNotes').value = patient.notes || '';
+                calculateAge();
+            } else {
+                title.textContent = 'Add New Patient';
+                submitBtn.textContent = 'Save Patient';
+                document.getElementById('patientId').value = '';
+            }
+
+            document.getElementById('patientModal').classList.add('show');
+        };
+
+        window.closePatientModal = function() {
+            document.getElementById('patientModal').classList.remove('show');
+            editingPatientId = null;
+        };
+
+        // Auto-calculate age
+        document.getElementById('pDob').addEventListener('change', calculateAge);
+        function calculateAge() {
+            const dob = document.getElementById('pDob').value;
+            if (dob) {
+                const today = new Date();
+                const birth = new Date(dob);
+                let age = today.getFullYear() - birth.getFullYear();
+                const m = today.getMonth() - birth.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+                document.getElementById('pAge').value = age;
+            }
+        }
+
+        document.getElementById('patientForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validatePatientForm()) return;
+
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = editingPatientId ? 'Updating...' : 'Saving...';
+
+            try {
+                const patientData = {
+                    fullName: document.getElementById('pFullName').value.trim(),
+                    surname: document.getElementById('pSurname').value.trim(),
+                    dob: document.getElementById('pDob').value,
+                    age: parseInt(document.getElementById('pAge').value) || 0,
+                    gender: document.getElementById('pGender').value,
+                    idPassport: document.getElementById('pIdPassport').value.trim(),
+                    cellphone: document.getElementById('pCellphone').value.trim(),
+                    insurance: document.getElementById('pInsurance').value,
+                    institution: document.getElementById('pInstitution').value.trim(),
+                    reason: document.getElementById('pReason').value,
+                    notes: document.getElementById('pNotes').value.trim()
+                };
+
+                if (editingPatientId) {
+                    await updatePatient(editingPatientId, patientData);
+                    showToast('Patient updated', 'success');
+                } else {
+                    await createPatient(currentUser.uid, patientData);
+                    showToast('Patient added', 'success');
+                }
+
+                closePatientModal();
+                await loadPatients();
+                updateStats();
+
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = editingPatientId ? 'Update Patient' : 'Save Patient';
+            }
+        });
+
+        function validatePatientForm() {
+            clearAllErrors('patientForm');
+            let valid = true;
+
+            const fields = {
+                pFullName: 'First name required',
+                pSurname: 'Surname required',
+                pDob: 'Date of birth required',
+                pGender: 'Select gender',
+                pIdPassport: 'ID/Passport required',
+                pCellphone: 'Phone required',
+                pInsurance: 'Select insurance',
+                pInstitution: 'Institution required',
+                pReason: 'Select reason'
+            };
+
+            for (const [id, msg] of Object.entries(fields)) {
+                const el = document.getElementById(id);
+                if (!el.value) {
+                    setError(el, document.getElementById(id + 'Error'), msg);
+                    valid = false;
+                }
+            }
+
+            // Validate phone
+            const phone = document.getElementById('pCellphone');
+            if (phone.value && !isValidNamibianPhone(phone.value.trim())) {
+                setError(phone, document.getElementById('pCellphoneError'), 'Valid Namibian phone required');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        // ============ APPOINTMENTS ============
+        function renderAppointments() {
+            const tbody = document.getElementById('appointmentsTable').querySelector('tbody');
+            const empty = document.getElementById('appointmentsEmpty');
+
+            const statusFilter = document.getElementById('apptStatusFilter').value;
+            const dateFrom = document.getElementById('apptDateFrom').value;
+            const dateTo = document.getElementById('apptDateTo').value;
+
+            let filtered = allAppointments.filter(apt => {
+                if (statusFilter && apt.status !== statusFilter) return false;
+                if (dateFrom && apt.date < dateFrom) return false;
+                if (dateTo && apt.date > dateTo) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.time || '').localeCompare(b.time || '');
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(apt => `
+                <tr>
+                    <td>${formatDate(apt.date)}</td>
+                    <td>${apt.time || '-'}</td>
+                    <td>${apt.patientName || ''} ${apt.patientSurname || ''}</td>
+                    <td>${formatDate(apt.patientDob || '')}</td>
+                    <td>${apt.reason || '-'}</td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="editAppointment('${apt.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteAppointment('${apt.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterAppointments() { renderAppointments(); }
+
+        window.editAppointment = function(id) {
+            const apt = allAppointments.find(a => a.id === id);
+            if (apt) openAppointmentModal(apt);
+        };
+
+        window.confirmDeleteAppointment = function(id) {
+            if (confirm('Delete this appointment?')) deleteAppointment(id);
+        };
+
+        // Appointment Modal
+        let editingAppointmentId = null;
+
+        window.openAppointmentModal = function(appointment = null) {
+            editingAppointmentId = appointment?.id || null;
+            const title = document.getElementById('apptModalTitle');
+            const form = document.getElementById('appointmentForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            form.reset();
+            clearAllErrors('appointmentForm');
+            populatePatientDropdowns();
+
+            if (appointment) {
+                title.textContent = 'Edit Appointment';
+                submitBtn.textContent = 'Update Appointment';
+                document.getElementById('appointmentId').value = appointment.id;
+                document.getElementById('appointmentPatientId').value = appointment.patientId || '';
+                document.getElementById('apptPatient').value = appointment.patientId || '';
+                document.getElementById('apptDate').value = appointment.date || '';
+                document.getElementById('apptTime').value = appointment.time || '';
+                document.getElementById('apptReason').value = appointment.reason || '';
+                document.getElementById('apptNotes').value = appointment.notes || '';
+                document.getElementById('apptStatus').value = appointment.status || 'scheduled';
+            } else {
+                title.textContent = 'New Appointment';
+                submitBtn.textContent = 'Save Appointment';
+                document.getElementById('appointmentId').value = '';
+                document.getElementById('appointmentPatientId').value = '';
+                document.getElementById('apptDate').min = new Date().toISOString().split('T')[0];
+                document.getElementById('apptStatus').value = 'scheduled';
+            }
+
+            document.getElementById('appointmentModal').classList.add('show');
+        };
+
+        window.closeAppointmentModal = function() {
+            document.getElementById('appointmentModal').classList.remove('show');
+            editingAppointmentId = null;
+        };
+
+        document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateAppointmentForm()) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = editingAppointmentId ? 'Updating...' : 'Saving...';
+
+            try {
+                const data = {
+                    patientId: document.getElementById('apptPatient').value,
+                    date: document.getElementById('apptDate').value,
+                    time: document.getElementById('apptTime').value,
+                    reason: document.getElementById('apptReason').value,
+                    notes: document.getElementById('apptNotes').value.trim(),
+                    status: document.getElementById('apptStatus').value
+                };
+
+                if (editingAppointmentId) {
+                    await updateAppointment(editingAppointmentId, data);
+                    showToast('Appointment updated', 'success');
+                } else {
+                    await createAppointment(currentUser.uid, data);
+                    showToast('Appointment created', 'success');
+                }
+
+                closeAppointmentModal();
+                await loadAppointments();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = editingAppointmentId ? 'Update Appointment' : 'Save Appointment';
+            }
+        });
+
+        function validateAppointmentForm() {
+            clearAllErrors('appointmentForm');
+            let valid = true;
+
+            if (!document.getElementById('apptPatient').value) {
+                setError(document.getElementById('apptPatient'), document.getElementById('apptPatientError'), 'Select a patient');
+                valid = false;
+            }
+            if (!document.getElementById('apptDate').value) {
+                setError(document.getElementById('apptDate'), document.getElementById('apptDateError'), 'Date required');
+                valid = false;
+            }
+            if (!document.getElementById('apptTime').value) {
+                setError(document.getElementById('apptTime'), document.getElementById('apptTimeError'), 'Time required');
+                valid = false;
+            }
+            if (!document.getElementById('apptReason').value) {
+                setError(document.getElementById('apptReason'), document.getElementById('apptReasonError'), 'Select reason');
+                valid = false;
+            }
+            return valid;
+        }
+
+        // ============ DOCUMENTS ============
+        function renderDocuments() {
+            const tbody = document.getElementById('documentsTable').querySelector('tbody');
+            const empty = document.getElementById('documentsEmpty');
+
+            const categoryFilter = document.getElementById('docCategoryFilter').value;
+            const patientFilter = document.getElementById('docPatientFilter').value;
+
+            let filtered = allDocuments.filter(doc => {
+                if (categoryFilter && doc.category !== categoryFilter) return false;
+                if (patientFilter && doc.patientId !== patientFilter) return false;
+                return true;
+            });
+
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(doc => `
+                <tr>
+                    <td><a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer">${doc.fileName}</a></td>
+                    <td>${doc.patientName || 'Unknown'}</td>
+                    <td><span class="status-badge status-pending">${doc.category.replace('_', ' ')}</span></td>
+                    <td>${formatDate(doc.uploadDate)}</td>
+                    <td>
+                        <a href="${doc.fileUrl}" target="_blank" class="btn-sm btn-view" style="text-decoration:none;padding:6px 12px;">View</a>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteDocument('${doc.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterDocuments() { renderDocuments(); }
+
+        window.confirmDeleteDocument = function(id) {
+            if (confirm('Delete this document?')) deleteDocument(id);
+        };
+
+        window.openUploadModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('uploadForm').reset();
+            clearAllErrors('uploadForm');
+            document.getElementById('uploadModal').classList.add('show');
+        };
+
+        window.closeUploadModal = function() {
+            document.getElementById('uploadModal').classList.remove('show');
+        };
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('docFile');
+            if (!fileInput.files[0]) {
+                setError(fileInput, document.getElementById('docFileError'), 'Select a file');
+                return;
+            }
+            if (fileInput.files[0].size > 10 * 1024 * 1024) {
+                setError(fileInput, document.getElementById('docFileError'), 'File must be under 10MB');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+
+            try {
+                await uploadDocument(
+                    currentUser.uid,
+                    document.getElementById('docPatient').value,
+                    fileInput.files[0],
+                    document.getElementById('docCategory').value
+                );
+                showToast('Document uploaded', 'success');
+                closeUploadModal();
+                await loadDocuments();
+                updateStats();
+            } catch (error) {
+                showToast('Upload failed: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Document';
+            }
+        });
+
+        // ============ MEDICATIONS ============
+        function renderMedRecords() {
+            const tbody = document.getElementById('medAdminTable').querySelector('tbody');
+            const empty = document.getElementById('medAdminEmpty');
+
+            if (allMedRecords.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = allMedRecords.map(mr => `
+                <tr>
+                    <td>${formatDate(mr.date)}</td>
+                    <td>${mr.patientName || mr.fullName || 'Unknown'}</td>
+                    <td>${mr.ailment || '-'}</td>
+                    <td>${mr.treatment || '-'}</td>
+                    <td>${mr.prescription || '-'}</td>
+                    <td>${mr.quantity || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        window.openMedAdminModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('medAdminForm').reset();
+            clearAllErrors('medAdminForm');
+            document.getElementById('maDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('medAdminModal').classList.add('show');
+        };
+
+        window.closeMedAdminModal = function() {
+            document.getElementById('medAdminModal').classList.remove('show');
+        };
+
+        document.getElementById('medAdminForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateMedAdminForm()) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Recording...';
+
+            try {
+                const data = {
+                    patientId: document.getElementById('maPatient').value,
+                    date: document.getElementById('maDate').value,
+                    ailment: document.getElementById('maAilment').value.trim(),
+                    treatment: document.getElementById('maTreatment').value.trim(),
+                    prescription: document.getElementById('maPrescription').value.trim(),
+                    quantity: parseInt(document.getElementById('maQuantity').value),
+                    notes: document.getElementById('maNotes').value.trim()
+                };
+
+                await recordMedicationAdministration(currentUser.uid, data);
+                showToast('Medication recorded', 'success');
+                closeMedAdminModal();
+                await loadMedRecords();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Record Administration';
+            }
+        });
+
+        function validateMedAdminForm() {
+            clearAllErrors('medAdminForm');
+            let valid = true;
+
+            if (!document.getElementById('maPatient').value) {
+                setError(document.getElementById('maPatient'), document.getElementById('maPatientError'), 'Select a patient');
+                valid = false;
+            }
+            if (!document.getElementById('maDate').value) {
+                setError(document.getElementById('maDate'), document.getElementById('maDateError'), 'Date required');
+                valid = false;
+            }
+            if (!document.getElementById('maAilment').value.trim()) {
+                setError(document.getElementById('maAilment'), document.getElementById('maAilmentError'), 'Ailment required');
+                valid = false;
+            }
+            if (!document.getElementById('maTreatment').value.trim()) {
+                setError(document.getElementById('maTreatment'), document.getElementById('maTreatmentError'), 'Treatment required');
+                valid = false;
+            }
+            if (!document.getElementById('maPrescription').value.trim()) {
+                setError(document.getElementById('maPrescription'), document.getElementById('maPrescriptionError'), 'Prescription required');
+                valid = false;
+            }
+            if (!document.getElementById('maQuantity').value) {
+                setError(document.getElementById('maQuantity'), document.getElementById('maQuantityError'), 'Quantity required');
+                valid = false;
+            }
+            return valid;
+        }
+
+        // Inventory Modal
+        window.openInventoryModal = async function() {
+            const modal = document.getElementById('inventoryModal');
+            const container = document.getElementById('inventoryItems');
+            container.innerHTML = '';
+
+            try {
+                const inventory = await getMedicationInventory() || {};
+                const meds = inventory.medications || [];
+                
+                if (meds.length === 0) {
+                    addInventoryRow();
+                } else {
+                    meds.forEach((med, i) => addInventoryRow(med, i));
+                }
+            } catch (error) {
+                addInventoryRow();
+            }
+
+            modal.classList.add('show');
+        };
+
+        window.closeInventoryModal = function() {
+            document.getElementById('inventoryModal').classList.remove('show');
+        };
+
+        function addInventoryRow(med = {}, index) {
+            const container = document.getElementById('inventoryItems');
+            const row = document.createElement('div');
+            row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; margin-bottom: 12px; align-items: end;';
+            row.innerHTML = `
+                <input type="text" placeholder="Medication Name" value="${med.name || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="text" placeholder="Strength" value="${med.strength || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="number" placeholder="Quantity" value="${med.quantity || ''}" min="0" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="date" placeholder="Expiry" value="${med.expiry || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <button type="button" class="btn btn-delete" onclick="this.parentElement.remove()" style="padding: 10px 16px;">Remove</button>
+            `;
+            container.appendChild(row);
+        }
+
+        document.getElementById('inventoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rows = document.querySelectorAll('#inventoryItems > div');
+            const medications = [];
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs[0].value.trim()) {
+                    medications.push({
+                        name: inputs[0].value.trim(),
+                        strength: inputs[1].value.trim(),
+                        quantity: parseInt(inputs[2].value) || 0,
+                        expiry: inputs[3].value
+                    });
+                }
+            });
+
+            try {
+                await updateMedicationInventory({ medications });
+                showToast('Inventory saved', 'success');
+                closeInventoryModal();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        // ============ TASKS ============
+        function renderTasks() {
+            const tbody = document.getElementById('tasksTable').querySelector('tbody');
+            const empty = document.getElementById('tasksEmpty');
+            const filter = document.getElementById('taskFilter').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            let filtered = allTasks.filter(t => {
+                if (filter === 'pending') return !t.completed;
+                if (filter === 'completed') return t.completed;
+                if (filter === 'today') return t.date === today;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.time || '').localeCompare(b.time || '');
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(task => `
+                <tr style="${task.completed ? 'opacity: 0.6;' : ''}">
+                    <td>${formatDate(task.date)}</td>
+                    <td>${task.time || '-'}</td>
+                    <td style="${task.completed ? 'text-decoration: line-through;' : ''}">${task.text}</td>
+                    <td><span class="status-badge status-${task.completed ? 'completed' : 'pending'}">${task.completed ? 'Completed' : 'Pending'}</span></td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="toggleTask('${task.id}')">${task.completed ? 'Undo' : 'Done'}</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteTask('${task.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterTasks() { renderTasks(); }
+
+        window.openTaskModal = function(task = null) {
+            const form = document.getElementById('taskForm');
+            const title = document.getElementById('taskModalTitle');
+            form.reset();
+            clearAllErrors('taskForm');
+            document.getElementById('taskDate').min = new Date().toISOString().split('T')[0];
+
+            if (task) {
+                title.textContent = 'Edit Task';
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskDate').value = task.date;
+                document.getElementById('taskTime').value = task.time || '';
+                document.getElementById('taskText').value = task.text;
+            } else {
+                title.textContent = 'Add Task';
+                document.getElementById('taskId').value = '';
+            }
+
+            document.getElementById('taskModal').classList.add('show');
+        };
+
+        window.closeTaskModal = function() {
+            document.getElementById('taskModal').classList.remove('show');
+        };
+
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('taskId').value;
+            const data = {
+                date: document.getElementById('taskDate').value,
+                time: document.getElementById('taskTime').value,
+                text: document.getElementById('taskText').value.trim()
+            };
+
+            if (!data.date || !data.time || !data.text) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                if (id) await updateTask(id, data);
+                else await addTask(data);
+                
+                showToast(id ? 'Task updated' : 'Task added', 'success');
+                closeTaskModal();
+                await loadTasks();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        window.toggleTask = async function(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (task) {
+                await updateTask(id, { completed: !task.completed });
+                await loadTasks();
+                updateStats();
+            }
+        };
+
+        window.confirmDeleteTask = function(id) {
+            if (confirm('Delete this task?')) deleteTask(id);
+        };
+
+        // ============ SIGN OUT ============
+        async function signOut() {
+            try {
+                await signOut();
+                showToast('Signed out successfully', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1000);
+            } catch (error) {
+                showToast('Sign out failed', 'error');
+            }
+        }
+
+        // ============ HELPER FUNCTIONS ============
+        function setError(input, errorEl, message) {
+            input.classList.add('error');
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+        }
+
+        function clearAllErrors(formId) {
+            const form = document.getElementById(formId) || document;
+            form.querySelectorAll('input.error, select.error, textarea.error').forEach(el => el.classList.remove('error'));
+            form.querySelectorAll('.error-message.visible').forEach(el => el.classList.remove('visible'));
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+            }
+        });
+    </script>
+</body>
+</html>

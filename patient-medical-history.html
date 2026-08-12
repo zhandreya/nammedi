@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical History - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .btn-danger { background: #fce4ec; color: #c62828; }
+        .btn-danger:hover { background: #f8bbd0; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+        .section-header h2 { margin: 0; color: #1a1a1a; }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 700; color: #333; position: sticky; top: 0; z-index: 1; }
+        tr:hover { background-color: #f8f9fa; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-scheduled { background: #e3f2fd; color: #1565c0; }
+        .status-cancelled { background: #fce4ec; color: #c62828; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
+        .btn-view { background: #e3f2fd; color: #1565c0; }
+        .btn-view:hover { background: #bbdefb; }
+        .btn-download { background: #f3e5f5; color: #7b1fa2; }
+        .btn-download:hover { background: #e1bee7; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state h3 { color: #333; margin-bottom: 8px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; border: 1px solid #eee; }
+        .card h3 { margin: 0 0 16px; color: #1a1a1a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .card .detail { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; }
+        .card .detail-label { font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
+        .card .detail-value { color: #666; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
+            <div class="header-info">
+                <h1 id="headerName">Loading...</h1>
+                <div class="role">Patient</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='patient-dashboard.html'">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Medical History</h2>
+        </div>
+
+        <!-- Overview Cards -->
+        <div class="card-grid" id="historyCards"></div>
+
+        <!-- Detailed Tables -->
+        <h3 style="margin: 32px 0 16px; color: #1a1a1a;">Appointments & Visits</h3>
+        <div class="table-container">
+            <table id="appointmentsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Institution</th>
+                        <th>Doctor / Specialist</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h3 style="margin: 32px 0 16px; color: #1a1a1a;">Prescriptions</h3>
+        <div class="table-container">
+            <table id="prescriptionsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor / Specialist</th>
+                        <th>Ailment</th>
+                        <th>Treatment</th>
+                        <th>Prescription</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h3 style="margin: 32px 0 16px; color: #1a1a1a;">Doctor's Reports</h3>
+        <div class="table-container">
+            <table id="reportsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor / Specialist</th>
+                        <th>Report</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <h3 style="margin: 32px 0 16px; color: #1a1a1a;">Ailments & Treatments</h3>
+        <div class="table-container">
+            <table id="ailmentsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Ailment</th>
+                        <th>Treatment</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            getMyAppointments,
+            getMyPrescriptions,
+            getMyAilmentsTreatments,
+            getMyInstitutesVisited,
+            initInactivityTimer,
+            showToast,
+            formatDate
+        } from './supabase-health-services.js';
+
+        // Initialize inactivity timer
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired. Redirecting...', 'info');
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // DOM Elements
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+        const historyCards = document.getElementById('historyCards');
+
+        // Check authentication
+        onAuthChange(async (user) => {
+            if (user) {
+                const profile = await getUserProfile(user.uid);
+                if (profile && profile.role === 'patient') {
+                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
+                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
+                    await loadMedicalHistory(user.uid);
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadMedicalHistory(uid) {
+            try {
+                const [appointments, prescriptions, ailments, institutes] = await Promise.all([
+                    getMyAppointments(),
+                    getMyPrescriptions(),
+                    getMyAilmentsTreatments(),
+                    getMyInstitutesVisited()
+                ]);
+
+                // Render overview cards
+                renderHistoryCards(appointments, prescriptions, ailments, institutes);
+
+                // Render detailed tables
+                renderAppointmentsTable(appointments);
+                renderPrescriptionsTable(prescriptions);
+                renderReportsTable(appointments);
+                renderAilmentsTable(ailments);
+
+            } catch (error) {
+                console.error('Error loading medical history:', error);
+                showToast('Failed to load medical history', 'error');
+            }
+        }
+
+        function renderHistoryCards(appointments, prescriptions, ailments, institutes) {
+            const upcomingAppts = appointments.filter(a => a.date >= new Date().toISOString().split('T')[0] && a.status === 'scheduled').length;
+            const completedAppts = appointments.filter(a => a.status === 'completed').length;
+
+            historyCards.innerHTML = `
+                <div class="card">
+                    <h3>📅 Total Visits</h3>
+                    <div class="detail">
+                        <span class="detail-label">Completed Appointments</span>
+                        <span class="detail-value">${completedAppts}</span>
+                    </div>
+                    <div class="detail">
+                        <span class="detail-label">Upcoming Appointments</span>
+                        <span class="detail-value">${upcomingAppts}</span>
+                    </div>
+                    <div class="detail">
+                        <span class="detail-label">Total Prescriptions</span>
+                        <span class="detail-value">${prescriptions.length}</span>
+                    </div>
+                    <div class="detail">
+                        <span class="detail-label">Recorded Conditions</span>
+                        <span class="detail-value">${ailments.length}</span>
+                    </div>
+                    <div class="detail">
+                        <span class="detail-label">Institutes Visited</span>
+                        <span class="detail-value">${institutes.length}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAppointmentsTable(appointments) {
+            const tbody = document.getElementById('appointmentsTable').querySelector('tbody');
+            tbody.innerHTML = appointments
+                .sort((a, b) => b.date.localeCompare(a.date))
+                .map(apt => `
+                    <tr>
+                        <td>${formatDate(apt.date)}</td>
+                        <td>${apt.institution || '-'}</td>
+                        <td>${apt.doctorSpecialist || apt.doctor_specialist || 'TBA'}</td>
+                        <td>${apt.reason || '-'}</td>
+                        <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                        <td>
+                            <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" style="text-align:center; color:#666; padding:40px;">No appointments found</td></tr>';
+        }
+
+        function renderPrescriptionsTable(prescriptions) {
+            const tbody = document.getElementById('prescriptionsTable').querySelector('tbody');
+            tbody.innerHTML = prescriptions
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(pr => `
+                    <tr>
+                        <td>${formatDate(pr.date)}</td>
+                        <td>${pr.doctorSpecialist || pr.doctor_specialist || 'Doctor'}</td>
+                        <td>${pr.ailment || '-'}</td>
+                        <td>${pr.treatment || '-'}</td>
+                        <td>${pr.prescription || '-'}</td>
+                        <td>
+                            <button class="btn-sm btn-view" onclick="viewPrescription('${pr.id}')">View</button>
+                            <button class="btn-sm btn-download" onclick="downloadPrescription('${pr.id}')">PDF</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" style="text-align:center; color:#666; padding:40px;">No prescriptions found</td></tr>';
+        }
+
+        function renderReportsTable(appointments) {
+            const tbody = document.getElementById('reportsTable').querySelector('tbody');
+            // Use completed appointments with notes as reports
+            const reports = appointments.filter(a => a.status === 'completed' && a.notes);
+            tbody.innerHTML = reports
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map(rpt => `
+                    <tr>
+                        <td>${formatDate(rpt.date)}</td>
+                        <td>${rpt.doctorSpecialist || rpt.doctor_specialist || 'Doctor'}</td>
+                        <td>${rpt.notes || 'No detailed report available'}</td>
+                        <td>
+                            <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" style="text-align:center; color:#666; padding:40px;">No reports available</td></tr>';
+        }
+
+        function renderAilmentsTable(ailments) {
+            const tbody = document.getElementById('ailmentsTable').querySelector('tbody');
+            tbody.innerHTML = ailments
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .map(at => `
+                    <tr>
+                        <td>${formatDate(at.date || at.createdAt)}</td>
+                        <td>${at.ailment || '-'}</td>
+                        <td>${at.treatment || '-'}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="3" style="text-align:center; color:#666; padding:40px;">No ailments & treatments recorded</td></tr>';
+        }
+
+        window.viewAppointment = function(id) {
+            showToast('Appointment details view coming soon', 'info');
+        };
+
+        window.viewPrescription = function(id) {
+            showToast('Prescription details view coming soon', 'info');
+        };
+
+        window.downloadPrescription = function(id) {
+            showToast('PDF download coming soon', 'info');
+        };
+
+        window.viewReport = function(id) {
+            showToast('Report view coming soon', 'info');
+        };
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+    </script>
+</body>
+</html>

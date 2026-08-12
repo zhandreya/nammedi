@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #0066cc;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+        }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #eee; }
+        .btn-danger { background: #fce4ec; color: #c62828; }
+        .btn-danger:hover { background: #f8bbd0; }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: #f0f7ff; border: 1px solid #d0e8ff; border-radius: 10px; padding: 20px; text-align: center; }
+        .stat-card .label { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { color: #0066cc; font-weight: 700; font-size: 2rem; margin-top: 4px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; border: 1px solid #eee; }
+        .card h2 { margin: 0 0 16px; color: #1a1a1a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .card .btn { width: 100%; justify-content: center; margin-top: 12px; }
+        .card p { color: #666; font-size: 14px; margin-bottom: 16px; }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+            #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
+            <div class="header-info">
+                <h1 id="headerName">Loading...</h1>
+                <div class="role">Patient</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
+            <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <!-- Quick Actions -->
+        <h2 style="margin: 0 0 20px; color: #1a1a1a;">Quick Actions</h2>
+        <div class="card-grid" id="quickActions"></div>
+
+        <!-- Upcoming Appointments -->
+        <h2 style="margin: 32px 0 20px; color: #1a1a1a;">Upcoming Appointments</h2>
+        <div class="card">
+            <div id="upcomingAppointments">Loading...</div>
+        </div>
+    </div>
+
+    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+    <script type="module">
+        import { 
+            onAuthChange, 
+            getUserProfile,
+            getUpcomingAppointments,
+            getMyAilmentsTreatments,
+            getMyInstitutesVisited,
+            getMyPrescriptions,
+            getMyRefillRequests,
+            signOut,
+            initInactivityTimer,
+            showToast,
+            formatDate
+        } from './supabase-health-services.js';
+
+        // Initialize inactivity timer
+        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            await signOut();
+            setTimeout(() => window.location.href = 'login.html', 2000);
+        });
+
+        // DOM Elements
+        const headerAvatar = document.getElementById('headerAvatar');
+        const headerName = document.getElementById('headerName');
+        const statsGrid = document.getElementById('statsGrid');
+        const quickActions = document.getElementById('quickActions');
+        const upcomingAppointments = document.getElementById('upcomingAppointments');
+
+        // Check authentication
+        onAuthChange(async (user) => {
+            if (user) {
+                const profile = await getUserProfile(user.uid);
+                if (profile && profile.role === 'patient') {
+                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
+                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
+                    await loadDashboard(profile);
+                } else if (profile) {
+                    // Wrong role, redirect
+                    window.location.href = 'dashboard.html';
+                } else {
+                    window.location.href = 'login.html';
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadDashboard(profile) {
+            try {
+                // Load stats in parallel
+                const [appointments, ailments, institutes, prescriptions, refills] = await Promise.all([
+                    getUpcomingAppointments(30),
+                    getMyAilmentsTreatments(),
+                    getMyInstitutesVisited(),
+                    getMyPrescriptions(),
+                    getMyRefillRequests()
+                ]);
+
+                // Update stats
+                statsGrid.innerHTML = `
+                    <div class="stat-card"><div class="label">Upcoming Appointments</div><div class="value">${appointments.length}</div></div>
+                    <div class="stat-card"><div class="label">Medical Conditions</div><div class="value">${ailments.length}</div></div>
+                    <div class="stat-card"><div class="label">Institutes Visited</div><div class="value">${institutes.length}</div></div>
+                    <div class="stat-card"><div class="label">Prescriptions</div><div class="value">${prescriptions.length}</div></div>
+                    <div class="stat-card"><div class="label">Refill Requests</div><div class="value">${refills.filter(r => r.status === 'pending').length}</div></div>
+                `;
+
+                // Quick Actions
+                quickActions.innerHTML = `
+                    <div class="card">
+                        <h2>📅 Appointments</h2>
+                        <p>View and schedule appointments</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-appointments.html'">Manage Appointments</button>
+                    </div>
+                    <div class="card">
+                        <h2>🏥 Medical History</h2>
+                        <p>View your medical history, ailments & treatments</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-medical-history.html'">View Medical History</button>
+                    </div>
+                    <div class="card">
+                        <h2>💊 Prescriptions</h2>
+                        <p>View prescriptions and request refills</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-prescriptions.html'">View Prescriptions</button>
+                    </div>
+                    <div class="card">
+                        <h2>📄 Reports</h2>
+                        <p>View doctor's reports and documents</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-reports.html'">View Reports</button>
+                    </div>
+                    <div class="card">
+                        <h2>🏢 Institutes Visited</h2>
+                        <p>View your healthcare visit history</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-institutes.html'">View Institutes</button>
+                    </div>
+                    <div class="card">
+                        <h2>🩺 Ailments & Treatments</h2>
+                        <p>View your recorded conditions</p>
+                        <button class="btn btn-primary" onclick="window.location.href='patient-ailments.html'">View Conditions</button>
+                    </div>
+                `;
+
+                // Upcoming Appointments
+                if (appointments.length === 0) {
+                    upcomingAppointments.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No upcoming appointments. <a href="patient-appointments.html" style="color: #0066cc;">Schedule one</a></p>';
+                } else {
+                    upcomingAppointments.innerHTML = `
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #eee;">
+                                        <th style="padding: 12px; text-align: left; color: #333;">Date</th>
+                                        <th style="padding: 12px; text-align: left; color: #333;">Time</th>
+                                        <th style="padding: 12px; text-align: left; color: #333;">Doctor/Specialist</th>
+                                        <th style="padding: 12px; text-align: left; color: #333;">Reason</th>
+                                        <th style="padding: 12px; text-align: left; color: #333;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${appointments.slice(0, 5).map(apt => `
+                                        <tr style="border-bottom: 1px solid #eee;">
+                                            <td style="padding: 12px;">${formatDate(apt.date)}</td>
+                                            <td style="padding: 12px;">${apt.time || '-'}</td>
+                                            <td style="padding: 12px;">${apt.doctorSpecialist || apt.doctor_specialist || 'TBA'}</td>
+                                            <td style="padding: 12px;">${apt.reason || '-'}</td>
+                                            <td style="padding: 12px;"><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${apt.status || 'scheduled'}</span></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${appointments.length > 5 ? `<p style="text-align: right; margin-top: 12px;"><a href="patient-appointments.html" style="color: #0066cc;">View all ${appointments.length} appointments →</a></p>` : ''}
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Failed to load dashboard data', 'error');
+            }
+        }
+
+        async function signOut() {
+            try {
+                await signOut();
+                showToast('Signed out successfully', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1000);
+            } catch (error) {
+                showToast('Sign out failed', 'error');
+            }
+        }
+
+        // Cleanup
+        window.addEventListener('beforeunload', () => cleanupInactivity());
+    </script>
+</body>
+</html>

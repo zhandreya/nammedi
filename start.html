@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NAMIBIAN MEDICAL RECORDS</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 20px;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        h1 {
+            color: #000000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 48px;
+            margin-top: 8px;
+            font-size: 40px;
+            font-family: Lato, sans-serif;
+        }
+
+        p {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin-top: 30px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 50px auto;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .option {
+            margin: 8px 0;
+            padding: 8px;
+            background-color: rgba(120, 120, 128, 0.30);
+            border-radius: 5px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        #signUpBtn, #logInBtn {
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-family: Lato, sans-serif;
+            flex: 1;
+            margin: 0 50px;
+        }
+
+        #signUpBtn:hover, #logInBtn:hover {
+            background-color: #4CAF50;
+        }
+
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            font-family: Lato, sans-serif;
+            color: #000000;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()">Back</button>
+    <h1 class="title">NAMIBIAN MEDICAL RECORDS</h1>
+    <div class="container">
+        <p>Sign-up or Log In as:</p>
+        <div class="options">
+            <label class="option">
+                <input type="radio" name="userType" value="patient"> Patient
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="receptionist"> Receptionist Medical Institute
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="medicalStaff"> Medical Staff
+            </label>
+            <label class="option">
+                <input type="radio" name="userType" value="specialist"> Specialist (Dr)
+            </label>
+        </div>
+        <div class="button-container">
+            <button id="signUpBtn">Sign-Up</button>
+            <button id="logInBtn">Log In</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { getCurrentUser, onAuthChange, initInactivityTimer } from './supabase-health-services.js';
+
+        // Inactivity timer for public page (longer timeout)
+        initInactivityTimer(4 * 60 * 60 * 1000, () => location.reload());
+
+        // Check if already logged in
+        onAuthChange((user) => {
+            if (user) {
+                // User is logged in, redirect to appropriate dashboard
+                // We'll check their role and redirect
+                window.location.href = 'dashboard.html';
+            }
+        });
+
+        document.getElementById('signUpBtn').addEventListener('click', () => {
+            const selectedUserType = document.querySelector('input[name="userType"]:checked');
+            if (selectedUserType) {
+                switch (selectedUserType.value) {
+                    case 'patient':
+                        window.location.href = 'patient-signup.html';
+                        break;
+                    case 'receptionist':
+                        window.location.href = 'receptionist-signup.html';
+                        break;
+                    case 'medicalStaff':
+                        window.location.href = 'medical-staff-signup.html';
+                        break;
+                    case 'specialist':
+                        window.location.href = 'specialist-signup.html';
+                        break;
+                }
+            } else {
+                alert('Please select a user type');
+            }
+        });
+
+        document.getElementById('logInBtn').addEventListener('click', () => {
+            const selectedUserType = document.querySelector('input[name="userType"]:checked');
+            if (selectedUserType) {
+                switch (selectedUserType.value) {
+                    case 'patient':
+                        window.location.href = 'patient-login.html';
+                        break;
+                    case 'receptionist':
+                        window.location.href = 'receptionist-login.html';
+                        break;
+                    case 'medicalStaff':
+                        window.location.href = 'medical-staff-login.html';
+                        break;
+                    case 'specialist':
+                        window.location.href = 'specialist-login.html';
+                        break;
+                }
+            } else {
+                alert('Please select a user type');
+            }
+        });
+    </script>
+</body>
+</html>
