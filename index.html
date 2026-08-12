@@ -70,15 +70,22 @@
       <img src="Nam heart.jpeg" alt="Heart with Namibian flag" class="heart-image">
     </div>
     <div class="content">
-       <a class="start-button" id="startBtn" href="start.html">Get Started</a>
-            <p class="subtitle">Secure health records management for Namibia</p>
-        </div>
-  </div>
+    <a class="start-button" id="startBtn" href="start.html">Get Started</a>
+    <p class="subtitle">Secure health records management for Namibia</p>
+</div>
+</div>
 
-  <script>
+<script>
     function redirectToStart() {
-      window.location.href = "start.html";
+        window.location.href = "start.html";
     }
-  </script>
+
+    var startBtn = document.getElementById("startBtn");
+    if (startBtn) {
+        startBtn.addEventListener("click", function () {
+            redirectToStart();
+        });
+    }
+</script>
 </body>
 </html>
