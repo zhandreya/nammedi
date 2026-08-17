@@ -127,7 +127,7 @@
         </form>
 
         <div class="divider"><span>Don't have an account?</span></div>
-        <button type="button" class="link-button" onclick="window.location.href='signup.html'">Create Account</button>
+        <button type="button" class="link-button" onclick="window.location.href='sign-up.html' + window.location.search">Create Account</button>
 
         <div class="footer-links">
             <a href="privacy-policy.html">Privacy Policy</a> |
@@ -142,9 +142,30 @@
             signIn, 
             isValidEmail,
             initInactivityTimer,
-            showToast,
-            getCurrentUser 
+            getCurrentUser,
+            getUserProfile
         } from './supabase-health-services.js';
+
+        // Each role's dashboard.
+        const DASHBOARDS = {
+            patient: 'patient-dashboard.html',
+            medical_staff: 'medical-staff-dashboard.html',
+            receptionist: 'receptionist-dashboard.html',
+            specialist: 'specialist-dashboard.html'
+        };
+
+        // Look up the role saved on the user's profile and return their dashboard.
+        // Uses the stored role, not the choice made on start.html, so nobody can
+        // reach another role's dashboard by picking a different radio button.
+        async function dashboardFor(user) {
+            try {
+                const profile = await getUserProfile(user.uid);
+                return DASHBOARDS[profile?.role] || 'patient-dashboard.html';
+            } catch (err) {
+                console.warn('Could not read profile role.', err);
+                return 'patient-dashboard.html';
+            }
+        }
 
         // Inactivity timer (30 min for auth pages)
         initInactivityTimer(30 * 60 * 1000, () => {
@@ -170,7 +191,7 @@
         // Check if already logged in
         const currentUser = getCurrentUser();
         if (currentUser) {
-            window.location.href = 'dashboard.html';
+            dashboardFor(currentUser).then(url => { window.location.href = url; });
         }
 
         // Toast notification
@@ -246,8 +267,9 @@
 
                 showToast('Welcome back!', 'success');
 
+                const target = await dashboardFor(getCurrentUser() || {});
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = target;
                 }, 1000);
 
             } catch (error) {
@@ -257,5 +279,5 @@
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8df6ffaed8a59',t:'MTc4Njk3MTc0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
