@@ -1,8 +1,4 @@
 // Supabase Configuration
-// ============================================================
-// Replace placeholders with Project Settings → API values
-// https://supabase.com/dashboard/project/_/settings/api
-// ============================================================
 
 const supabaseConfig = {
     url: 'https://wkduowriurfbfsowxxel.supabase.co',
@@ -21,10 +17,6 @@ function isSupabaseConfigValid() {
         return false;
     }
     return true;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { supabaseConfig, isSupabaseConfigValid };
 }
 
 window.__SUPABASE_CONFIG__ = supabaseConfig;
