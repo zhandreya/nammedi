@@ -115,6 +115,8 @@
                     <option value="" disabled selected>Select role</option>
                     <option value="patient">Patient / Member of Public</option>
                     <option value="medical_staff">Medical Staff / Healthcare Professional</option>
+                    <option value="receptionist">Receptionist / Medical Institute</option>
+                    <option value="specialist">Specialist (Dr)</option>
                 </select>
                 <div class="error-message" id="roleError"></div>
             </div>
@@ -356,13 +358,17 @@
         const confirmPasswordError = document.getElementById('confirmPasswordError');
         const termsError = document.getElementById('termsError');
 
-        // Show/hide fields based on role
-        roleSelect.addEventListener('change', () => {
+        // Roles that use the professional field set (name, profession, institution...).
+        const STAFF_ROLES = ['medical_staff', 'receptionist', 'specialist'];
+
+        function applyRole() {
             const role = roleSelect.value;
-            medicalStaffFields.style.display = role === 'medical_staff' ? 'block' : 'none';
+            medicalStaffFields.style.display = STAFF_ROLES.includes(role) ? 'block' : 'none';
             patientFields.style.display = role === 'patient' ? 'block' : 'none';
             clearAllErrors();
-        });
+        }
+
+        roleSelect.addEventListener('change', applyRole);
 
         // Set max date for DOB (today)
         const today = new Date().toISOString().split('T')[0];
@@ -404,6 +410,14 @@
                 const errorEl = document.getElementById(input.id + 'Error');
                 if (errorEl) clearError(input, errorEl);
             });
+        }
+
+        // Preselect the role chosen on start.html (?role=...).
+        // Runs here, after allInputs exists, because applyRole() clears errors.
+        const requestedRole = new URLSearchParams(window.location.search).get('role');
+        if (requestedRole && [...roleSelect.options].some(o => o.value === requestedRole)) {
+            roleSelect.value = requestedRole;
+            applyRole();
         }
 
         function calculateAge(dob) {
@@ -589,7 +603,7 @@
             }
 
             const role = roleSelect.value;
-            if (role === 'medical_staff') {
+            if (STAFF_ROLES.includes(role)) {
                 isValid = validateMedicalStaffFields() && isValid;
             } else if (role === 'patient') {
                 isValid = validatePatientFields() && isValid;
@@ -613,9 +627,9 @@
                 const role = roleSelect.value;
                 let profileData = { role };
 
-                if (role === 'medical_staff') {
+                if (STAFF_ROLES.includes(role)) {
                     profileData = {
-                        role: 'medical_staff',
+                        role,
                         fullName: fullNameInput.value.trim(),
                         surname: surnameInput.value.trim(),
                         email: emailInput.value.trim(),
@@ -651,13 +665,16 @@
 
                 showToast('Account created successfully!', 'success');
 
-                // Redirect based on role
+                // Send each role to its own dashboard.
+                const DASHBOARDS = {
+                    patient: 'patient-dashboard.html',
+                    medical_staff: 'medical-staff-dashboard.html',
+                    receptionist: 'receptionist-dashboard.html',
+                    specialist: 'specialist-dashboard.html'
+                };
+
                 setTimeout(() => {
-                    if (role === 'medical_staff') {
-                        window.location.href = 'med-staff-portfolio.html';
-                    } else {
-                        window.location.href = 'help-contact.html';
-                    }
+                    window.location.href = DASHBOARDS[role] || 'patient-dashboard.html';
                 }, 1500);
 
             } catch (error) {
@@ -667,5 +684,5 @@
             }
         });
     </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8e2c6b9498a59',t:'MTc4Njk3MTg3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
