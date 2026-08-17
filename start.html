@@ -128,63 +128,51 @@
     </div>
 
     <script type="module">
-        import { getCurrentUser, onAuthChange, initInactivityTimer } from './supabase-health-services.js';
+        import { getCurrentUser, onAuthChange, initInactivityTimer, getUserProfile } from './supabase-health-services.js';
 
         // Inactivity timer for public page (longer timeout)
         initInactivityTimer(4 * 60 * 60 * 1000, () => location.reload());
 
-        // Check if already logged in
-        onAuthChange((user) => {
-            if (user) {
-                // User is logged in, redirect to appropriate dashboard
-                // We'll check their role and redirect
-                window.location.href = 'dashboard.html';
+        // Every role's dashboard, keyed by the role stored in Supabase.
+        const DASHBOARDS = {
+            patient: 'patient-dashboard.html',
+            medical_staff: 'medical-staff-dashboard.html',
+            receptionist: 'receptionist-dashboard.html',
+            specialist: 'specialist-dashboard.html'
+        };
+
+        // Already signed in? Send them to their own dashboard.
+        onAuthChange(async (user) => {
+            if (!user) return;
+            try {
+                const profile = await getUserProfile(user.uid);
+                window.location.href = DASHBOARDS[profile?.role] || 'patient-dashboard.html';
+            } catch (err) {
+                console.warn('Could not read profile role.', err);
             }
         });
 
-        document.getElementById('signUpBtn').addEventListener('click', () => {
-            const selectedUserType = document.querySelector('input[name="userType"]:checked');
-            if (selectedUserType) {
-                switch (selectedUserType.value) {
-                    case 'patient':
-                        window.location.href = 'patient-signup.html';
-                        break;
-                    case 'receptionist':
-                        window.location.href = 'receptionist-signup.html';
-                        break;
-                    case 'medicalStaff':
-                        window.location.href = 'medical-staff-signup.html';
-                        break;
-                    case 'specialist':
-                        window.location.href = 'specialist-signup.html';
-                        break;
-                }
-            } else {
-                alert('Please select a user type');
-            }
-        });
+        // Maps the radio values to the role names stored in Supabase.
+        const ROLE_MAP = {
+            patient: 'patient',
+            receptionist: 'receptionist',
+            medicalStaff: 'medical_staff',
+            specialist: 'specialist'
+        };
 
-        document.getElementById('logInBtn').addEventListener('click', () => {
-            const selectedUserType = document.querySelector('input[name="userType"]:checked');
-            if (selectedUserType) {
-                switch (selectedUserType.value) {
-                    case 'patient':
-                        window.location.href = 'patient-login.html';
-                        break;
-                    case 'receptionist':
-                        window.location.href = 'receptionist-login.html';
-                        break;
-                    case 'medicalStaff':
-                        window.location.href = 'medical-staff-login.html';
-                        break;
-                    case 'specialist':
-                        window.location.href = 'specialist-login.html';
-                        break;
-                }
-            } else {
+        function goTo(page) {
+            const selected = document.querySelector('input[name="userType"]:checked');
+            if (!selected) {
                 alert('Please select a user type');
+                return;
             }
-        });
+            // Carry the choice across as ?role=... so the next page can preselect it.
+            window.location.href = `${page}?role=${encodeURIComponent(ROLE_MAP[selected.value])}`;
+        }
+
+        document.getElementById('signUpBtn').addEventListener('click', () => goTo('sign-up.html'));
+        document.getElementById('logInBtn').addEventListener('click', () => goTo('login.html'));
+
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8ab0fee7e4eb4',t:'MTc4Njk2OTU5Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8c0a44baf4fa7',t:'MTc4Njk3MDQ4MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
