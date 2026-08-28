@@ -1,0 +1,13 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: curl -fsS -H "apikey: https://wkduowriurfbfsowxxel.supabase.co" https://wkduowriurfbfsowxxel.supabase.co/auth/v1/health
