@@ -10,4 +10,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase
-        run: curl -fsS -H "apikey: https://wkduowriurfbfsowxxel.supabase.co" https://wkduowriurfbfsowxxel.supabase.co/auth/v1/health
+        run: curl -fsS -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZHVvd3JpdXJmYmZzb3d4eGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNTc5MzEsImV4cCI6MjEwMTkzMzkzMX0.9KXvTvdzP6PO-UPlMFndeaGOdLrHfj-FvjhHlmCdCiA" https://wkduowriurfbfsowxxel.supabase.co/auth/v1/health
