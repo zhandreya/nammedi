@@ -160,7 +160,7 @@
             getMyInstitutesVisited,
             getMyPrescriptions,
             getMyRefillRequests,
-            signOut,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -185,7 +185,11 @@
             if (user) {
                 const profile = await getUserProfile(user.uid);
                 if (profile && profile.role === 'patient') {
-                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
+                    const displayName = [profile.surname, profile.fullName]
+                        .filter(v => v && String(v).trim())
+                        .map(v => String(v).trim())
+                        .join(' ');
+                    headerName.textContent = `Hello, ${displayName || 'Patient'}`;
                     headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
                     await loadDashboard(profile);
                 } else if (profile) {
@@ -294,7 +298,7 @@
 
         async function signOut() {
             try {
-                await signOut();
+                await signOutUser();
                 showToast('Signed out successfully', 'success');
                 setTimeout(() => window.location.href = 'login.html', 1000);
             } catch (error) {
@@ -304,6 +308,9 @@
 
         // Cleanup
         window.addEventListener('beforeunload', () => cleanupInactivity());
+
+        // Expose for inline event handlers (onclick/onchange)
+        window.signOut = signOut;
     </script>
 </body>
 </html>
