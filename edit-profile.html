@@ -147,10 +147,10 @@
         @media (max-width: 600px) { 
             .container { margin: 10px auto; padding: 20px; } 
             #backBtn { top: 10px; left: 10px; padding: 8px 12px; } 
-            .header { margin: 20px auto 10px; padding: 16px; }
-            .form-grid { grid-template-columns: 1fr; }
-            .btn-group { flex-direction: column; }
-            .btn { width: 100%; }
+            .header { margin: 20px auto 10px; padding: 16px; } 
+            .form-grid { grid-template-columns: 1fr; } 
+            .btn-group { flex-direction: column; } 
+            .btn { width: 100%; } 
         }
     </style>
 </head>
@@ -300,6 +300,20 @@
             document.getElementById('profession').value = profile.profession || '';
             document.getElementById('institute').value = profile.institute || '';
             profilePicPreview.src = profile.profilePictureUrl || 'default-profile.png';
+
+            // Staff-only fields: shown for medical staff / receptionist / specialist,
+            // hidden for patients (patients have no work tel, profession or institute).
+            const staffRoles = ['medical_staff', 'receptionist', 'specialist'];
+            const isStaff = staffRoles.includes(profile.role);
+            ['workTel', 'profession', 'institute'].forEach(id => {
+                const group = document.getElementById(id).closest('.form-group');
+                if (group) group.style.display = isStaff ? '' : 'none';
+            });
+        }
+
+        function isStaffFieldsVisible() {
+            const group = document.getElementById('workTel').closest('.form-group');
+            return !group || group.style.display !== 'none';
         }
 
         function previewProfilePicture(input) {
@@ -362,12 +376,15 @@
 
             if (!idPassport.value.trim()) { setError(idPassport, document.getElementById('idPassportError'), 'ID/Passport is required'); isValid = false; }
 
-            if (!workTel.value.trim()) { setError(workTel, document.getElementById('workTelError'), 'Work telephone is required'); isValid = false; }
-            else if (!isValidNamibianPhone(workTel.value.trim())) { setError(workTel, document.getElementById('workTelError'), 'Enter valid Namibian phone number'); isValid = false; }
+            // Staff-only validation (skipped for patients — those fields are hidden)
+            if (isStaffFieldsVisible()) {
+                if (!workTel.value.trim()) { setError(workTel, document.getElementById('workTelError'), 'Work telephone is required'); isValid = false; }
+                else if (!isValidNamibianPhone(workTel.value.trim())) { setError(workTel, document.getElementById('workTelError'), 'Enter valid Namibian phone number'); isValid = false; }
 
-            if (!profession.value.trim()) { setError(profession, document.getElementById('professionError'), 'Profession is required'); isValid = false; }
+                if (!profession.value.trim()) { setError(profession, document.getElementById('professionError'), 'Profession is required'); isValid = false; }
 
-            if (!institute.value.trim()) { setError(institute, document.getElementById('instituteError'), 'Institute is required'); isValid = false; }
+                if (!institute.value.trim()) { setError(institute, document.getElementById('instituteError'), 'Institute is required'); isValid = false; }
+            }
 
             return isValid;
         }
@@ -422,9 +439,16 @@
 
                 await updateUserProfile(currentUser.uid, profileData);
                 showToast('Profile updated successfully!', 'success');
-                
+
+                // Go back to THIS user's dashboard (based on the role stored in Supabase)
+                const DASHBOARDS = {
+                    patient: 'patient-dashboard.html',
+                    medical_staff: 'medical-staff-dashboard.html',
+                    receptionist: 'receptionist-dashboard.html',
+                    specialist: 'specialist-dashboard.html'
+                };
                 setTimeout(() => {
-                    window.location.href = 'med-staff-portfolio.html';
+                    window.location.href = DASHBOARDS[currentProfile.role] || 'patient-dashboard.html';
                 }, 1500);
 
             } catch (error) {
@@ -437,6 +461,9 @@
 
         // Cleanup
         window.addEventListener('beforeunload', () => cleanupInactivity());
+
+        // Expose for inline event handlers (onclick/onchange)
+        window.previewProfilePicture = previewProfilePicture;
     </script>
 </body>
 </html>
