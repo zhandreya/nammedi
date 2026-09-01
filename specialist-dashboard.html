@@ -630,11 +630,11 @@
             onAuthChange, 
             getUserProfile,
             updateUserProfile,
-            signOut,
+            signOut as signOutUser,
             getMyPatients,
             createPatient,
             updatePatient,
-            deletePatient,
+            deletePatient as deletePatientUser,
             getAppointmentsByStaff,
             createAppointment,
             updateAppointment,
@@ -691,7 +691,11 @@
                 // Load profile
                 currentProfile = await getUserProfile(currentUser.uid);
                 if (currentProfile) {
-                    headerName.textContent = `Dr. ${currentProfile.fullName || currentProfile.displayName || 'Specialist'}`;
+                                        const displayName = [currentProfile.surname, currentProfile.fullName]
+                        .filter(v => v && String(v).trim())
+                        .map(v => String(v).trim())
+                        .join(' ');
+                    headerName.textContent = `Hello, Dr. ${displayName || 'Specialist'}`;
                     headerRole.textContent = currentProfile.profession || 'Specialist';
                     headerSpeciality.textContent = currentProfile.speciality || 'General Medicine';
                     headerInstitute.textContent = currentProfile.institute || 'Ministry of Health';
@@ -910,7 +914,7 @@
 
         async function deletePatient(id) {
             try {
-                await deletePatient(id);
+                await deletePatientUser(id);
                 showToast('Patient deleted', 'success');
                 await loadPatients();
                 updateStats();
@@ -1451,7 +1455,7 @@
         // ============ SIGN OUT ============
         async function signOut() {
             try {
-                await signOut();
+                await signOutUser();
                 showToast('Signed out successfully', 'success');
                 setTimeout(() => window.location.href = 'login.html', 1000);
             } catch (error) {
@@ -1488,6 +1492,13 @@
                 document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
             }
         });
+
+        // Expose for inline event handlers (onclick/onchange)
+        window.filterAppointments = filterAppointments;
+        window.filterDocuments = filterDocuments;
+        window.filterPatients = filterPatients;
+        window.filterPrescriptions = filterPrescriptions;
+        window.signOut = signOut;
     </script>
 </body>
 </html>
