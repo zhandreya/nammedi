@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Receptionist Dashboard - Namibia Health Services</title>
+    <title>Medical Staff Dashboard - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -119,8 +119,6 @@
         .status-completed { background: #e8f5e9; color: #2e7d32; }
         .status-cancelled { background: #fce4ec; color: #c62828; }
         .status-pending { background: #fff8e1; color: #f57f17; }
-        .status-verified { background: #e8f5e9; color: #2e7d32; }
-        .status-rejected { background: #fce4ec; color: #c62828; }
         .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
         .btn-view { background: #e3f2fd; color: #1565c0; }
         .btn-view:hover { background: #bbdefb; }
@@ -128,8 +126,6 @@
         .btn-edit:hover { background: #c8e6c9; }
         .btn-delete { background: #fce4ec; color: #c62828; }
         .btn-delete:hover { background: #f8bbd0; }
-        .btn-verify { background: #e8f5e9; color: #2e7d32; }
-        .btn-verify:hover { background: #c8e6c9; }
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state h3 { color: #333; margin-bottom: 8px; }
         .filter-bar { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
@@ -167,16 +163,15 @@
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
-                <div class="role" id="headerRole">Receptionist</div>
+                <div class="role" id="headerRole">Medical Staff</div>
                 <div class="institute" id="headerInstitute">Ministry of Health</div>
             </div>
         </div>
         <div class="header-actions">
             <button class="btn btn-primary" onclick="openPatientModal()"><span>+</span> Add Patient</button>
             <button class="btn btn-primary" onclick="openAppointmentModal()"><span>+</span> New Appointment</button>
-            <button class="btn btn-secondary" onclick="openVerifyInsuranceModal()"><span>🏥</span> Verify Insurance</button>
-            <button class="btn btn-secondary" onclick="openInvoiceModal()"><span>🧾</span> Generate Invoice</button>
-            <button class="btn btn-secondary" onclick="openPaymentModal()"><span>💳</span> Process Payment</button>
+            <button class="btn btn-secondary" onclick="openUploadModal()"><span>📄</span> Upload Document</button>
+            <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
     </div>
@@ -189,15 +184,15 @@
         <div class="tabs" id="tabs">
             <button class="tab active" data-tab="patients">Patients</button>
             <button class="tab" data-tab="appointments">Appointments</button>
-            <button class="tab" data-tab="insurance">Insurance</button>
-            <button class="tab" data-tab="billing">Billing</button>
-            <button class="tab" data-tab="reports">Reports</button>
+            <button class="tab" data-tab="documents">Documents</button>
+            <button class="tab" data-tab="medications">Medications</button>
+            <button class="tab" data-tab="tasks">Tasks & Reminders</button>
         </div>
 
         <!-- Patients Tab -->
         <div class="tab-panel active" id="patientsPanel">
             <div class="section-header">
-                <h2>Patient Management</h2>
+                <h2>My Patients</h2>
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label>Search:</label>
@@ -232,7 +227,7 @@
         <!-- Appointments Tab -->
         <div class="tab-panel" id="appointmentsPanel">
             <div class="section-header">
-                <h2>Appointment Management</h2>
+                <h2>Appointments</h2>
             </div>
             <div class="filter-bar">
                 <div class="filter-group">
@@ -275,71 +270,106 @@
             </div>
         </div>
 
-        <!-- Insurance Tab -->
-        <div class="tab-panel" id="insurancePanel">
+        <!-- Documents Tab -->
+        <div class="tab-panel" id="documentsPanel">
             <div class="section-header">
-                <h2>Insurance Verification</h2>
-                <button class="btn btn-primary" onclick="openVerifyInsuranceModal()">Verify Insurance</button>
+                <h2>Documents</h2>
             </div>
             <div class="filter-bar">
                 <div class="filter-group">
-                    <label>Status:</label>
-                    <select id="insuranceStatusFilter" onchange="filterInsurance()">
+                    <label>Category:</label>
+                    <select id="docCategoryFilter" onchange="filterDocuments()">
                         <option value="">All</option>
-                        <option value="pending">Pending</option>
-                        <option value="verified">Verified</option>
-                        <option value="rejected">Rejected</option>
+                        <option value="lab_results">Lab Results</option>
+                        <option value="prescriptions">Prescriptions</option>
+                        <option value="referrals">Referrals</option>
+                        <option value="imaging">Imaging</option>
+                        <option value="consent">Consent Forms</option>
+                        <option value="discharge">Discharge Summaries</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Patient:</label>
+                    <select id="docPatientFilter" onchange="filterDocuments()">
+                        <option value="">All Patients</option>
                     </select>
                 </div>
             </div>
             <div class="table-container">
-                <table id="insuranceTable">
+                <table id="documentsTable">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Patient Name</th>
-                            <th>ID / Passport</th>
-                            <th>Medical Aid #</th>
-                            <th>Status</th>
+                            <th>File Name</th>
+                            <th>Patient</th>
+                            <th>Category</th>
+                            <th>Upload Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <div class="empty-state" id="insuranceEmpty" style="display: none;">
-                <h3>No insurance verifications</h3>
-                <p>Click "Verify Insurance" to start a new verification.</p>
+            <div class="empty-state" id="documentsEmpty" style="display: none;">
+                <h3>No documents uploaded</h3>
+                <p>Click "Upload Document" to add files.</p>
             </div>
         </div>
 
-        <!-- Billing Tab -->
-        <div class="tab-panel" id="billingPanel">
+        <!-- Medications Tab -->
+        <div class="tab-panel" id="medicationsPanel">
             <div class="section-header">
-                <h2>Billing & Payments</h2>
+                <h2>Medication Management</h2>
                 <div style="display: flex; gap: 12px;">
-                    <button class="btn btn-primary" onclick="openInvoiceModal()">Generate Invoice</button>
-                    <button class="btn btn-secondary" onclick="openPaymentModal()">Process Payment</button>
+                    <button class="btn btn-primary" onclick="openMedAdminModal()">Record Administration</button>
+                    <button class="btn btn-secondary" onclick="openInventoryModal()">Manage Inventory</button>
                 </div>
+            </div>
+            <div class="table-container">
+                <table id="medAdminTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Ailment</th>
+                            <th>Treatment</th>
+                            <th>Prescription</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="medAdminEmpty" style="display: none;">
+                <h3>No medication records</h3>
+                <p>Click "Record Administration" to add entries.</p>
+            </div>
+        </div>
+
+        <!-- Tasks & Reminders Tab -->
+        <div class="tab-panel" id="tasksPanel">
+            <div class="section-header">
+                <h2>Tasks & Reminders</h2>
+                <button class="btn btn-primary" onclick="openTaskModal()">Add Task</button>
             </div>
             <div class="filter-bar">
                 <div class="filter-group">
                     <label>View:</label>
-                    <select id="billingFilter" onchange="filterBilling()">
-                        <option value="invoices">Invoices</option>
-                        <option value="payments">Payments</option>
+                    <select id="taskFilter" onchange="filterTasks()">
+                        <option value="all">All Tasks</option>
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="today">Today Only</option>
                     </select>
                 </div>
             </div>
             <div class="table-container">
-                <table id="invoicesTable">
+                <table id="tasksTable">
                     <thead>
                         <tr>
-                            <th>Invoice #</th>
-                            <th>Patient</th>
                             <th>Date</th>
-                            <th>Reason</th>
-                            <th>Amount</th>
+                            <th>Time</th>
+                            <th>Task</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -347,62 +377,9 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <div class="table-container" id="paymentsTableContainer" style="display: none;">
-                <table id="paymentsTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Patient</th>
-                            <th>ID / Passport</th>
-                            <th>Phone</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="billingEmpty" style="display: none;">
-                <h3>No billing records</h3>
-                <p>Generate an invoice or process a payment.</p>
-            </div>
-        </div>
-
-        <!-- Reports Tab -->
-        <div class="tab-panel" id="reportsPanel">
-            <div class="section-header">
-                <h2>Reports</h2>
-                <button class="btn btn-primary" onclick="openReportModal()">Generate Report</button>
-            </div>
-            <div class="filter-bar">
-                <div class="filter-group">
-                    <label>Type:</label>
-                    <select id="reportTypeFilter" onchange="filterReports()">
-                        <option value="">All</option>
-                        <option value="daily">Daily Summary</option>
-                        <option value="patient">Patient Reports</option>
-                        <option value="financial">Financial Reports</option>
-                        <option value="insurance">Insurance Reports</option>
-                    </select>
-                </div>
-            </div>
-            <div class="table-container">
-                <table id="reportsTable">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Patient</th>
-                            <th>ID / Passport</th>
-                            <th>Type</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="reportsEmpty" style="display: none;">
-                <h3>No reports generated</h3>
-                <p>Click "Generate Report" to create one.</p>
+            <div class="empty-state" id="tasksEmpty" style="display: none;">
+                <h3>No tasks</h3>
+                <p>Click "Add Task" to create one.</p>
             </div>
         </div>
     </div>
@@ -568,223 +545,154 @@
         </div>
     </div>
 
-    <!-- Insurance Verification Modal -->
-    <div class="modal" id="verifyInsuranceModal" role="dialog" aria-labelledby="verifyInsuranceModalTitle" aria-modal="true">
+    <!-- Document Upload Modal -->
+    <div class="modal" id="uploadModal" role="dialog" aria-labelledby="uploadModalTitle" aria-modal="true">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="verifyInsuranceModalTitle">Verify Insurance</h3>
-                <button class="modal-close" onclick="closeVerifyInsuranceModal()" aria-label="Close">&times;</button>
+                <h3 id="uploadModalTitle">Upload Document</h3>
+                <button class="modal-close" onclick="closeUploadModal()" aria-label="Close">&times;</button>
             </div>
-            <form id="verifyInsuranceForm" novalidate>
+            <form id="uploadForm" novalidate enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="required">Select Patient</label>
-                    <select id="viPatient" name="patientId" required>
+                    <select id="docPatient" name="patientId" required>
                         <option value="">Loading patients...</option>
                     </select>
-                    <div class="error-message" id="viPatientError"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="required">Medical Aid Number</label>
-                        <input type="text" id="viMedicalAid" name="medicalAidNumber" required placeholder="Medical Aid Membership #">
-                        <div class="error-message" id="viMedicalAidError"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="required">Verification Date</label>
-                        <input type="date" id="viDate" name="date" required max="">
-                        <div class="error-message" id="viDateError"></div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="required">Payment Status</label>
-                        <select id="viPayment" name="paymentStatus" required>
-                            <option value="">Select</option>
-                            <option value="paid">Paid</option>
-                            <option value="pending">Pending</option>
-                            <option value="overdue">Overdue</option>
-                        </select>
-                        <div class="error-message" id="viPaymentError"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select id="viStatus" name="status">
-                            <option value="pending">Pending Verification</option>
-                            <option value="verified">Verified</option>
-                            <option value="rejected">Rejected</option>
-                        </select>
-                    </div>
+                    <div class="error-message" id="docPatientError"></div>
                 </div>
                 <div class="form-group">
-                    <label>Notes</label>
-                    <textarea id="viNotes" name="notes" rows="3" placeholder="Additional notes..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeVerifyInsuranceModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit Verification</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Invoice Modal -->
-    <div class="modal" id="invoiceModal" role="dialog" aria-labelledby="invoiceModalTitle" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="invoiceModalTitle">Generate Invoice</h3>
-                <button class="modal-close" onclick="closeInvoiceModal()" aria-label="Close">&times;</button>
-            </div>
-            <form id="invoiceForm" novalidate>
-                <div class="form-group">
-                    <label class="required">Select Patient</label>
-                    <select id="invPatient" name="patientId" required>
-                        <option value="">Loading patients...</option>
-                    </select>
-                    <div class="error-message" id="invPatientError"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="required">Date</label>
-                        <input type="date" id="invDate" name="date" required max="">
-                        <div class="error-message" id="invDateError"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="required">Reason for Visit</label>
-                        <select id="invReason" name="reason" required>
-                            <option value="">Select</option>
-                            <option value="General Check-Up">General Check-Up</option>
-                            <option value="Follow-Up">Follow-Up</option>
-                            <option value="Specific Ailment">Specific Ailment</option>
-                            <option value="Surgery">Surgery</option>
-                            <option value="Vaccination">Vaccination</option>
-                            <option value="Maternity">Maternity</option>
-                            <option value="Emergency">Emergency</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <div class="error-message" id="invReasonError"></div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Prescription</label>
-                        <input type="text" id="invPrescription" name="prescription" placeholder="Prescription details">
-                    </div>
-                    <div class="form-group">
-                        <label>Treatment</label>
-                        <input type="text" id="invTreatment" name="treatment" placeholder="Treatment details">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="required">Fee Amount (NAD)</label>
-                        <input type="number" id="invFee" name="fee" required min="0" step="0.01" placeholder="0.00">
-                        <div class="error-message" id="invFeeError"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Paid</label>
-                        <select id="invPaid" name="paid">
-                            <option value="false">No</option>
-                            <option value="true">Yes</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Generate Invoice</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Payment Modal -->
-    <div class="modal" id="paymentModal" role="dialog" aria-labelledby="paymentModalTitle" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="paymentModalTitle">Process Payment</h3>
-                <button class="modal-close" onclick="closePaymentModal()" aria-label="Close">&times;</button>
-            </div>
-            <form id="paymentForm" novalidate>
-                <div class="form-group">
-                    <label class="required">Select Patient</label>
-                    <select id="payPatient" name="patientId" required>
-                        <option value="">Loading patients...</option>
-                    </select>
-                    <div class="error-message" id="payPatientError"></div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="required">Date</label>
-                        <input type="date" id="payDate" name="date" required max="">
-                        <div class="error-message" id="payDateError"></div>
-                    </div>
-                    <div class="form-group">
-                        <label class="required">Amount (NAD)</label>
-                        <input type="number" id="payAmount" name="amount" required min="0" step="0.01" placeholder="0.00">
-                        <div class="error-message" id="payAmountError"></div>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <select id="payMethod" name="method">
-                            <option value="cash">Cash</option>
-                            <option value="card">Card</option>
-                            <option value="insurance">Insurance</option>
-                            <option value="eft">EFT</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Reference #</label>
-                        <input type="text" id="payReference" name="reference" placeholder="Transaction reference">
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Process Payment</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Report Modal -->
-    <div class="modal" id="reportModal" role="dialog" aria-labelledby="reportModalTitle" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="reportModalTitle">Generate Report</h3>
-                <button class="modal-close" onclick="closeReportModal()" aria-label="Close">&times;</button>
-            </div>
-            <form id="reportForm" novalidate>
-                <div class="form-group">
-                    <label class="required">Report Type</label>
-                    <select id="rptType" name="type" required>
+                    <label class="required">Category</label>
+                    <select id="docCategory" name="category" required>
                         <option value="">Select</option>
-                        <option value="daily">Daily Summary</option>
-                        <option value="patient">Patient Report</option>
-                        <option value="financial">Financial Report</option>
-                        <option value="insurance">Insurance Report</option>
+                        <option value="lab_results">Lab Results</option>
+                        <option value="prescriptions">Prescriptions</option>
+                        <option value="referrals">Referrals</option>
+                        <option value="imaging">Imaging (X-ray, MRI, etc.)</option>
+                        <option value="consent">Consent Forms</option>
+                        <option value="discharge">Discharge Summaries</option>
+                        <option value="other">Other</option>
                     </select>
-                    <div class="error-message" id="rptTypeError"></div>
+                    <div class="error-message" id="docCategoryError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">File</label>
+                    <input type="file" id="docFile" name="file" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div class="error-message" id="docFileError"></div>
+                    <small style="color: #666;">Max 10MB. PDF, JPG, PNG, DOC, DOCX</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeUploadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Upload Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Medication Administration Modal -->
+    <div class="modal" id="medAdminModal" role="dialog" aria-labelledby="medAdminModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="medAdminModalTitle">Record Medication Administration</h3>
+                <button class="modal-close" onclick="closeMedAdminModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="medAdminForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="maPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="maPatientError"></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Patient (for patient reports)</label>
-                        <select id="rptPatient" name="patientId">
-                            <option value="">Select Patient</option>
-                        </select>
+                        <label class="required">Date</label>
+                        <input type="date" id="maDate" name="date" required max="">
+                        <div class="error-message" id="maDateError"></div>
                     </div>
                     <div class="form-group">
+                        <label class="required">Ailment</label>
+                        <input type="text" id="maAilment" name="ailment" required placeholder="e.g., Hypertension">
+                        <div class="error-message" id="maAilmentError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Treatment</label>
+                        <input type="text" id="maTreatment" name="treatment" required placeholder="e.g., Antihypertensive therapy">
+                        <div class="error-message" id="maTreatmentError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Prescription</label>
+                        <input type="text" id="maPrescription" name="prescription" required placeholder="e.g., Amlodipine 5mg daily">
+                        <div class="error-message" id="maPrescriptionError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Quantity</label>
+                        <input type="number" id="maQuantity" name="quantity" required min="1" placeholder="e.g., 30">
+                        <div class="error-message" id="maQuantityError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" id="maNotes" name="notes" placeholder="Additional notes...">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeMedAdminModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Administration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Inventory Modal -->
+    <div class="modal" id="inventoryModal" role="dialog" aria-labelledby="inventoryModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="inventoryModalTitle">Medication Inventory</h3>
+                <button class="modal-close" onclick="closeInventoryModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="inventoryForm" novalidate>
+                <div id="inventoryItems"></div>
+                <button type="button" class="btn btn-secondary" onclick="addInventoryRow()" style="margin-bottom: 16px;">+ Add Medication</button>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInventoryModal()">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Inventory</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal" role="dialog" aria-labelledby="taskModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="taskModalTitle">Add Task</h3>
+                <button class="modal-close" onclick="closeTaskModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="taskForm" novalidate>
+                <input type="hidden" id="taskId" name="taskId">
+                <div class="form-row">
+                    <div class="form-group">
                         <label class="required">Date</label>
-                        <input type="date" id="rptDate" name="date" required max="">
-                        <div class="error-message" id="rptDateError"></div>
+                        <input type="date" id="taskDate" name="date" required min="">
+                        <div class="error-message" id="taskDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Time</label>
+                        <input type="time" id="taskTime" name="time" required>
+                        <div class="error-message" id="taskTimeError"></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
-                    <textarea id="rptDescription" name="description" rows="3" placeholder="Report details..."></textarea>
+                    <label class="required">Task Description</label>
+                    <textarea id="taskText" name="text" rows="3" required placeholder="What needs to be done?"></textarea>
+                    <div class="error-message" id="taskTextError"></div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Generate Report</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Task</button>
                 </div>
             </form>
         </div>
@@ -800,16 +708,24 @@
             signOut as signOutUser,
             getMyPatients,
             createPatient,
+            getPatientById,
             updatePatient,
             deletePatient as deletePatientUser,
             getAppointmentsByStaff,
             createAppointment,
             updateAppointment,
             deleteAppointment,
-            verifyInsurance,
-            createInvoice,
-            processPayment,
-            generateReport,
+            getDocumentsByStaff,
+            uploadDocument,
+            deleteDocument,
+            recordMedicationAdministration,
+            getMyMedicationRecords,
+            updateMedicationInventory,
+            getMedicationInventory,
+            addTask,
+            getMyTasks,
+            updateTask,
+            deleteTask,
             initInactivityTimer,
             showToast,
             isValidNamibianPhone,
@@ -828,10 +744,9 @@
         let currentProfile = null;
         let allPatients = [];
         let allAppointments = [];
-        let allInsurance = [];
-        let allInvoices = [];
-        let allPayments = [];
-        let allReports = [];
+        let allDocuments = [];
+        let allMedRecords = [];
+        let allTasks = [];
 
         // DOM Elements
         const headerAvatar = document.getElementById('headerAvatar');
@@ -862,8 +777,8 @@
                         .filter(v => v && String(v).trim())
                         .map(v => String(v).trim())
                         .join(' ');
-                    headerName.textContent = `Hello, ${displayName || 'Receptionist'}`;
-                    headerRole.textContent = currentProfile.profession || 'Receptionist';
+                    headerName.textContent = `Hello, ${displayName || 'Staff Member'}`;
+                    headerRole.textContent = currentProfile.profession || 'Medical Staff';
                     headerInstitute.textContent = currentProfile.institute || 'Ministry of Health';
                     headerAvatar.src = currentProfile.profilePictureUrl || 'default-profile.png';
                 }
@@ -872,9 +787,9 @@
                 await Promise.all([
                     loadPatients(),
                     loadAppointments(),
-                    loadInsurance(),
-                    loadBilling(),
-                    loadReports()
+                    loadDocuments(),
+                    loadMedRecords(),
+                    loadTasks()
                 ]);
 
                 // Update stats
@@ -897,21 +812,19 @@
             renderAppointments();
         }
 
-        async function loadInsurance() {
-            // For now, using a placeholder - in production, query Firestore collection
-            allInsurance = JSON.parse(localStorage.getItem('insuranceVerifications') || '[]');
-            renderInsurance();
+        async function loadDocuments() {
+            allDocuments = await getDocumentsByStaff(currentUser.uid);
+            renderDocuments();
         }
 
-        async function loadBilling() {
-            allInvoices = JSON.parse(localStorage.getItem('invoices') || '[]');
-            allPayments = JSON.parse(localStorage.getItem('payments') || '[]');
-            renderBilling();
+        async function loadMedRecords() {
+            allMedRecords = await getMyMedicationRecords();
+            renderMedRecords();
         }
 
-        async function loadReports() {
-            allReports = JSON.parse(localStorage.getItem('reports') || '[]');
-            renderReports();
+        async function loadTasks() {
+            allTasks = await getMyTasks();
+            renderTasks();
         }
 
         // ============ STATS ============
@@ -919,16 +832,15 @@
             const today = new Date().toISOString().split('T')[0];
             const upcoming = allAppointments.filter(a => a.date >= today && a.status === 'scheduled').length;
             const todayAppts = allAppointments.filter(a => a.date === today).length;
-            const pendingInsurance = allInsurance.filter(i => i.status === 'pending').length;
-            const unpaidInvoices = allInvoices.filter(inv => inv.paid === false).length;
+            const pendingTasks = allTasks.filter(t => !t.completed && t.date >= today).length;
 
             statsGrid.innerHTML = `
                 <div class="stat-card"><div class="label">Total Patients</div><div class="value">${allPatients.length}</div></div>
                 <div class="stat-card"><div class="label">Upcoming Appointments</div><div class="value">${upcoming}</div></div>
                 <div class="stat-card"><div class="label">Today's Appointments</div><div class="value">${todayAppts}</div></div>
-                <div class="stat-card"><div class="label">Pending Insurance</div><div class="value">${pendingInsurance}</div></div>
-                <div class="stat-card"><div class="label">Unpaid Invoices</div><div class="value">${unpaidInvoices}</div></div>
-                <div class="stat-card"><div class="label">Reports Generated</div><div class="value">${allReports.length}</div></div>
+                <div class="stat-card"><div class="label">Documents</div><div class="value">${allDocuments.length}</div></div>
+                <div class="stat-card"><div class="label">Medication Records</div><div class="value">${allMedRecords.length}</div></div>
+                <div class="stat-card"><div class="label">Pending Tasks</div><div class="value">${pendingTasks}</div></div>
             `;
         }
 
@@ -1013,10 +925,9 @@
         }
 
         function populatePatientDropdowns() {
-            const selects = ['apptPatient', 'viPatient', 'invPatient', 'payPatient', 'rptPatient'];
+            const selects = ['apptPatient', 'docPatient', 'maPatient'];
             selects.forEach(id => {
                 const select = document.getElementById(id);
-                if (!select) return;
                 const currentValue = select.value;
                 select.innerHTML = '<option value="">Select patient</option>';
                 allPatients.forEach(p => {
@@ -1027,6 +938,20 @@
                 });
                 if (allPatients.some(p => p.id === currentValue)) select.value = currentValue;
             });
+
+            // Also populate document patient filter
+            const docFilter = document.getElementById('docPatientFilter');
+            if (docFilter) {
+                const currentVal = docFilter.value;
+                docFilter.innerHTML = '<option value="">All Patients</option>';
+                allPatients.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = `${p.fullName} ${p.surname}`;
+                    docFilter.appendChild(opt);
+                });
+                if (allPatients.some(p => p.id === currentVal)) docFilter.value = currentVal;
+            }
         }
 
         window.viewPatient = function(id) {
@@ -1319,6 +1244,17 @@
                     status: document.getElementById('apptStatus').value
                 };
 
+                // Carry the selected patient's details onto the appointment.
+                // Name + surname are how the patient's own account matches this
+                // appointment on their dashboard; patientUserId when linked.
+                const selPatient = allPatients.find(p => p.id === data.patientId);
+                if (selPatient) {
+                    data.patientUserId = selPatient.patientUserId || null;
+                    data.patientName = selPatient.fullName || null;
+                    data.patientSurname = selPatient.surname || null;
+                    data.patientDob = selPatient.dob || null;
+                }
+
                 if (editingAppointmentId) {
                     await updateAppointment(editingAppointmentId, data);
                     showToast('Appointment updated', 'success');
@@ -1361,19 +1297,21 @@
             return valid;
         }
 
-        // ============ INSURANCE ============
-        function renderInsurance() {
-            const tbody = document.getElementById('insuranceTable').querySelector('tbody');
-            const empty = document.getElementById('insuranceEmpty');
+        // ============ DOCUMENTS ============
+        function renderDocuments() {
+            const tbody = document.getElementById('documentsTable').querySelector('tbody');
+            const empty = document.getElementById('documentsEmpty');
 
-            const statusFilter = document.getElementById('insuranceStatusFilter').value;
+            const categoryFilter = document.getElementById('docCategoryFilter').value;
+            const patientFilter = document.getElementById('docPatientFilter').value;
 
-            let filtered = allInsurance.filter(i => {
-                if (statusFilter && i.status !== statusFilter) return false;
+            let filtered = allDocuments.filter(doc => {
+                if (categoryFilter && doc.category !== categoryFilter) return false;
+                if (patientFilter && doc.patientId !== patientFilter) return false;
                 return true;
             });
 
-            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+            filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
             if (filtered.length === 0) {
                 tbody.innerHTML = '';
@@ -1382,291 +1320,343 @@
             }
 
             empty.style.display = 'none';
-            tbody.innerHTML = filtered.map(ins => `
+            tbody.innerHTML = filtered.map(doc => `
                 <tr>
-                    <td>${formatDate(ins.date)}</td>
-                    <td>${ins.patientName || 'Unknown'}</td>
-                    <td>${ins.idPassport || '-'}</td>
-                    <td>${ins.medicalAidNumber || '-'}</td>
-                    <td><span class="status-badge status-${ins.status}">${ins.status}</span></td>
+                    <td><a href="${doc.fileUrl}" target="_blank" rel="noopener noreferrer">${doc.fileName}</a></td>
+                    <td>${doc.patientName || 'Unknown'}</td>
+                    <td><span class="status-badge status-pending">${doc.category.replace('_', ' ')}</span></td>
+                    <td>${formatDate(doc.uploadDate)}</td>
                     <td>
-                        <button class="btn-sm btn-view" onclick="viewInsurance('${ins.id}')">View</button>
-                        <button class="btn-sm btn-edit" onclick="editInsurance('${ins.id}')">Edit</button>
+                        <a href="${doc.fileUrl}" target="_blank" class="btn-sm btn-view" style="text-decoration:none;padding:6px 12px;">View</a>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteDocument('${doc.id}')">Delete</button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        function filterInsurance() { renderInsurance(); }
+        function filterDocuments() { renderDocuments(); }
 
-        window.openVerifyInsuranceModal = function(insurance = null) {
-            const form = document.getElementById('verifyInsuranceForm');
-            const title = document.getElementById('verifyInsuranceModalTitle');
+        window.confirmDeleteDocument = function(id) {
+            if (confirm('Delete this document?')) deleteDocument(id);
+        };
+
+        window.openUploadModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('uploadForm').reset();
+            clearAllErrors('uploadForm');
+            document.getElementById('uploadModal').classList.add('show');
+        };
+
+        window.closeUploadModal = function() {
+            document.getElementById('uploadModal').classList.remove('show');
+        };
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('docFile');
+            if (!fileInput.files[0]) {
+                setError(fileInput, document.getElementById('docFileError'), 'Select a file');
+                return;
+            }
+            if (fileInput.files[0].size > 10 * 1024 * 1024) {
+                setError(fileInput, document.getElementById('docFileError'), 'File must be under 10MB');
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+
+            try {
+                await uploadDocument(
+                    currentUser.uid,
+                    document.getElementById('docPatient').value,
+                    fileInput.files[0],
+                    document.getElementById('docCategory').value
+                );
+                showToast('Document uploaded', 'success');
+                closeUploadModal();
+                await loadDocuments();
+                updateStats();
+            } catch (error) {
+                showToast('Upload failed: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Document';
+            }
+        });
+
+        // ============ MEDICATIONS ============
+        function renderMedRecords() {
+            const tbody = document.getElementById('medAdminTable').querySelector('tbody');
+            const empty = document.getElementById('medAdminEmpty');
+
+            if (allMedRecords.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = allMedRecords.map(mr => `
+                <tr>
+                    <td>${formatDate(mr.date)}</td>
+                    <td>${mr.patientName || mr.fullName || 'Unknown'}</td>
+                    <td>${mr.ailment || '-'}</td>
+                    <td>${mr.treatment || '-'}</td>
+                    <td>${mr.prescription || '-'}</td>
+                    <td>${mr.quantity || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        window.openMedAdminModal = function() {
+            populatePatientDropdowns();
+            document.getElementById('medAdminForm').reset();
+            clearAllErrors('medAdminForm');
+            document.getElementById('maDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('medAdminModal').classList.add('show');
+        };
+
+        window.closeMedAdminModal = function() {
+            document.getElementById('medAdminModal').classList.remove('show');
+        };
+
+        document.getElementById('medAdminForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!validateMedAdminForm()) return;
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Recording...';
+
+            try {
+                const data = {
+                    patientId: document.getElementById('maPatient').value,
+                    date: document.getElementById('maDate').value,
+                    ailment: document.getElementById('maAilment').value.trim(),
+                    treatment: document.getElementById('maTreatment').value.trim(),
+                    prescription: document.getElementById('maPrescription').value.trim(),
+                    quantity: parseInt(document.getElementById('maQuantity').value),
+                    notes: document.getElementById('maNotes').value.trim()
+                };
+
+                await recordMedicationAdministration(currentUser.uid, data);
+                showToast('Medication recorded', 'success');
+                closeMedAdminModal();
+                await loadMedRecords();
+                updateStats();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Record Administration';
+            }
+        });
+
+        function validateMedAdminForm() {
+            clearAllErrors('medAdminForm');
+            let valid = true;
+
+            if (!document.getElementById('maPatient').value) {
+                setError(document.getElementById('maPatient'), document.getElementById('maPatientError'), 'Select a patient');
+                valid = false;
+            }
+            if (!document.getElementById('maDate').value) {
+                setError(document.getElementById('maDate'), document.getElementById('maDateError'), 'Date required');
+                valid = false;
+            }
+            if (!document.getElementById('maAilment').value.trim()) {
+                setError(document.getElementById('maAilment'), document.getElementById('maAilmentError'), 'Ailment required');
+                valid = false;
+            }
+            if (!document.getElementById('maTreatment').value.trim()) {
+                setError(document.getElementById('maTreatment'), document.getElementById('maTreatmentError'), 'Treatment required');
+                valid = false;
+            }
+            if (!document.getElementById('maPrescription').value.trim()) {
+                setError(document.getElementById('maPrescription'), document.getElementById('maPrescriptionError'), 'Prescription required');
+                valid = false;
+            }
+            if (!document.getElementById('maQuantity').value) {
+                setError(document.getElementById('maQuantity'), document.getElementById('maQuantityError'), 'Quantity required');
+                valid = false;
+            }
+            return valid;
+        }
+
+        // Inventory Modal
+        window.openInventoryModal = async function() {
+            const modal = document.getElementById('inventoryModal');
+            const container = document.getElementById('inventoryItems');
+            container.innerHTML = '';
+
+            try {
+                const inventory = await getMedicationInventory() || {};
+                const meds = inventory.medications || [];
+                
+                if (meds.length === 0) {
+                    addInventoryRow();
+                } else {
+                    meds.forEach((med, i) => addInventoryRow(med, i));
+                }
+            } catch (error) {
+                addInventoryRow();
+            }
+
+            modal.classList.add('show');
+        };
+
+        window.closeInventoryModal = function() {
+            document.getElementById('inventoryModal').classList.remove('show');
+        };
+
+        function addInventoryRow(med = {}, index) {
+            const container = document.getElementById('inventoryItems');
+            const row = document.createElement('div');
+            row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 12px; margin-bottom: 12px; align-items: end;';
+            row.innerHTML = `
+                <input type="text" placeholder="Medication Name" value="${med.name || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="text" placeholder="Strength" value="${med.strength || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="number" placeholder="Quantity" value="${med.quantity || ''}" min="0" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <input type="date" placeholder="Expiry" value="${med.expiry || ''}" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <button type="button" class="btn btn-delete" onclick="this.parentElement.remove()" style="padding: 10px 16px;">Remove</button>
+            `;
+            container.appendChild(row);
+        }
+
+        document.getElementById('inventoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rows = document.querySelectorAll('#inventoryItems > div');
+            const medications = [];
+            
+            rows.forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if (inputs[0].value.trim()) {
+                    medications.push({
+                        name: inputs[0].value.trim(),
+                        strength: inputs[1].value.trim(),
+                        quantity: parseInt(inputs[2].value) || 0,
+                        expiry: inputs[3].value
+                    });
+                }
+            });
+
+            try {
+                await updateMedicationInventory({ medications });
+                showToast('Inventory saved', 'success');
+                closeInventoryModal();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
+
+        // ============ TASKS ============
+        function renderTasks() {
+            const tbody = document.getElementById('tasksTable').querySelector('tbody');
+            const empty = document.getElementById('tasksEmpty');
+            const filter = document.getElementById('taskFilter').value;
+            const today = new Date().toISOString().split('T')[0];
+
+            let filtered = allTasks.filter(t => {
+                if (filter === 'pending') return !t.completed;
+                if (filter === 'completed') return t.completed;
+                if (filter === 'today') return t.date === today;
+                return true;
+            });
+
+            filtered.sort((a, b) => {
+                if (a.date !== b.date) return a.date.localeCompare(b.date);
+                return (a.time || '').localeCompare(b.time || '');
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            tbody.innerHTML = filtered.map(task => `
+                <tr style="${task.completed ? 'opacity: 0.6;' : ''}">
+                    <td>${formatDate(task.date)}</td>
+                    <td>${task.time || '-'}</td>
+                    <td style="${task.completed ? 'text-decoration: line-through;' : ''}">${task.text}</td>
+                    <td><span class="status-badge status-${task.completed ? 'completed' : 'pending'}">${task.completed ? 'Completed' : 'Pending'}</span></td>
+                    <td>
+                        <button class="btn-sm btn-edit" onclick="toggleTask('${task.id}')">${task.completed ? 'Undo' : 'Done'}</button>
+                        <button class="btn-sm btn-delete" onclick="confirmDeleteTask('${task.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterTasks() { renderTasks(); }
+
+        window.openTaskModal = function(task = null) {
+            const form = document.getElementById('taskForm');
+            const title = document.getElementById('taskModalTitle');
             form.reset();
-            clearAllErrors('verifyInsuranceForm');
-            populatePatientDropdowns();
-            document.getElementById('viDate').max = new Date().toISOString().split('T')[0];
+            clearAllErrors('taskForm');
+            document.getElementById('taskDate').min = new Date().toISOString().split('T')[0];
 
-            if (insurance) {
-                title.textContent = 'Edit Insurance Verification';
-                document.getElementById('viPatient').value = insurance.patientId || '';
-                document.getElementById('viMedicalAid').value = insurance.medicalAidNumber || '';
-                document.getElementById('viDate').value = insurance.date || '';
-                document.getElementById('viPayment').value = insurance.paymentStatus || '';
-                document.getElementById('viStatus').value = insurance.status || 'pending';
-                document.getElementById('viNotes').value = insurance.notes || '';
+            if (task) {
+                title.textContent = 'Edit Task';
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskDate').value = task.date;
+                document.getElementById('taskTime').value = task.time || '';
+                document.getElementById('taskText').value = task.text;
             } else {
-                title.textContent = 'Verify Insurance';
+                title.textContent = 'Add Task';
+                document.getElementById('taskId').value = '';
             }
 
-            document.getElementById('verifyInsuranceModal').classList.add('show');
+            document.getElementById('taskModal').classList.add('show');
         };
 
-        window.closeVerifyInsuranceModal = function() {
-            document.getElementById('verifyInsuranceModal').classList.remove('show');
+        window.closeTaskModal = function() {
+            document.getElementById('taskModal').classList.remove('show');
         };
 
-        document.getElementById('verifyInsuranceForm').addEventListener('submit', async (e) => {
+        document.getElementById('taskForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+            const id = document.getElementById('taskId').value;
             const data = {
-                patientId: document.getElementById('viPatient').value,
-                medicalAidNumber: document.getElementById('viMedicalAid').value.trim(),
-                date: document.getElementById('viDate').value,
-                paymentStatus: document.getElementById('viPayment').value,
-                status: document.getElementById('viStatus').value,
-                notes: document.getElementById('viNotes').value.trim()
+                date: document.getElementById('taskDate').value,
+                time: document.getElementById('taskTime').value,
+                text: document.getElementById('taskText').value.trim()
             };
 
-            if (!data.patientId || !data.medicalAidNumber || !data.date || !data.paymentStatus) {
+            if (!data.date || !data.time || !data.text) {
                 showToast('Fill all required fields', 'error');
                 return;
             }
 
             try {
-                await verifyInsurance(currentUser.uid, data);
-                showToast('Insurance verification submitted', 'success');
-                closeVerifyInsuranceModal();
-                await loadInsurance();
+                if (id) await updateTask(id, data);
+                else await addTask(data);
+                
+                showToast(id ? 'Task updated' : 'Task added', 'success');
+                closeTaskModal();
+                await loadTasks();
                 updateStats();
             } catch (error) {
                 showToast('Error: ' + error.message, 'error');
             }
         });
 
-        // ============ BILLING ============
-        function renderBilling() {
-            const filter = document.getElementById('billingFilter').value;
-            const invoicesTable = document.getElementById('invoicesTable');
-            const paymentsTable = document.getElementById('paymentsTable');
-            const invoicesContainer = invoicesTable.parentElement;
-            const paymentsContainer = document.getElementById('paymentsTableContainer');
-            const empty = document.getElementById('billingEmpty');
-
-            if (filter === 'invoices') {
-                invoicesContainer.style.display = 'block';
-                paymentsContainer.style.display = 'none';
-
-                if (allInvoices.length === 0) {
-                    invoicesTable.querySelector('tbody').innerHTML = '';
-                    empty.style.display = 'block';
-                    return;
-                }
-
-                empty.style.display = 'none';
-                invoicesTable.querySelector('tbody').innerHTML = allInvoices.map(inv => `
-                    <tr>
-                        <td>INV-${inv.id.slice(-8).toUpperCase()}</td>
-                        <td>${inv.patientName || 'Unknown'}</td>
-                        <td>${formatDate(inv.date)}</td>
-                        <td>${inv.reason || '-'}</td>
-                        <td>NAD ${parseFloat(inv.fee || 0).toFixed(2)}</td>
-                        <td><span class="status-badge status-${inv.paid ? 'completed' : 'pending'}">${inv.paid ? 'Paid' : 'Unpaid'}</span></td>
-                        <td>
-                            <button class="btn-sm btn-view" onclick="viewInvoice('${inv.id}')">View</button>
-                            ${!inv.paid ? `<button class="btn-sm btn-verify" onclick="markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
-            } else {
-                invoicesContainer.style.display = 'none';
-                paymentsContainer.style.display = 'block';
-
-                if (allPayments.length === 0) {
-                    paymentsTable.querySelector('tbody').innerHTML = '';
-                    empty.style.display = 'block';
-                    return;
-                }
-
-                empty.style.display = 'none';
-                paymentsTable.querySelector('tbody').innerHTML = allPayments.map(pay => `
-                    <tr>
-                        <td>${formatDate(pay.date)}</td>
-                        <td>${pay.patientName || 'Unknown'}</td>
-                        <td>${pay.idPassport || '-'}</td>
-                        <td>${pay.cellPhone || '-'}</td>
-                        <td>NAD ${parseFloat(pay.amount || 0).toFixed(2)}</td>
-                        <td><span class="status-badge status-completed">${pay.method || 'Processed'}</span></td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        function filterBilling() { renderBilling(); }
-
-        window.openInvoiceModal = function() {
-            populatePatientDropdowns();
-            document.getElementById('invoiceForm').reset();
-            clearAllErrors('invoiceForm');
-            document.getElementById('invDate').max = new Date().toISOString().split('T')[0];
-            document.getElementById('invoiceModal').classList.add('show');
-        };
-
-        window.closeInvoiceModal = function() {
-            document.getElementById('invoiceModal').classList.remove('show');
-        };
-
-        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const data = {
-                patientId: document.getElementById('invPatient').value,
-                date: document.getElementById('invDate').value,
-                reason: document.getElementById('invReason').value,
-                prescription: document.getElementById('invPrescription').value,
-                treatment: document.getElementById('invTreatment').value,
-                fee: parseFloat(document.getElementById('invFee').value),
-                paid: document.getElementById('invPaid').value === 'true'
-            };
-
-            if (!data.patientId || !data.date || !data.reason || isNaN(data.fee)) {
-                showToast('Fill all required fields', 'error');
-                return;
-            }
-
-            try {
-                await createInvoice(currentUser.uid, data);
-                showToast('Invoice generated', 'success');
-                closeInvoiceModal();
-                await loadBilling();
+        window.toggleTask = async function(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (task) {
+                await updateTask(id, { completed: !task.completed });
+                await loadTasks();
                 updateStats();
-            } catch (error) {
-                showToast('Error: ' + error.message, 'error');
             }
-        });
-
-        window.openPaymentModal = function() {
-            populatePatientDropdowns();
-            document.getElementById('paymentForm').reset();
-            clearAllErrors('paymentForm');
-            document.getElementById('payDate').max = new Date().toISOString().split('T')[0];
-            document.getElementById('paymentModal').classList.add('show');
         };
 
-        window.closePaymentModal = function() {
-            document.getElementById('paymentModal').classList.remove('show');
+        window.confirmDeleteTask = function(id) {
+            if (confirm('Delete this task?')) deleteTask(id);
         };
-
-        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const data = {
-                patientId: document.getElementById('payPatient').value,
-                date: document.getElementById('payDate').value,
-                amount: parseFloat(document.getElementById('payAmount').value),
-                method: document.getElementById('payMethod').value,
-                reference: document.getElementById('payReference').value
-            };
-
-            if (!data.patientId || !data.date || isNaN(data.amount)) {
-                showToast('Fill all required fields', 'error');
-                return;
-            }
-
-            try {
-                await processPayment(currentUser.uid, data);
-                showToast('Payment processed', 'success');
-                closePaymentModal();
-                await loadBilling();
-                updateStats();
-            } catch (error) {
-                showToast('Error: ' + error.message, 'error');
-            }
-        });
-
-        // ============ REPORTS ============
-        function renderReports() {
-            const tbody = document.getElementById('reportsTable').querySelector('tbody');
-            const empty = document.getElementById('reportsEmpty');
-
-            const typeFilter = document.getElementById('reportTypeFilter').value;
-
-            let filtered = allReports.filter(r => {
-                if (typeFilter && r.type !== typeFilter) return false;
-                return true;
-            });
-
-            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '';
-                empty.style.display = 'block';
-                return;
-            }
-
-            empty.style.display = 'none';
-            tbody.innerHTML = filtered.map(rpt => `
-                <tr>
-                    <td>${formatDate(rpt.date)}</td>
-                    <td>${rpt.patientName || 'N/A'}</td>
-                    <td>${rpt.idPassport || '-'}</td>
-                    <td>${rpt.type.replace('_', ' ')}</td>
-                    <td>
-                        <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function filterReports() { renderReports(); }
-
-        window.openReportModal = function() {
-            populatePatientDropdowns();
-            document.getElementById('reportForm').reset();
-            clearAllErrors('reportForm');
-            document.getElementById('rptDate').max = new Date().toISOString().split('T')[0];
-            document.getElementById('reportModal').classList.add('show');
-        };
-
-        window.closeReportModal = function() {
-            document.getElementById('reportModal').classList.remove('show');
-        };
-
-        document.getElementById('reportForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const data = {
-                type: document.getElementById('rptType').value,
-                patientId: document.getElementById('rptPatient').value || null,
-                date: document.getElementById('rptDate').value,
-                description: document.getElementById('rptDescription').value
-            };
-
-            if (!data.type || !data.date) {
-                showToast('Fill all required fields', 'error');
-                return;
-            }
-
-            try {
-                await generateReport(currentUser.uid, data);
-                showToast('Report generated', 'success');
-                closeReportModal();
-                await loadReports();
-                updateStats();
-            } catch (error) {
-                showToast('Error: ' + error.message, 'error');
-            }
-        });
 
         // ============ SIGN OUT ============
         async function signOut() {
@@ -1711,10 +1701,9 @@
 
         // Expose for inline event handlers (onclick/onchange)
         window.filterAppointments = filterAppointments;
-        window.filterBilling = filterBilling;
-        window.filterInsurance = filterInsurance;
+        window.filterDocuments = filterDocuments;
         window.filterPatients = filterPatients;
-        window.filterReports = filterReports;
+        window.filterTasks = filterTasks;
         window.signOut = signOut;
     </script>
 </body>
