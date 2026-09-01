@@ -176,6 +176,7 @@
             <button class="btn btn-primary" onclick="openAppointmentModal()"><span>+</span> New Appointment</button>
             <button class="btn btn-primary" onclick="openPrescriptionModal()"><span>💊</span> Add Prescription</button>
             <button class="btn btn-secondary" onclick="openUploadModal()"><span>📄</span> Upload Document</button>
+            <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
     </div>
@@ -1170,6 +1171,17 @@
                     notes: document.getElementById('apptNotes').value.trim(),
                     status: document.getElementById('apptStatus').value
                 };
+
+                // Carry the selected patient's details onto the appointment.
+                // Name + surname are how the patient's own account matches this
+                // appointment on their dashboard; patientUserId when linked.
+                const selPatient = allPatients.find(p => p.id === data.patientId);
+                if (selPatient) {
+                    data.patientUserId = selPatient.patientUserId || null;
+                    data.patientName = selPatient.fullName || null;
+                    data.patientSurname = selPatient.surname || null;
+                    data.patientDob = selPatient.dob || null;
+                }
 
                 if (editingAppointmentId) {
                     await updateAppointment(editingAppointmentId, data);
