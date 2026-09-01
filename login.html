@@ -142,7 +142,7 @@
             signIn, 
             isValidEmail,
             initInactivityTimer,
-            getCurrentUser,
+            onAuthChange,
             getUserProfile
         } from './supabase-health-services.js';
 
@@ -188,11 +188,15 @@
             rememberMe.checked = true;
         }
 
-        // Check if already logged in
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-            dashboardFor(currentUser).then(url => { window.location.href = url; });
-        }
+        // Check if already logged in (listens for the auth state so it never races it)
+        let formSubmitted = false;
+        let autoRedirected = false;
+        onAuthChange(async (user) => {
+            if (!user || formSubmitted || autoRedirected) return;
+            autoRedirected = true;
+            const url = await dashboardFor(user);
+            window.location.href = url;
+        });
 
         // Toast notification
         function showToast(message, type = 'info') {
@@ -256,7 +260,8 @@
             submitBtn.textContent = 'Signing In...';
 
             try {
-                await signIn(emailInput.value.trim(), passwordInput.value);
+                formSubmitted = true;
+                const { user } = await signIn(emailInput.value.trim(), passwordInput.value);
 
                 // Handle remember me
                 if (rememberMe.checked) {
@@ -267,7 +272,7 @@
 
                 showToast('Welcome back!', 'success');
 
-                const target = await dashboardFor(getCurrentUser() || {});
+                const target = await dashboardFor(user || {});
                 setTimeout(() => {
                     window.location.href = target;
                 }, 1000);
@@ -279,5 +284,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8df6ffaed8a59',t:'MTc4Njk3MTc0Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
