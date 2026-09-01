@@ -177,6 +177,7 @@
             <button class="btn btn-secondary" onclick="openVerifyInsuranceModal()"><span>🏥</span> Verify Insurance</button>
             <button class="btn btn-secondary" onclick="openInvoiceModal()"><span>🧾</span> Generate Invoice</button>
             <button class="btn btn-secondary" onclick="openPaymentModal()"><span>💳</span> Process Payment</button>
+            <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
     </div>
@@ -797,11 +798,11 @@
             onAuthChange, 
             getUserProfile,
             updateUserProfile,
-            signOut,
+            signOut as signOutUser,
             getMyPatients,
             createPatient,
             updatePatient,
-            deletePatient,
+            deletePatient as deletePatientUser,
             getAppointmentsByStaff,
             createAppointment,
             updateAppointment,
@@ -858,7 +859,11 @@
                 // Load profile
                 currentProfile = await getUserProfile(currentUser.uid);
                 if (currentProfile) {
-                    headerName.textContent = currentProfile.fullName || currentProfile.displayName || 'Receptionist';
+                                        const displayName = [currentProfile.surname, currentProfile.fullName]
+                        .filter(v => v && String(v).trim())
+                        .map(v => String(v).trim())
+                        .join(' ');
+                    headerName.textContent = `Hello, ${displayName || 'Receptionist'}`;
                     headerRole.textContent = currentProfile.profession || 'Receptionist';
                     headerInstitute.textContent = currentProfile.institute || 'Ministry of Health';
                     headerAvatar.src = currentProfile.profilePictureUrl || 'default-profile.png';
@@ -1058,7 +1063,7 @@
 
         async function deletePatient(id) {
             try {
-                await deletePatient(id);
+                await deletePatientUser(id);
                 showToast('Patient deleted', 'success');
                 await loadPatients();
                 updateStats();
@@ -1314,6 +1319,17 @@
                     notes: document.getElementById('apptNotes').value.trim(),
                     status: document.getElementById('apptStatus').value
                 };
+
+                // Carry the selected patient's details onto the appointment.
+                // Name + surname are how the patient's own account matches this
+                // appointment on their dashboard; patientUserId when linked.
+                const selPatient = allPatients.find(p => p.id === data.patientId);
+                if (selPatient) {
+                    data.patientUserId = selPatient.patientUserId || null;
+                    data.patientName = selPatient.fullName || null;
+                    data.patientSurname = selPatient.surname || null;
+                    data.patientDob = selPatient.dob || null;
+                }
 
                 if (editingAppointmentId) {
                     await updateAppointment(editingAppointmentId, data);
@@ -1667,7 +1683,7 @@
         // ============ SIGN OUT ============
         async function signOut() {
             try {
-                await signOut();
+                await signOutUser();
                 showToast('Signed out successfully', 'success');
                 setTimeout(() => window.location.href = 'login.html', 1000);
             } catch (error) {
@@ -1704,6 +1720,14 @@
                 document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
             }
         });
+
+        // Expose for inline event handlers (onclick/onchange)
+        window.filterAppointments = filterAppointments;
+        window.filterBilling = filterBilling;
+        window.filterInsurance = filterInsurance;
+        window.filterPatients = filterPatients;
+        window.filterReports = filterReports;
+        window.signOut = signOut;
     </script>
 </body>
 </html>
