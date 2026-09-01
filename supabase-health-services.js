@@ -508,7 +508,27 @@ export async function getPatientAppointments(patientId) {
 }
 
 export async function getUpcomingAppointments(days = 30) {
-    const appointments = await getMyAppointments();
+    const user = requireUser();
+    // Appointments I created, or made for my account.
+    const { data, error } = await supabase.from(T.APPOINTMENTS)
+        .select('*')
+        .or(`created_by.eq.${user.uid},patient_user_id.eq.${user.uid}`)
+        .order('date', { ascending: true }).order('time', { ascending: true });
+    if (error) throw error;
+    let list = data || [];
+    // ...or recorded under my full name + surname (staff record patients manually).
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* fall back to id-based match */ }
+    if (profile && profile.fullName && profile.surname) {
+        const { data: byName, error: nameError } = await supabase.from(T.APPOINTMENTS)
+            .select('*')
+            .filter('patient_name', 'ilike', profile.fullName.trim())
+            .filter('patient_surname', 'ilike', profile.surname.trim())
+            .order('date', { ascending: true });
+        if (!nameError && byName) list = list.concat(byName);
+    }
+    const seen = new Set();
+    const appointments = list.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
     const now = new Date();
     const future = new Date();
     future.setDate(now.getDate() + days);
@@ -519,7 +539,21 @@ export async function getUpcomingAppointments(days = 30) {
 }
 
 export async function updateAppointment(appointmentId, data) {
-    await updateRow(T.APPOINTMENTS, appointmentId, data);
+    const row = {};
+    const put = (k, v) => { if (v !== undefined) row[k] = v; };
+    put('patient_id', data.patientId !== undefined ? data.patientId : data.patient_id);
+    put('patient_user_id', data.patientUserId !== undefined ? data.patientUserId : data.patient_user_id);
+    put('patient_name', data.patientName !== undefined ? data.patientName : data.patient_name);
+    put('patient_surname', data.patientSurname !== undefined ? data.patientSurname : data.patient_surname);
+    put('patient_dob', data.patientDob !== undefined ? data.patientDob : data.patient_dob);
+    put('doctor_specialist', data.doctorSpecialist !== undefined ? data.doctorSpecialist : data.doctor_specialist);
+    put('institution', data.institution);
+    put('date', data.date);
+    put('time', data.time);
+    put('reason', data.reason);
+    put('notes', data.notes);
+    put('status', data.status);
+    await updateRow(T.APPOINTMENTS, appointmentId, row);
 }
 
 export async function deleteAppointment(appointmentId) {
