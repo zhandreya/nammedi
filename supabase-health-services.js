@@ -350,7 +350,8 @@ export async function uploadProfilePicture(uid, file) {
     return downloadUrl;
 }
 
-export async function addPatient(patientData) {
+export async function addPatient(uid, patientData) {
+    // Accepts (uid, patientData) as used by all call sites; the signed-in user is authoritative.
     const user = requireUser();
     const row = {
         full_name: patientData.fullName || patientData.full_name,
@@ -377,31 +378,64 @@ export async function addPatient(patientData) {
     return { id: data.id, ...patientData };
 }
 
+// PostgREST returns snake_case; UI code expects camelCase. Keep both.
+function camelPatient(d) {
+    if (!d) return d;
+    return {
+        ...d,
+        fullName: d.full_name,
+        idPassport: d.id_passport,
+        patientUserId: d.patient_user_id,
+        assignedDoctor: d.assigned_doctor,
+        createdBy: d.created_by,
+        createdAt: d.created_at,
+        updatedAt: d.updated_at
+    };
+}
+
 export async function getMyPatients() {
     const user = requireUser();
-    return selectEq(T.PATIENTS, 'created_by', user.uid);
+    const rows = await selectEq(T.PATIENTS, 'created_by', user.uid);
+    return rows.map(camelPatient);
 }
 
 export async function getAssignedPatients() {
     const user = requireUser();
-    return selectEq(T.PATIENTS, 'assigned_doctor', user.uid);
+    const rows = await selectEq(T.PATIENTS, 'assigned_doctor', user.uid);
+    return rows.map(camelPatient);
 }
 
 export async function getInstitutePatients() {
     const user = requireUser();
     const userProfile = await getUserProfile(user.uid);
     if (!userProfile || !userProfile.institute) throw new Error('User has no institute assigned');
-    return selectEq(T.PATIENTS, 'institute', userProfile.institute);
+    const rows = await selectEq(T.PATIENTS, 'institute', userProfile.institute);
+    return rows.map(camelPatient);
 }
 
 export async function getPatient(patientId) {
     const { data, error } = await supabase.from(T.PATIENTS).select('*').eq('id', patientId).maybeSingle();
     if (error) throw error;
-    return data;
+    return camelPatient(data);
 }
 
 export async function updatePatient(patientId, data) {
-    await updateRow(T.PATIENTS, patientId, data);
+    const row = {};
+    const put = (k, v) => { if (v !== undefined) row[k] = v; };
+    put('full_name', data.fullName !== undefined ? data.fullName : data.full_name);
+    put('surname', data.surname);
+    put('dob', data.dob);
+    put('age', data.age);
+    put('gender', data.gender);
+    put('id_passport', data.idPassport !== undefined ? data.idPassport : data.id_passport);
+    put('phone', data.phone !== undefined ? data.phone : data.cellphone);
+    put('cellphone', data.cellphone !== undefined ? data.cellphone : data.phone);
+    put('insurance', data.insurance);
+    put('institution', data.institution !== undefined ? data.institution : data.institute);
+    put('institute', data.institute !== undefined ? data.institute : data.institution);
+    put('reason', data.reason);
+    put('notes', data.notes);
+    await updateRow(T.PATIENTS, patientId, row);
 }
 
 export async function assignPatientToDoctor(patientId, doctorId) {
@@ -840,7 +874,10 @@ export function isValidEmail(email) {
 
 export function isValidNamibianPhone(phone) {
     const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-    return /^(\+264|0)(?:6[1-8]|8[1-5])\d{7,8}$/.test(cleaned);
+    // National: mobiles are 0 + 9 digits, landlines are 0 + 8 digits
+    if (/^0\d{8,9}$/.test(cleaned)) return true;
+    // With country code: +264 / 264 / 00264 + 8-9 digits
+    return /^(?:\+?0{0,2}264)\d{8,9}$/.test(cleaned);
 }
 
 export function isValidNamibianId(id) {
