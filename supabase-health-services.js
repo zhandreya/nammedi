@@ -476,6 +476,7 @@ export async function createAppointment(appointmentData, maybeData) {
         patient_name: src.patientName || src.fullName || null,
         patient_surname: src.patientSurname || src.surname || null,
         patient_dob: src.patientDob || src.dob || null,
+        patient_id_passport: src.patientIdPassport || null,
         doctor_specialist: src.doctorSpecialist || src.doctor || null,
         institution: src.institution || null,
         date: src.date,
@@ -510,15 +511,17 @@ export async function getPatientAppointments(patientId) {
 export async function getUpcomingAppointments(days = 30) {
     const user = requireUser();
     // Appointments I created, or made for my account.
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* fall back to id-based match */ }
+    const conds = [`created_by.eq.${user.uid}`, `patient_user_id.eq.${user.uid}`];
+    if (profile && profile.idPassport) conds.push(`patient_id_passport.eq.${profile.idPassport.trim()}`);
     const { data, error } = await supabase.from(T.APPOINTMENTS)
         .select('*')
-        .or(`created_by.eq.${user.uid},patient_user_id.eq.${user.uid}`)
+        .or(conds.join(','))
         .order('date', { ascending: true }).order('time', { ascending: true });
     if (error) throw error;
     let list = data || [];
     // ...or recorded under my full name + surname (staff record patients manually).
-    let profile = null;
-    try { profile = await getUserProfile(user.uid); } catch (e) { /* fall back to id-based match */ }
     if (profile && profile.fullName && profile.surname) {
         const { data: byName, error: nameError } = await supabase.from(T.APPOINTMENTS)
             .select('*')
@@ -546,6 +549,7 @@ export async function updateAppointment(appointmentId, data) {
     put('patient_name', data.patientName !== undefined ? data.patientName : data.patient_name);
     put('patient_surname', data.patientSurname !== undefined ? data.patientSurname : data.patient_surname);
     put('patient_dob', data.patientDob !== undefined ? data.patientDob : data.patient_dob);
+    put('patient_id_passport', data.patientIdPassport !== undefined ? data.patientIdPassport : data.patient_id_passport);
     put('doctor_specialist', data.doctorSpecialist !== undefined ? data.doctorSpecialist : data.doctor_specialist);
     put('institution', data.institution);
     put('date', data.date);
