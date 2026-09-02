@@ -521,13 +521,14 @@ export async function getUpcomingAppointments(days = 30) {
         .order('date', { ascending: true }).order('time', { ascending: true });
     if (error) throw error;
     let list = data || [];
-    // ...or recorded under my full name + surname (staff record patients manually).
+    // ...or recorded with my name + surname + date of birth
+    // (matched against what staff entered from the registered patient list).
     if (profile && profile.fullName && profile.surname) {
-        const { data: byName, error: nameError } = await supabase.from(T.APPOINTMENTS)
-            .select('*')
+        let q = supabase.from(T.APPOINTMENTS).select('*')
             .filter('patient_name', 'ilike', profile.fullName.trim())
-            .filter('patient_surname', 'ilike', profile.surname.trim())
-            .order('date', { ascending: true });
+            .filter('patient_surname', 'ilike', profile.surname.trim());
+        if (profile.dob) q = q.eq('patient_dob', profile.dob);
+        const { data: byName, error: nameError } = await q.order('date', { ascending: true });
         if (!nameError && byName) list = list.concat(byName);
     }
     const seen = new Set();
