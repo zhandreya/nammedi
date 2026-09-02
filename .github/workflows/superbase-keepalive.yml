@@ -9,5 +9,17 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase
-        run: curl -fsS -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZHVvd3JpdXJmYmZzb3d4eGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNTc5MzEsImV4cCI6MjEwMTkzMzkzMX0.9KXvTvdzP6PO-UPlMFndeaGOdLrHfj-FvjhHlmCdCiA" https://wkduowriurfbfsowxxel.supabase.co/auth/v1/health
+      - name: Ping Supabase (3 attempts)
+        run: |
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt..."
+            code=$(curl -s -o /tmp/resp.txt -w "%{http_code}" -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrZHVvd3JpdXJmYmZzb3d4eGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNTc5MzEsImV4cCI6MjEwMTkzMzkzMX0.9KXvTvdzP6PO-UPlMFndeaGOdLrHfj-FvjhHlmCdCiA" https://wkduowriurfbfsowxxel.supabase.co/auth/v1/health) || true
+            echo "HTTP $code: $(cat /tmp/resp.txt)"
+            if [ "$code" = "200" ]; then
+              echo "Supabase is up."
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Supabase did not answer 200 after 3 attempts."
+          exit 1
