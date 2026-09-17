@@ -7,7 +7,9 @@ import { supabaseConfig } from './supabase-config.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    // sessionStorage = each browser tab keeps its OWN login session,
+    // so different users can be signed in on different tabs of the same window.
+    auth: { storage: sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
 export const auth = {
@@ -393,6 +395,15 @@ function camelPatient(d) {
     };
 }
 
+// Registered specialists (doctors) — used to suggest names when booking
+export async function getSpecialists() {
+    const { data, error } = await supabase.from(T.USERS)
+        .select('*').eq('role', 'specialist')
+        .order('full_name', { ascending: true });
+    if (error) throw error;
+    return (data || []).map(camelUser);
+}
+
 export async function getMyPatients() {
     const user = requireUser();
     const rows = await selectEq(T.PATIENTS, 'created_by', user.uid);
@@ -470,6 +481,16 @@ export async function searchPatients(searchTerm) {
 export async function createAppointment(appointmentData, maybeData) {
     const user = requireUser();
     const src = (maybeData && typeof maybeData === 'object') ? maybeData : appointmentData;
+    // Record who booked it as the doctor/specialist when not given explicitly
+    let doctor = src.doctorSpecialist || src.doctor || null;
+    if (!doctor) {
+        try {
+            const prof = await getUserProfile(user.uid);
+            if (prof && prof.role === 'specialist') {
+                doctor = [prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null;
+            }
+        } catch (e) { /* leave blank -> shows TBA */ }
+    }
     const data = await insertRow(T.APPOINTMENTS, {
         patient_id: src.patientId || src.patient_id || null,
         patient_user_id: src.patientUserId || null,
@@ -477,7 +498,7 @@ export async function createAppointment(appointmentData, maybeData) {
         patient_surname: src.patientSurname || src.surname || null,
         patient_dob: src.patientDob || src.dob || null,
         patient_id_passport: src.patientIdPassport || null,
-        doctor_specialist: src.doctorSpecialist || src.doctor || null,
+        doctor_specialist: doctor,
         institution: src.institution || null,
         date: src.date,
         time: src.time || null,
@@ -494,11 +515,27 @@ export async function createAppointment(appointmentData, maybeData) {
 
 export async function getMyAppointments() {
     const user = requireUser();
+    // Appointments I created, or made for my account / registered details.
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* fall back to id-based match */ }
+    const conds = [`created_by.eq.${user.uid}`, `patient_user_id.eq.${user.uid}`];
+    if (profile && profile.idPassport) conds.push(`patient_id_passport.eq.${profile.idPassport.trim()}`);
     const { data, error } = await supabase.from(T.APPOINTMENTS)
-        .select('*').eq('created_by', user.uid)
+        .select('*').or(conds.join(','))
         .order('date', { ascending: true }).order('time', { ascending: true });
     if (error) throw error;
-    return data || [];
+    let list = data || [];
+    // ...or recorded with my name + surname + date of birth
+    if (profile && profile.fullName && profile.surname) {
+        let q = supabase.from(T.APPOINTMENTS).select('*')
+            .filter('patient_name', 'ilike', profile.fullName.trim())
+            .filter('patient_surname', 'ilike', profile.surname.trim());
+        if (profile.dob) q = q.eq('patient_dob', profile.dob);
+        const { data: byName, error: nameError } = await q.order('date', { ascending: true });
+        if (!nameError && byName) list = list.concat(byName);
+    }
+    const seen = new Set();
+    return list.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
 }
 
 export async function getPatientAppointments(patientId) {
@@ -509,30 +546,7 @@ export async function getPatientAppointments(patientId) {
 }
 
 export async function getUpcomingAppointments(days = 30) {
-    const user = requireUser();
-    // Appointments I created, or made for my account.
-    let profile = null;
-    try { profile = await getUserProfile(user.uid); } catch (e) { /* fall back to id-based match */ }
-    const conds = [`created_by.eq.${user.uid}`, `patient_user_id.eq.${user.uid}`];
-    if (profile && profile.idPassport) conds.push(`patient_id_passport.eq.${profile.idPassport.trim()}`);
-    const { data, error } = await supabase.from(T.APPOINTMENTS)
-        .select('*')
-        .or(conds.join(','))
-        .order('date', { ascending: true }).order('time', { ascending: true });
-    if (error) throw error;
-    let list = data || [];
-    // ...or recorded with my name + surname + date of birth
-    // (matched against what staff entered from the registered patient list).
-    if (profile && profile.fullName && profile.surname) {
-        let q = supabase.from(T.APPOINTMENTS).select('*')
-            .filter('patient_name', 'ilike', profile.fullName.trim())
-            .filter('patient_surname', 'ilike', profile.surname.trim());
-        if (profile.dob) q = q.eq('patient_dob', profile.dob);
-        const { data: byName, error: nameError } = await q.order('date', { ascending: true });
-        if (!nameError && byName) list = list.concat(byName);
-    }
-    const seen = new Set();
-    const appointments = list.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+    const appointments = await getMyAppointments();
     const now = new Date();
     const future = new Date();
     future.setDate(now.getDate() + days);
@@ -974,7 +988,7 @@ export default {
     supabase, auth, db, storage, USER_ROLES,
     signUp, signIn, signOut, resetPassword, changeEmail, changePassword, getCurrentUser, onAuthChange,
     createUserProfile, getUserProfile, updateUserProfile, updateLastLogin, uploadProfilePicture,
-    addPatient, createPatient, getMyPatients, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
+    addPatient, createPatient, getMyPatients, getSpecialists, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
     getPatient, getPatientById, updatePatient, getAppointmentsByStaff, getDocumentsByStaff,
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
