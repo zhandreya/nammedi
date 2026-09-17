@@ -477,6 +477,11 @@
                     </select>
                     <div class="error-message" id="apptPatientError"></div>
                 </div>
+                <div class="form-group">
+                    <label>Doctor/Specialist</label>
+                    <input type="text" id="apptDoctor" name="doctorSpecialist" list="doctorList" placeholder="Enter the doctor/specialist's name">
+                    <datalist id="doctorList"></datalist>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="required">Date</label>
@@ -638,6 +643,7 @@
             deletePatient as deletePatientUser,
             getAppointmentsByStaff,
             createAppointment,
+            getSpecialists,
             updateAppointment,
             deleteAppointment,
             getDocumentsByStaff,
@@ -1116,6 +1122,22 @@
         // Appointment Modal
         let editingAppointmentId = null;
 
+        // Suggest names of registered specialists in the Doctor/Specialist field
+        async function populateDoctorList() {
+            try {
+                const specialists = await getSpecialists();
+                const dl = document.getElementById('doctorList');
+                if (dl) {
+                    dl.innerHTML = '';
+                    specialists.forEach(u => {
+                        const o = document.createElement('option');
+                        o.value = `${u.fullName} ${u.surname}`.trim();
+                        dl.appendChild(o);
+                    });
+                }
+            } catch (e) { /* suggestions are optional */ }
+        }
+
         window.openAppointmentModal = function(appointment = null) {
             editingAppointmentId = appointment?.id || null;
             const title = document.getElementById('apptModalTitle');
@@ -1125,6 +1147,7 @@
             form.reset();
             clearAllErrors('appointmentForm');
             populatePatientDropdowns();
+            populateDoctorList();
 
             if (appointment) {
                 title.textContent = 'Edit Appointment';
@@ -1137,6 +1160,7 @@
                 document.getElementById('apptReason').value = appointment.reason || '';
                 document.getElementById('apptNotes').value = appointment.notes || '';
                 document.getElementById('apptStatus').value = appointment.status || 'scheduled';
+                document.getElementById('apptDoctor').value = appointment.doctorSpecialist || appointment.doctor_specialist || '';
             } else {
                 title.textContent = 'New Appointment';
                 submitBtn.textContent = 'Save Appointment';
@@ -1169,7 +1193,8 @@
                     time: document.getElementById('apptTime').value,
                     reason: document.getElementById('apptReason').value,
                     notes: document.getElementById('apptNotes').value.trim(),
-                    status: document.getElementById('apptStatus').value
+                    status: document.getElementById('apptStatus').value,
+                    doctorSpecialist: document.getElementById('apptDoctor').value.trim() || null
                 };
 
                 // Carry the selected patient's details onto the appointment.
