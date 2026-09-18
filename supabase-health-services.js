@@ -404,9 +404,28 @@ export async function getSpecialists() {
     return (data || []).map(camelUser);
 }
 
+function normInst(v) {
+    return String(v || '').trim().toLowerCase();
+}
+
 export async function getMyPatients() {
     const user = requireUser();
-    const rows = await selectEq(T.PATIENTS, 'created_by', user.uid);
+    let rows = await selectEq(T.PATIENTS, 'created_by', user.uid);
+    // Institute sharing: staff also see patients registered at their own
+    // institute (by any colleague there), matched case-insensitively.
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role && profile.role !== 'patient' && profile.institute) {
+        const inst = normInst(profile.institute);
+        if (inst) {
+            const { data: all } = await supabase.from(T.PATIENTS)
+                .select('*').order('created_at', { ascending: false }).limit(1000);
+            const seen = new Set(rows.map(r => r.id));
+            (all || []).forEach(p => {
+                if (!seen.has(p.id) && normInst(p.institute || p.institution) === inst) rows.push(p);
+            });
+        }
+    }
     return rows.map(camelPatient);
 }
 
@@ -980,7 +999,17 @@ export function showToast(message, type = 'info', duration = 4000) {
 
 export const createPatient = addPatient;
 export const getPatientsByStaff = getMyPatients;
-export const getAppointmentsByStaff = getMyAppointments;
+// Staff appointment view: everything the database permissions allow —
+// own appointments, plus shared-institute appointments once the
+// institute policies are in place.
+export async function getAppointmentsByStaff() {
+    const { data, error } = await supabase.from(T.APPOINTMENTS)
+        .select('*')
+        .order('date', { ascending: true })
+        .order('time', { ascending: true });
+    if (error) throw error;
+    return data || [];
+}
 export const getPatientById = getPatient;
 export const getDocumentsByStaff = getMyDocuments;
 
