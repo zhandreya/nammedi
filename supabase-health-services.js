@@ -608,7 +608,7 @@ export async function uploadDocument(patientId, file, category = 'general') {
     const patient = await getPatient(patientId);
     const rec = await insertRow(T.DOCUMENTS, {
         patient_id: patientId,
-        patient_user_id: patient?.patient_user_id || patient?.patientUserId || '',
+        patient_user_id: patient?.patient_user_id || patient?.patientUserId || null,
         file_name: file.name,
         file_url: fileUrl,
         file_size: file.size,
@@ -824,7 +824,10 @@ export async function verifyInsurance(insuranceData) {
     return { id: rec.id, ...insuranceData };
 }
 
-export async function createInvoice(invoiceData) {
+export async function createInvoice(uid, invoiceData) {
+    // Dashboards call createInvoice(currentUser.uid, data);
+    // also tolerates a single-argument call createInvoice(data).
+    if (uid && typeof uid === 'object') { invoiceData = uid; uid = null; }
     const user = requireUser();
     let patient = null;
     if (invoiceData.patientId) {
@@ -852,7 +855,10 @@ export async function createInvoice(invoiceData) {
     return { ...rec, patientName: rec.patient_name, patientSurname: rec.patient_surname, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
 }
 
-export async function processPayment(paymentData) {
+export async function processPayment(uid, paymentData) {
+    // Dashboards call processPayment(currentUser.uid, data);
+    // also tolerates a single-argument call processPayment(data).
+    if (uid && typeof uid === 'object') { paymentData = uid; uid = null; }
     const user = requireUser();
     let patient = null;
     if (paymentData.patientId) {
@@ -983,7 +989,7 @@ export async function saveInvoicePdf(invoice, blob) {
     }
     await insertRow(T.DOCUMENTS, {
         patient_id: invoice.patientId || null,
-        patient_user_id: patient ? (patient.patient_user_id || patient.patientUserId || '') : '',
+        patient_user_id: patient ? (patient.patient_user_id || patient.patientUserId || null) : null,
         file_name: fileName,
         file_url: fileUrl,
         file_size: blob.size,
