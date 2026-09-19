@@ -826,25 +826,188 @@ export async function verifyInsurance(insuranceData) {
 
 export async function createInvoice(invoiceData) {
     const user = requireUser();
+    let patient = null;
+    if (invoiceData.patientId) {
+        try { patient = await getPatient(invoiceData.patientId); } catch (e) { /* patient lookup is best-effort */ }
+    }
+    const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const invoiceNumber = invoiceData.invoiceNumber || `INV-${stamp}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+    const paid = invoiceData.paid === true || invoiceData.paid === 'true';
     const rec = await insertRow(T.INVOICES, {
-        ...invoiceData,
+        patient_id: invoiceData.patientId || null,
+        patient_name: patient ? (patient.fullName || null) : (invoiceData.patientName || null),
+        patient_surname: patient ? (patient.surname || null) : (invoiceData.patientSurname || null),
+        invoice_number: invoiceNumber,
+        date: invoiceData.date,
+        reason: invoiceData.reason || null,
+        prescription: invoiceData.prescription || null,
+        treatment: invoiceData.treatment || null,
+        fee: invoiceData.fee ?? 0,
+        paid: paid,
+        status: invoiceData.status || (paid ? 'paid' : 'pending'),
         created_by: user.uid,
         created_by_email: user.email,
-        status: invoiceData.status || 'pending',
         created_at: nowIso()
     });
-    return { id: rec.id, ...invoiceData };
+    return { ...rec, patientName: rec.patient_name, patientSurname: rec.patient_surname, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
 }
 
 export async function processPayment(paymentData) {
     const user = requireUser();
+    let patient = null;
+    if (paymentData.patientId) {
+        try { patient = await getPatient(paymentData.patientId); } catch (e) { /* best-effort */ }
+    }
     const rec = await insertRow(T.PAYMENTS, {
-        ...paymentData,
+        patient_id: paymentData.patientId || null,
+        patient_name: patient ? (patient.fullName || null) : null,
+        patient_surname: patient ? (patient.surname || null) : null,
+        id_passport: patient ? (patient.idPassport || null) : null,
+        cell_phone: patient ? (patient.cellphone || patient.phone || null) : null,
+        date: paymentData.date,
+        amount: paymentData.amount ?? 0,
+        method: paymentData.method || null,
+        reference: paymentData.reference || null,
         processed_by: user.uid,
         processed_by_email: user.email,
         created_at: nowIso()
     });
     return { id: rec.id, ...paymentData };
+}
+
+
+// ============ BILLING READERS (scoped by RLS: own + shared institute) ============
+export async function getInvoices() {
+    const { data, error } = await supabase.from(T.INVOICES)
+        .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(i => ({
+        id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
+        invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
+        treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
+        pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at
+    }));
+}
+
+export async function getPayments() {
+    const { data, error } = await supabase.from(T.PAYMENTS)
+        .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(p => ({
+        id: p.id, patientId: p.patient_id, patientName: p.patient_name, patientSurname: p.patient_surname,
+        idPassport: p.id_passport, cellPhone: p.cell_phone, date: p.date, amount: p.amount,
+        method: p.method, reference: p.reference, processedBy: p.processed_by, createdAt: p.created_at
+    }));
+}
+
+export async function markInvoicePaid(invoiceId) {
+    await updateRow(T.INVOICES, invoiceId, { paid: true, status: 'paid' });
+}
+
+// ============ INVOICE PDF (jsPDF, loaded via <script> on the pages) ============
+export function buildInvoicePdf(invoice) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const name = `${invoice.patientName || ''} ${invoice.patientSurname || ''}`.trim() || 'Patient';
+    doc.setFillColor(0, 102, 204);
+    doc.rect(0, 0, 210, 28, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+    doc.text('TAX INVOICE', 14, 12);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Namibia Health Services', 14, 20);
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text(`Invoice No: ${invoice.invoiceNumber || '-'}`, 14, 42);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+    doc.text(`Date: ${invoice.date ? String(invoice.date).slice(0, 10) : '-'}`, 14, 50);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(invoice.paid ? 27 : 198, invoice.paid ? 94 : 40, invoice.paid ? 60 : 40);
+    doc.text(`Status: ${invoice.paid ? 'PAID' : 'UNPAID'}`, 196, 42, { align: 'right' });
+    doc.setTextColor(30, 30, 30);
+    doc.setFont('helvetica', 'normal');
+    doc.line(14, 58, 196, 58);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Billed to:', 14, 68);
+    doc.setFont('helvetica', 'normal');
+    doc.text(name, 14, 76);
+    let y = 84;
+    if (invoice.idPassport) { doc.text(`ID/Passport: ${invoice.idPassport}`, 14, y); y += 8; }
+    if (invoice.cellPhone) { doc.text(`Phone: ${invoice.cellPhone}`, 14, y); y += 8; }
+    y += 10;
+    doc.line(14, y - 8, 196, y - 8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Description', 16, y);
+    doc.text('Amount (NAD)', 194, y, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    y += 10;
+    const lines = [];
+    if (invoice.reason) lines.push(`Reason for visit: ${invoice.reason}`);
+    if (invoice.treatment) lines.push(`Treatment: ${invoice.treatment}`);
+    if (invoice.prescription) lines.push(`Prescription: ${invoice.prescription}`);
+    if (!lines.length) lines.push('Medical services');
+    lines.forEach((l, i) => {
+        doc.text(String(l).slice(0, 95), 16, y + i * 8);
+        if (i === lines.length - 1) doc.text(Number(invoice.fee || 0).toFixed(2), 194, y + i * 8, { align: 'right' });
+    });
+    y += lines.length * 8 + 6;
+    doc.line(14, y - 6, 196, y - 6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('Total', 150, y + 2);
+    doc.text(`NAD ${Number(invoice.fee || 0).toFixed(2)}`, 194, y + 2, { align: 'right' });
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text(invoice.paid ? 'Payment received. Thank you.' : 'Balance due. Please settle at the front desk.', 14, y + 14);
+    doc.text('Generated by Namibia Health Services - this is a computer-generated invoice.', 14, 287);
+    return doc;
+}
+
+export async function generateInvoicePdf(invoice) {
+    if (!window.jspdf) throw new Error('PDF library not loaded');
+    return buildInvoicePdf(invoice).output('blob');
+}
+
+// Store the PDF where the patient can download it later (documents area)
+export async function saveInvoicePdf(invoice, blob) {
+    const user = requireUser();
+    const fileName = `Invoice-${invoice.invoiceNumber || invoice.id}.pdf`;
+    const folder = invoice.patientId || 'general';
+    const path = `documents/${folder}/invoices/${Date.now()}_${fileName}`;
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+    const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
+    const fileUrl = pub.publicUrl;
+    let patient = null;
+    if (invoice.patientId) {
+        try { patient = await getPatient(invoice.patientId); } catch (e) { /* best-effort */ }
+    }
+    await insertRow(T.DOCUMENTS, {
+        patient_id: invoice.patientId || null,
+        patient_user_id: patient ? (patient.patient_user_id || patient.patientUserId || '') : '',
+        file_name: fileName,
+        file_url: fileUrl,
+        file_size: blob.size,
+        file_type: 'application/pdf',
+        category: 'invoice',
+        uploaded_by: user.uid,
+        uploaded_by_email: user.email,
+        upload_date: new Date().toISOString().split('T')[0],
+        created_at: nowIso()
+    });
+    try { await updateRow(T.INVOICES, invoice.id, { pdf_url: fileUrl }); } catch (e) { /* pdf_url is optional */ }
+    return fileUrl;
+}
+
+// A patient's own documents (invoices, reports, ...) - RLS scopes the result
+export async function getMyPatientDocuments() {
+    const { data, error } = await supabase.from(T.DOCUMENTS)
+        .select('*').order('upload_date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(d => ({
+        id: d.id, patientId: d.patient_id, fileName: d.file_name, fileUrl: d.file_url,
+        fileSize: d.file_size, fileType: d.file_type, category: d.category, uploadDate: d.upload_date,
+        createdAt: d.created_at
+    }));
 }
 
 export async function createClaim(claimData) {
@@ -1020,6 +1183,7 @@ export default {
     addPatient, createPatient, getMyPatients, getSpecialists, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
     getPatient, getPatientById, updatePatient, getAppointmentsByStaff, getDocumentsByStaff,
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
+    getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, saveInvoicePdf, getMyPatientDocuments,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
     updateAppointment, deleteAppointment,
     uploadDocument, getPatientDocuments, getMyDocuments, deleteDocument,
