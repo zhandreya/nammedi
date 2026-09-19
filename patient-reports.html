@@ -180,6 +180,26 @@
             <h3>No reports found</h3>
             <p>Reports from your healthcare providers will appear here.</p>
         </div>
+
+        <h2 style="margin: 32px 0 16px; color: #1a1a1a;">Documents &amp; Invoices</h2>
+        <div class="table-container">
+            <table id="docsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Size</th>
+                        <th>Download</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="docsEmptyState" style="display: none;">
+            <h3>No documents yet</h3>
+            <p>Invoices and documents from your healthcare providers will appear here.</p>
+        </div>
     </div>
 
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
@@ -189,6 +209,7 @@
             onAuthChange, 
             getUserProfile,
             getMyPrescriptions,
+            getMyPatientDocuments,
             initInactivityTimer,
             showToast,
             formatDate
@@ -214,6 +235,7 @@
                     headerName.textContent = profile.fullName || profile.displayName || 'Patient';
                     headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
                     await loadReports();
+                    await loadMyDocuments();
                 } else {
                     window.location.href = 'dashboard.html';
                 }
@@ -279,6 +301,60 @@
 
         window.downloadReport = function(id) {
             showToast('PDF download coming soon', 'info');
+        };
+
+        // ============ DOCUMENTS & INVOICES (real, downloadable) ============
+        const docsTable = document.getElementById('docsTable').querySelector('tbody');
+        const docsEmpty = document.getElementById('docsEmptyState');
+        let myDocuments = [];
+
+        async function loadMyDocuments() {
+            try {
+                myDocuments = await getMyPatientDocuments();
+            } catch (e) {
+                console.error('Error loading documents:', e);
+                myDocuments = [];
+            }
+            renderMyDocuments();
+        }
+
+        function renderMyDocuments() {
+            if (myDocuments.length === 0) {
+                docsTable.innerHTML = '';
+                docsEmpty.style.display = 'block';
+                return;
+            }
+            docsEmpty.style.display = 'none';
+            docsTable.innerHTML = myDocuments.map(d => {
+                const size = d.fileSize
+                    ? (d.fileSize > 1048576 ? (d.fileSize / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(d.fileSize / 1024)) + ' KB')
+                    : '-';
+                return `
+                <tr>
+                    <td>${d.fileName || 'Document'}</td>
+                    <td>${d.category || 'general'}</td>
+                    <td>${formatDate(d.uploadDate || d.createdAt || '')}</td>
+                    <td>${size}</td>
+                    <td>
+                        <button class="btn-sm btn-download" onclick="downloadDocument('${d.id}')">Download</button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.downloadDocument = function(id) {
+            const doc = myDocuments.find(x => x.id === id);
+            const url = doc && doc.fileUrl;
+            if (!url) { showToast('No file available', 'error'); return; }
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = doc.fileName || 'document';
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            showToast('Download started', 'success');
         };
 
         // Cleanup
