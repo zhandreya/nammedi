@@ -365,6 +365,19 @@
             const role = roleSelect.value;
             medicalStaffFields.style.display = STAFF_ROLES.includes(role) ? 'block' : 'none';
             patientFields.style.display = role === 'patient' ? 'block' : 'none';
+            // Adapt the profession field to the role
+            const profLabel = document.querySelector('label[for="profession"]');
+            if (profLabel) {
+                if (role === 'specialist') {
+                    profLabel.textContent = 'Specialization *';
+                    professionInput.placeholder = 'e.g. Cardiology (saved as Doctor of Cardiology)';
+                    if (professionInput.value.trim() === 'Receptionist') professionInput.value = '';
+                } else {
+                    profLabel.textContent = 'Profession *';
+                    professionInput.placeholder = 'e.g., Registered Nurse, Doctor, Pharmacist';
+                    if (role === 'receptionist' && !professionInput.value.trim()) professionInput.value = 'Receptionist';
+                }
+            }
             clearAllErrors();
         }
 
@@ -628,6 +641,11 @@
                 let profileData = { role };
 
                 if (STAFF_ROLES.includes(role)) {
+                    let professionValue = professionInput.value.trim();
+                    // Specialists are stored/displayed as "Doctor of <specialization>"
+                    if (role === 'specialist' && professionValue && !/^doctor of /i.test(professionValue)) {
+                        professionValue = 'Doctor of ' + professionValue;
+                    }
                     profileData = {
                         role,
                         fullName: fullNameInput.value.trim(),
@@ -637,7 +655,7 @@
                         idPassport: idPassportInput.value.trim(),
                         dob: dobInput.value,
                         gender: genderInput.value,
-                        profession: professionInput.value.trim(),
+                        profession: professionValue,
                         institute: instituteInput.value.trim(),
                         workTel: workTelInput.value.trim()
                     };
