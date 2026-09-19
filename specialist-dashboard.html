@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -176,6 +177,7 @@
             <button class="btn btn-primary" onclick="openAppointmentModal()"><span>+</span> New Appointment</button>
             <button class="btn btn-primary" onclick="openPrescriptionModal()"><span>💊</span> Add Prescription</button>
             <button class="btn btn-secondary" onclick="openUploadModal()"><span>📄</span> Upload Document</button>
+            <button class="btn btn-secondary" onclick="openInvoiceModal()"><span>🧾</span> Invoice</button>
             <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
@@ -191,9 +193,37 @@
             <button class="tab" data-tab="appointments">Appointments</button>
             <button class="tab" data-tab="prescriptions">Prescriptions</button>
             <button class="tab" data-tab="documents">Documents</button>
+            <button class="tab" data-tab="invoices">Invoices</button>
         </div>
 
         <!-- Patients Tab -->
+
+        <!-- Invoices Tab -->
+        <div class="tab-panel" id="invoicesPanel">
+            <div class="section-header">
+                <h2>Invoices</h2>
+            </div>
+            <div class="table-container">
+                <table id="invoicesTable">
+                    <thead>
+                        <tr>
+                            <th>Invoice No</th>
+                            <th>Patient</th>
+                            <th>Date</th>
+                            <th>Reason</th>
+                            <th>Fee (NAD)</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="invoicesEmpty" style="display: none;">
+                <h3>No invoices yet</h3>
+                <p>Use the "Invoice" button to generate an invoice for a visit.</p>
+            </div>
+        </div>
         <div class="tab-panel active" id="patientsPanel">
             <div class="section-header">
                 <h2>My Patients</h2>
@@ -629,6 +659,74 @@
         </div>
     </div>
 
+    <div class="modal" id="invoiceModal" role="dialog" aria-labelledby="invoiceModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="invoiceModalTitle">Generate Invoice</h3>
+                <button class="modal-close" onclick="closeInvoiceModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="invoiceForm" novalidate>
+                <div class="form-group">
+                    <label class="required">Select Patient</label>
+                    <select id="invPatient" name="patientId" required>
+                        <option value="">Loading patients...</option>
+                    </select>
+                    <div class="error-message" id="invPatientError"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Date</label>
+                        <input type="date" id="invDate" name="date" required max="">
+                        <div class="error-message" id="invDateError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="required">Reason for Visit</label>
+                        <select id="invReason" name="reason" required>
+                            <option value="">Select</option>
+                            <option value="General Check-Up">General Check-Up</option>
+                            <option value="Follow-Up">Follow-Up</option>
+                            <option value="Specific Ailment">Specific Ailment</option>
+                            <option value="Surgery">Surgery</option>
+                            <option value="Vaccination">Vaccination</option>
+                            <option value="Maternity">Maternity</option>
+                            <option value="Emergency">Emergency</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="error-message" id="invReasonError"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prescription</label>
+                        <input type="text" id="invPrescription" name="prescription" placeholder="Prescription details">
+                    </div>
+                    <div class="form-group">
+                        <label>Treatment</label>
+                        <input type="text" id="invTreatment" name="treatment" placeholder="Treatment details">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="required">Fee Amount (NAD)</label>
+                        <input type="number" id="invFee" name="fee" required min="0" step="0.01" placeholder="0.00">
+                        <div class="error-message" id="invFeeError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Paid</label>
+                        <select id="invPaid" name="paid">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeInvoiceModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Generate Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
     <script type="module">
@@ -644,6 +742,11 @@
             getAppointmentsByStaff,
             createAppointment,
             getSpecialists,
+            createInvoice,
+            getInvoices,
+            markInvoicePaid,
+            generateInvoicePdf,
+            saveInvoicePdf,
             updateAppointment,
             deleteAppointment,
             getDocumentsByStaff,
@@ -713,6 +816,7 @@
                 await Promise.all([
                     loadPatients(),
                     loadAppointments(),
+                    loadInvoices(),
                     loadPrescriptions(),
                     loadDocuments()
                 ]);
@@ -763,6 +867,140 @@
                 <div class="stat-card"><div class="label">Documents</div><div class="value">${allDocuments.length}</div></div>
             `;
         }
+
+
+        // ============ INVOICES ============
+        let allInvoices = [];
+
+        async function loadInvoices() {
+            try {
+                allInvoices = await getInvoices();
+            } catch (e) {
+                console.error('Error loading invoices:', e);
+                allInvoices = [];
+            }
+            renderInvoices();
+        }
+
+        function renderInvoices() {
+            const table = document.getElementById('invoicesTable');
+            const empty = document.getElementById('invoicesEmpty');
+            if (!table) return;
+            if (allInvoices.length === 0) {
+                table.querySelector('tbody').innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            table.querySelector('tbody').innerHTML = allInvoices.map(inv => `
+                <tr>
+                    <td>${inv.invoiceNumber || ('INV-' + inv.id.slice(-8).toUpperCase())}</td>
+                    <td>${(inv.patientName || '') + ' ' + (inv.patientSurname || '') || 'Unknown'}</td>
+                    <td>${formatDate(inv.date)}</td>
+                    <td>${inv.reason || '-'}</td>
+                    <td>NAD ${parseFloat(inv.fee || 0).toFixed(2)}</td>
+                    <td><span class="status-badge status-${inv.paid ? 'completed' : 'pending'}">${inv.paid ? 'Paid' : 'Unpaid'}</span></td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewInvoice('${inv.id}')">View</button>
+                        <button class="btn-sm btn-verify" onclick="downloadInvoicePdf('${inv.id}')">PDF</button>
+                        ${!inv.paid ? `<button class="btn-sm btn-verify" onclick="markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.openInvoiceModal = function() {
+            populatePatientDropdowns();
+            const form = document.getElementById('invoiceForm');
+            form.reset();
+            clearAllErrors('invoiceForm');
+            document.getElementById('invDate').max = new Date().toISOString().split('T')[0];
+            document.getElementById('invoiceModal').classList.add('show');
+        };
+
+        window.closeInvoiceModal = function() {
+            document.getElementById('invoiceModal').classList.remove('show');
+        };
+
+        async function saveInvoicePdfLocal(inv, blob) {
+            await saveInvoicePdf(inv, blob);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `${inv.invoiceNumber || 'Invoice'}.pdf`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        }
+
+        window.downloadInvoicePdf = async function(id) {
+            try {
+                const inv = allInvoices.find(x => x.id === id);
+                if (!inv) { showToast('Invoice not found', 'error'); return; }
+                const blob = await generateInvoicePdf(inv);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `${inv.invoiceNumber || 'Invoice-' + id.slice(-8)}.pdf`;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                showToast('Invoice PDF downloaded', 'success');
+            } catch (error) {
+                showToast('PDF error: ' + error.message, 'error');
+            }
+        };
+
+        window.viewInvoice = async function(id) {
+            try {
+                const inv = allInvoices.find(x => x.id === id);
+                if (!inv) { showToast('Invoice not found', 'error'); return; }
+                const blob = await generateInvoicePdf(inv);
+                window.open(URL.createObjectURL(blob), '_blank');
+            } catch (error) {
+                showToast('Could not open invoice: ' + error.message, 'error');
+            }
+        };
+
+        window.markInvoicePaid = async function(id) {
+            try {
+                await markInvoicePaid(id);
+                await loadInvoices();
+                showToast('Invoice marked as paid', 'success');
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        };
+
+        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                patientId: document.getElementById('invPatient').value,
+                date: document.getElementById('invDate').value,
+                reason: document.getElementById('invReason').value,
+                prescription: document.getElementById('invPrescription').value,
+                treatment: document.getElementById('invTreatment').value,
+                fee: parseFloat(document.getElementById('invFee').value),
+                paid: document.getElementById('invPaid').value === 'true'
+            };
+
+            if (!data.patientId || !data.date || !data.reason || isNaN(data.fee)) {
+                showToast('Fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                const inv = await createInvoice(currentUser.uid, data);
+                try {
+                    const blob = await generateInvoicePdf(inv);
+                    await saveInvoicePdfLocal(inv, blob);
+                } catch (pdfErr) {
+                    console.warn('PDF step failed:', pdfErr);
+                }
+                showToast('Invoice generated', 'success');
+                closeInvoiceModal();
+                await loadInvoices();
+            } catch (error) {
+                showToast('Error: ' + error.message, 'error');
+            }
+        });
 
         // ============ TABS ============
         tabs.forEach(tab => {
@@ -845,7 +1083,7 @@
         }
 
         function populatePatientDropdowns() {
-            const selects = ['apptPatient', 'prPatient', 'docPatient'];
+            const selects = ['apptPatient', 'prPatient', 'docPatient', 'invPatient'];
             selects.forEach(id => {
                 const select = document.getElementById(id);
                 const currentValue = select.value;
