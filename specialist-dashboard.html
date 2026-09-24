@@ -915,6 +915,8 @@
             form.reset();
             clearAllErrors('invoiceForm');
             document.getElementById('invDate').max = new Date().toISOString().split('T')[0];
+            // Pre-fill today's date so the invoice always carries a date
+            document.getElementById('invDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('invoiceModal').classList.add('show');
         };
 
