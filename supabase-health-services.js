@@ -609,6 +609,7 @@ export async function uploadDocument(patientId, file, category = 'general') {
     const rec = await insertRow(T.DOCUMENTS, {
         patient_id: patientId,
         patient_user_id: patient?.patient_user_id || patient?.patientUserId || null,
+        id_passport: patient?.idPassport || null,
         file_name: file.name,
         file_url: fileUrl,
         file_size: file.size,
@@ -845,6 +846,8 @@ export async function createInvoice(uid, invoiceData) {
         reason: invoiceData.reason || null,
         prescription: invoiceData.prescription || null,
         treatment: invoiceData.treatment || null,
+        id_passport: patient ? (patient.idPassport || null) : null,
+        cell_phone: patient ? (patient.cellphone || patient.phone || null) : null,
         fee: invoiceData.fee ?? 0,
         paid: paid,
         status: invoiceData.status || (paid ? 'paid' : 'pending'),
@@ -852,7 +855,7 @@ export async function createInvoice(uid, invoiceData) {
         created_by_email: user.email,
         created_at: nowIso()
     });
-    return { ...rec, patientName: rec.patient_name, patientSurname: rec.patient_surname, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
+    return { ...rec, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
 }
 
 export async function processPayment(uid, paymentData) {
@@ -891,6 +894,7 @@ export async function getInvoices() {
         id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
         treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
+        idPassport: i.id_passport, cellPhone: i.cell_phone,
         pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at
     }));
 }
@@ -990,6 +994,7 @@ export async function saveInvoicePdf(invoice, blob) {
     await insertRow(T.DOCUMENTS, {
         patient_id: invoice.patientId || null,
         patient_user_id: patient ? (patient.patient_user_id || patient.patientUserId || null) : null,
+        id_passport: patient ? (patient.idPassport || null) : null,
         file_name: fileName,
         file_url: fileUrl,
         file_size: blob.size,
