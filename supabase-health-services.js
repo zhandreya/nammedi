@@ -20,8 +20,23 @@ function slotFromPath() {
     return 'default';
 }
 
+function projectRef() {
+    try { return supabaseConfig.url.replace(/^https?:\/\//, '').split('.')[0]; } catch (e) { return 'unknown'; }
+}
+
 function slotStorage(slot) {
     const prefix = 'nm-auth-' + slot + '-';
+    // Each slot uses its OWN storageKey so the auth library's cross-tab
+    // BroadcastChannel (named by storageKey) is separate per role. Without
+    // this, a sign-in in one tab broadcast its session to every other tab.
+    const newKey = 'nm-slot-' + slot;
+    try {
+        const oldKey = 'sb-' + projectRef() + '-auth-token';
+        if (!localStorage.getItem(prefix + newKey) && localStorage.getItem(prefix + oldKey)) {
+            localStorage.setItem(prefix + newKey, localStorage.getItem(prefix + oldKey));
+            localStorage.removeItem(prefix + oldKey);
+        }
+    } catch (e) { /* ignore */ }
     return {
         getItem: (key) => { try { return localStorage.getItem(prefix + key); } catch (e) { return null; } },
         setItem: (key, value) => { try { localStorage.setItem(prefix + key, value); } catch (e) { /* ignore */ } },
@@ -32,7 +47,11 @@ function slotStorage(slot) {
 export const CURRENT_SLOT = slotFromPath();
 
 export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-    auth: { storage: slotStorage(CURRENT_SLOT), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: {
+        storage: slotStorage(CURRENT_SLOT),
+        storageKey: 'nm-slot-' + CURRENT_SLOT,
+        persistSession: true, autoRefreshToken: true, detectSessionInUrl: true
+    }
 });
 
 const ROLE_SLOTS = {
@@ -53,12 +72,28 @@ export async function persistSessionForRole(role) {
         const session = data && data.session;
         if (!session) return;
         const tmp = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-            auth: { storage: slotStorage(slot), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+            auth: { storage: slotStorage(slot), storageKey: 'nm-slot-' + slot, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
         });
         await tmp.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
     } catch (e) {
         console.warn('Could not persist session for role slot.', e);
     }
+}
+
+// True if the role's slot currently holds a stored session.
+// (Role slots are set on login and cleared on sign-out, so a missing slot
+// means that role is signed out - even if another slot still holds an old token.)
+export function roleHasLiveSession(role) {
+    const slot = ROLE_SLOTS[role];
+    if (!slot) return false;
+    try {
+        const prefix = 'nm-auth-' + slot + '-';
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.indexOf(prefix) === 0) return true;
+        }
+    } catch (e) { /* ignore */ }
+    return false;
 }
 
 export const auth = {
@@ -253,7 +288,32 @@ export async function signIn(email, password) {
 }
 
 export async function signOut() {
+    // Remember who is signing out (so the shared 'default' slot is only
+    // cleared when it holds this user - never someone else's login).
+    let uid = null;
+    try {
+        const { data } = await supabase.auth.getSession();
+        uid = data && data.session ? data.session.user.id : null;
+    } catch (e) { /* ignore */ }
+
     const { error } = await supabase.auth.signOut();
+
+    if (CURRENT_SLOT !== 'default') {
+        try {
+            const prefix = 'nm-auth-default-';
+            const remove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k || k.indexOf(prefix) !== 0) continue;
+                try {
+                    const parsed = JSON.parse(localStorage.getItem(k) || '');
+                    if (parsed && parsed.user && parsed.user.id === uid) remove.push(k);
+                } catch (e2) { /* not session JSON - leave it */ }
+            }
+            remove.forEach(k => localStorage.removeItem(k));
+        } catch (e) { /* best effort */ }
+    }
+
     if (error) throw new Error('Failed to sign out. Please try again.');
     window.__SUPABASE_CURRENT_USER__ = null;
 }
