@@ -293,8 +293,8 @@
             isValidNamibianPhone,
             isValidNamibianId,
             initInactivityTimer,
-            showToast 
-        } from './supabase-health-services.js';
+            showToast,
+            persistSessionForRole} from './supabase-health-services.js';
 
         // Initialize inactivity timer for auth pages (30 min)
         initInactivityTimer(30 * 60 * 1000, () => {
@@ -682,6 +682,10 @@
                 );
 
                 showToast('Account created successfully!', 'success');
+
+                // Store the session in this role's slot so the dashboard keeps
+                // it even if the browser reloads the tab in the background.
+                await persistSessionForRole(role);
 
                 // Send each role to its own dashboard.
                 const DASHBOARDS = {
