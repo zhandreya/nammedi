@@ -135,7 +135,16 @@
         </div>
     </div>
 
-            <div id="profileMissingBanner" style="display:none; margin: 0 24px 16px; padding: 14px 18px; border-radius: 10px; background: #fff3cd; color: #7a5c00; border: 1px solid #ffe08a; font-size: 14px; line-height: 1.5;">
+            <div id="continueBanner" style="display:none; margin: 0 24px 16px; padding: 14px 18px; border-radius: 10px; background: #e8f0fe; color: #173a6b; border: 1px solid #b9d0f5; font-size: 14px; line-height: 1.5;">
+            You are signed in as <b id="continueName"></b>.<br>
+            <button id="continueBtn" onclick="window.location.href = this.dataset.target"
+                style="margin-top: 8px; padding: 8px 16px; border: none; border-radius: 8px; background: #1a73e8; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;">
+                Continue to dashboard &rarr;
+            </button>
+            &nbsp; or sign in with a different account below.
+        </div>
+
+        <div id="profileMissingBanner" style="display:none; margin: 0 24px 16px; padding: 14px 18px; border-radius: 10px; background: #fff3cd; color: #7a5c00; border: 1px solid #ffe08a; font-size: 14px; line-height: 1.5;">
             &#9888;&#65039; You are signed in, but your profile could not be found - it may have been deleted.<br>
             Please contact an administrator to restore your profile, or use &ldquo;Sign In&rdquo; with a different account.
         </div>
@@ -149,7 +158,8 @@
             initInactivityTimer,
             onAuthChange,
             getUserProfile,
-            persistSessionForRole
+            persistSessionForRole,
+            roleHasLiveSession
         } from './supabase-health-services.js';
 
         // Each role's dashboard.
@@ -202,18 +212,34 @@
             rememberMe.checked = true;
         }
 
-        // Check if already logged in (listens for the auth state so it never races it)
+        // "Already signed in" handling - NEVER auto-redirects.
+        // (Auto-redirecting here caused an infinite login<->dashboard bounce when
+        // a stale session was left behind after signing out. Instead we show a
+        // manual "Continue" button, and only when that role is actually signed in.)
         let formSubmitted = false;
-        let autoRedirected = false;
+        const continueBanner = document.getElementById('continueBanner');
+        const continueBtn = document.getElementById('continueBtn');
         onAuthChange(async (user) => {
-            if (!user || formSubmitted || autoRedirected) return;
-            autoRedirected = true;
-            const url = await dashboardFor(user);
-            if (url) {
-                window.location.href = url;
-            } else {
-                showProfileMissing();
-                showToast('Signed in, but your profile could not be found.', 'error');
+            if (formSubmitted) return;
+            if (!user || !continueBanner) {
+                if (continueBanner) continueBanner.style.display = 'none';
+                return;
+            }
+            try {
+                const profile = await getUserProfile(user.uid);
+                const role = profile ? profile.role : null;
+                if (role && DASHBOARDS[role] && roleHasLiveSession(role)) {
+                    const name = [profile.surname, profile.fullName]
+                        .filter(v => v && String(v).trim())
+                        .map(v => String(v).trim()).join(' ');
+                    document.getElementById('continueName').textContent = name || user.email || 'your account';
+                    continueBtn.dataset.target = DASHBOARDS[role];
+                    continueBanner.style.display = 'block';
+                } else {
+                    continueBanner.style.display = 'none';
+                }
+            } catch (err) {
+                continueBanner.style.display = 'none';
             }
         });
 
@@ -280,6 +306,7 @@
 
             try {
                 formSubmitted = true;
+                if (continueBanner) continueBanner.style.display = 'none';
                 const { user } = await signIn(emailInput.value.trim(), passwordInput.value);
 
                 // Handle remember me
