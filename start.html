@@ -106,6 +106,14 @@
     <button id="backBtn" onclick="window.history.back()">Back</button>
     <h1 class="title">NAMIBIAN MEDICAL RECORDS</h1>
     <div class="container">
+        <div id="startContinueBanner" style="display:none; margin-bottom: 16px; padding: 14px 18px; border-radius: 10px; background: #e8f0fe; color: #173a6b; border: 1px solid #b9d0f5; font-size: 14px; line-height: 1.5;">
+            You are signed in.
+            <button id="startContinueBtn" onclick="window.location.href = this.dataset.target"
+                style="margin-top: 8px; padding: 8px 16px; border: none; border-radius: 8px; background: #1a73e8; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;">
+                Continue to your dashboard &rarr;
+            </button>
+            &nbsp; or pick a role below to sign up / log in as a different account.
+        </div>
         <p>Sign-up or Log In as:</p>
         <div class="options">
             <label class="option">
@@ -128,7 +136,7 @@
     </div>
 
     <script type="module">
-        import { getCurrentUser, onAuthChange, initInactivityTimer, getUserProfile } from './supabase-health-services.js';
+        import { getCurrentUser, onAuthChange, initInactivityTimer, getUserProfile, roleHasLiveSession } from './supabase-health-services.js';
 
         // Inactivity timer for public page (longer timeout)
         initInactivityTimer(4 * 60 * 60 * 1000, () => location.reload());
@@ -141,14 +149,24 @@
             specialist: 'specialist-dashboard.html'
         };
 
-        // Already signed in? Send them to their own dashboard.
+        // Already signed in? Offer a manual "Continue" button - never auto-redirect.
+        // (Auto-redirecting caused an infinite login<->dashboard bounce when a
+        // stale session remained after signing out.)
         onAuthChange(async (user) => {
-            if (!user) return;
+            const banner = document.getElementById('startContinueBanner');
+            if (!banner) return;
+            if (!user) { banner.style.display = 'none'; return; }
             try {
                 const profile = await getUserProfile(user.uid);
-                window.location.href = DASHBOARDS[profile?.role] || 'patient-dashboard.html';
+                const role = profile ? profile.role : null;
+                if (role && DASHBOARDS[role] && roleHasLiveSession(role)) {
+                    document.getElementById('startContinueBtn').dataset.target = DASHBOARDS[role];
+                    banner.style.display = 'block';
+                } else {
+                    banner.style.display = 'none';
+                }
             } catch (err) {
-                console.warn('Could not read profile role.', err);
+                banner.style.display = 'none';
             }
         });
 
