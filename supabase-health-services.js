@@ -6,11 +6,60 @@
 import { supabaseConfig } from './supabase-config.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
+// Each role's dashboard keeps its OWN login session in a dedicated
+// localStorage "slot" (keyed by page name). localStorage - unlike
+// sessionStorage - survives the mobile browser discarding/reloading
+// background tabs, so all four role tabs stay signed in side by side
+// in one window without ever stealing each other's session.
+function slotFromPath() {
+    const page = (location.pathname.split('/').pop() || '').toLowerCase();
+    if (page.indexOf('patient') === 0) return 'patient';
+    if (page === 'receptionist-dashboard.html') return 'receptionist';
+    if (page === 'medical-staff-dashboard.html') return 'medicalstaff';
+    if (page === 'specialist-dashboard.html') return 'specialist';
+    return 'default';
+}
+
+function slotStorage(slot) {
+    const prefix = 'nm-auth-' + slot + '-';
+    return {
+        getItem: (key) => { try { return localStorage.getItem(prefix + key); } catch (e) { return null; } },
+        setItem: (key, value) => { try { localStorage.setItem(prefix + key, value); } catch (e) { /* ignore */ } },
+        removeItem: (key) => { try { localStorage.removeItem(prefix + key); } catch (e) { /* ignore */ } }
+    };
+}
+
+export const CURRENT_SLOT = slotFromPath();
+
 export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-    // sessionStorage = each browser tab keeps its OWN login session,
-    // so different users can be signed in on different tabs of the same window.
-    auth: { storage: sessionStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: { storage: slotStorage(CURRENT_SLOT), persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
+
+const ROLE_SLOTS = {
+    patient: 'patient',
+    medical_staff: 'medicalstaff',
+    receptionist: 'receptionist',
+    specialist: 'specialist'
+};
+
+// After logging in / signing up (login.html / sign-up.html use the 'default'
+// slot), copy the fresh session into the user's role slot so the role's
+// dashboard picks it up and it survives tab reloads and browser tab discards.
+export async function persistSessionForRole(role) {
+    const slot = ROLE_SLOTS[role];
+    if (!slot || slot === CURRENT_SLOT) return;
+    try {
+        const { data } = await supabase.auth.getSession();
+        const session = data && data.session;
+        if (!session) return;
+        const tmp = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+            auth: { storage: slotStorage(slot), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+        await tmp.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
+    } catch (e) {
+        console.warn('Could not persist session for role slot.', e);
+    }
+}
 
 export const auth = {
     get currentUser() {
@@ -855,7 +904,7 @@ export async function createInvoice(uid, invoiceData) {
         created_by_email: user.email,
         created_at: nowIso()
     });
-    return { ...rec, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
+    return { ...rec, patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
 }
 
 export async function processPayment(uid, paymentData) {
