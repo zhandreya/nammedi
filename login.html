@@ -135,7 +135,12 @@
         </div>
     </div>
 
-    <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+            <div id="profileMissingBanner" style="display:none; margin: 0 24px 16px; padding: 14px 18px; border-radius: 10px; background: #fff3cd; color: #7a5c00; border: 1px solid #ffe08a; font-size: 14px; line-height: 1.5;">
+            &#9888;&#65039; You are signed in, but your profile could not be found - it may have been deleted.<br>
+            Please contact an administrator to restore your profile, or use &ldquo;Sign In&rdquo; with a different account.
+        </div>
+
+<div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
     <script type="module">
         import { 
@@ -143,7 +148,8 @@
             isValidEmail,
             initInactivityTimer,
             onAuthChange,
-            getUserProfile
+            getUserProfile,
+            persistSessionForRole
         } from './supabase-health-services.js';
 
         // Each role's dashboard.
@@ -157,14 +163,22 @@
         // Look up the role saved on the user's profile and return their dashboard.
         // Uses the stored role, not the choice made on start.html, so nobody can
         // reach another role's dashboard by picking a different radio button.
+        // Returns NULL when no usable profile exists (missing/unknown role) -
+        // in that case we must NOT redirect: bouncing to a dashboard that
+        // can't find the profile would create a login<->dashboard refresh loop.
         async function dashboardFor(user) {
             try {
                 const profile = await getUserProfile(user.uid);
-                return DASHBOARDS[profile?.role] || 'patient-dashboard.html';
+                if (profile && profile.role && DASHBOARDS[profile.role]) return DASHBOARDS[profile.role];
             } catch (err) {
                 console.warn('Could not read profile role.', err);
-                return 'patient-dashboard.html';
             }
+            return null;
+        }
+
+        function showProfileMissing() {
+            const banner = document.getElementById('profileMissingBanner');
+            if (banner) banner.style.display = 'block';
         }
 
         // Inactivity timer (30 min for auth pages)
@@ -195,7 +209,12 @@
             if (!user || formSubmitted || autoRedirected) return;
             autoRedirected = true;
             const url = await dashboardFor(user);
-            window.location.href = url;
+            if (url) {
+                window.location.href = url;
+            } else {
+                showProfileMissing();
+                showToast('Signed in, but your profile could not be found.', 'error');
+            }
         });
 
         // Toast notification
@@ -273,6 +292,16 @@
                 showToast('Welcome back!', 'success');
 
                 const target = await dashboardFor(user || {});
+                if (!target) {
+                    showProfileMissing();
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign In';
+                    return;
+                }
+                // Store the session in this role's slot so the dashboard keeps
+                // it even if the browser reloads the tab in the background.
+                const profile = await getUserProfile((user || {}).uid);
+                await persistSessionForRole(profile ? profile.role : null);
                 setTimeout(() => {
                     window.location.href = target;
                 }, 1000);
