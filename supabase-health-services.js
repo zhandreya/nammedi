@@ -707,10 +707,29 @@ export async function deleteAppointment(appointmentId) {
     await deleteRow(T.APPOINTMENTS, appointmentId);
 }
 
+// The documents bucket enforces a mime whitelist. Phones often misreport a
+// file's mime type (e.g. "text/plain;charset=UTF-8" for a PDF picked from
+// WhatsApp/downloads), which the bucket rejects with "mime type ... is not
+// supported". Derive the type from the extension and send it explicitly.
+const DOC_MIME_BY_EXT = {
+    pdf: 'application/pdf',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+};
+
 export async function uploadDocument(patientId, file, category = 'general') {
     const user = requireUser();
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    const mime = DOC_MIME_BY_EXT[ext];
+    if (!mime) {
+        throw new Error('Unsupported file type. Please upload a PDF, JPG, PNG, DOC or DOCX file.');
+    }
+    const uploadFile = new File([file], file.name, { type: mime });
     const path = `documents/${patientId}/${Date.now()}_${file.name}`;
-    const { error } = await supabase.storage.from('documents').upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from('documents').upload(path, uploadFile, { upsert: true, contentType: mime });
     if (error) throw error;
     const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
     const fileUrl = pub.publicUrl;
@@ -722,7 +741,7 @@ export async function uploadDocument(patientId, file, category = 'general') {
         file_name: file.name,
         file_url: fileUrl,
         file_size: file.size,
-        file_type: file.type,
+        file_type: mime,
         category,
         uploaded_by: user.uid,
         uploaded_by_email: user.email,
@@ -1291,7 +1310,20 @@ export async function getAppointmentsByStaff() {
         .order('date', { ascending: true })
         .order('time', { ascending: true });
     if (error) throw error;
-    return data || [];
+    // The dashboards' tables read camelCase fields (patientName, patientDob,
+    // doctorSpecialist, ...) but the DB rows are snake_case - expose both.
+    return (data || []).map(a => ({
+        ...a,
+        patientId: a.patient_id,
+        patientUserId: a.patient_user_id,
+        patientName: a.patient_name,
+        patientSurname: a.patient_surname,
+        patientDob: a.patient_dob,
+        patientIdPassport: a.patient_id_passport,
+        doctorSpecialist: a.doctor_specialist,
+        createdBy: a.created_by,
+        createdByEmail: a.created_by_email
+    }));
 }
 export const getPatientById = getPatient;
 export const getDocumentsByStaff = getMyDocuments;
