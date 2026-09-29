@@ -720,8 +720,19 @@ const DOC_MIME_BY_EXT = {
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 };
 
-export async function uploadDocument(patientId, file, category = 'general') {
+export async function uploadDocument(a, b, c, d) {
     const user = requireUser();
+    // Two calling conventions exist in the codebase:
+    //   uploadDocument(patientId, file, category)
+    //   uploadDocument(staffUid, patientId, file, category)   <- staff dashboards
+    // Detect which one by finding the actual File argument.
+    const isFile = v => v instanceof File || (v && typeof v === 'object' &&
+        typeof v.name === 'string' && typeof v.size === 'number' && typeof v.type === 'string');
+    let patientId, file, category = 'general';
+    if (isFile(b)) { patientId = a; file = b; category = c || 'general'; }
+    else if (isFile(c)) { patientId = b; file = c; category = d || 'general'; }
+    else throw new Error('No file selected for upload.');
+    if (!patientId) throw new Error('Please select a patient first.');
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     const mime = DOC_MIME_BY_EXT[ext];
     if (!mime) {
@@ -813,25 +824,105 @@ export async function getMedicationInventory() {
     return data;
 }
 
-export async function addPrescription(prescriptionData) {
+let prescNoIdCol = false;
+
+export async function addPrescription(a, b) {
     const user = requireUser();
-    const rec = await insertRow(T.PRESCRIPTIONS, {
-        ...prescriptionData,
+    // Two calling conventions exist:
+    //   addPrescription(data)
+    //   addPrescription(staffUid, data)   <- specialist dashboard
+    const data = (b && typeof b === 'object') ? b : a;
+    // Carry the selected patient's details onto the prescription row.
+    let patient = null;
+    const patientId = data.patientId || data.patient_id || null;
+    if (patientId) {
+        try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ }
+    }
+    // Doctor name: explicit, or the prescriber's own name when they are a specialist.
+    let doctorName = data.doctorName || data.doctor_name || null;
+    if (!doctorName) {
+        try {
+            const prof = await getUserProfile(user.uid);
+            if (prof && prof.role === 'specialist') {
+                doctorName = [prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null;
+            }
+        } catch (e) { /* leave null */ }
+    }
+    const base = {
+        patient_id: patientId,
+        patient_name: data.patientName || (patient && patient.fullName) || null,
+        patient_surname: data.patientSurname || (patient && patient.surname) || null,
+        patient_dob: data.patientDob || (patient && patient.dob) || null,
+        patient_phone: data.cellPhone || (patient && (patient.cellphone || patient.phone)) || null,
+        patient_user_id: data.patientUserId || (patient && (patient.patientUserId || patient.patient_user_id)) || null,
+        doctor_name: doctorName,
+        date: data.date,
+        ailment: data.ailment,
+        treatment: data.treatment,
+        prescription: data.prescription,
+        report: data.report,
+        status: data.status || 'active',
         prescribed_by: user.uid,
         prescribed_by_email: user.email,
-        patient_user_id: prescriptionData.patientUserId || '',
         created_at: nowIso()
-    });
-    return { id: rec.id, ...prescriptionData };
+    };
+    // patient_id_passport is added by a one-time SQL migration; insert with it
+    // when available, and fall back to without it until the migration has run.
+    let rec;
+    if (!prescNoIdCol) {
+        try {
+            rec = await insertRow(T.PRESCRIPTIONS, { ...base, patient_id_passport: (patient && patient.idPassport) || null });
+        } catch (e) {
+            if (e && /patient_id_passport/.test(String(e.message || e))) {
+                prescNoIdCol = true;
+                rec = await insertRow(T.PRESCRIPTIONS, base);
+            } else throw e;
+        }
+    } else {
+        rec = await insertRow(T.PRESCRIPTIONS, base);
+    }
+    return {
+        id: rec.id,
+        patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname,
+        patientDob: rec.patient_dob, patientUserId: rec.patient_user_id,
+        patientIdPassport: rec.patient_id_passport, doctorName: rec.doctor_name,
+        date: rec.date, ailment: rec.ailment, treatment: rec.treatment,
+        prescription: rec.prescription, report: rec.report, status: rec.status
+    };
+}
+
+function camelPrescription(p) {
+    return {
+        ...p,
+        patientId: p.patient_id,
+        patientUserId: p.patient_user_id,
+        patientName: p.patient_name,
+        patientSurname: p.patient_surname,
+        patientDob: p.patient_dob,
+        patientPhone: p.patient_phone,
+        patientIdPassport: p.patient_id_passport,
+        doctorName: p.doctor_name,
+        prescribedBy: p.prescribed_by
+    };
 }
 
 export async function getMyPrescriptions() {
     const user = requireUser();
-    return selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid);
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role === 'patient') {
+        // Patient: RLS returns only prescriptions written FOR them
+        // (matched by patient_user_id or patient_id_passport).
+        const { data, error } = await supabase.from(T.PRESCRIPTIONS)
+            .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(camelPrescription);
+    }
+    return (await selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid)).map(camelPrescription);
 }
 
 export async function getPatientPrescriptions(patientUserId) {
-    return selectEq(T.PRESCRIPTIONS, 'patient_user_id', patientUserId);
+    return (await selectEq(T.PRESCRIPTIONS, 'patient_user_id', patientUserId)).map(camelPrescription);
 }
 
 export async function addTask(taskData) {
@@ -953,11 +1044,29 @@ export async function verifyInsurance(insuranceData) {
     return { id: rec.id, ...insuranceData };
 }
 
+// Guard against fast double-submits (very common on phones): if the same
+// staff member creates an invoice/payment with identical key fields within
+// 3 seconds, return the first result instead of creating a duplicate row.
+const _recentSubmits = new Map();
+function recentSubmitKey(fn, user, fields) {
+    const key = fn + '|' + user + '|' + JSON.stringify(fields);
+    const last = _recentSubmits.get(key);
+    const now = Date.now();
+    if (last && now - last.ts < 3000) return last;
+    return null;
+}
+function rememberSubmit(fn, user, fields, result) {
+    _recentSubmits.set(fn + '|' + user + '|' + JSON.stringify(fields), { ts: Date.now(), result });
+}
+
 export async function createInvoice(uid, invoiceData) {
     // Dashboards call createInvoice(currentUser.uid, data);
     // also tolerates a single-argument call createInvoice(data).
     if (uid && typeof uid === 'object') { invoiceData = uid; uid = null; }
     const user = requireUser();
+    const _f = [invoiceData.patientId, invoiceData.fee, invoiceData.date, invoiceData.reason];
+    const _dup = recentSubmitKey('invoice', user.uid, _f);
+    if (_dup) return _dup.result;
     let patient = null;
     if (invoiceData.patientId) {
         try { patient = await getPatient(invoiceData.patientId); } catch (e) { /* patient lookup is best-effort */ }
@@ -983,7 +1092,9 @@ export async function createInvoice(uid, invoiceData) {
         created_by_email: user.email,
         created_at: nowIso()
     });
-    return { ...rec, patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
+    const _result = { ...rec, patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
+    rememberSubmit('invoice', user.uid, _f, _result);
+    return _result;
 }
 
 export async function processPayment(uid, paymentData) {
@@ -995,6 +1106,9 @@ export async function processPayment(uid, paymentData) {
     if (paymentData.patientId) {
         try { patient = await getPatient(paymentData.patientId); } catch (e) { /* best-effort */ }
     }
+    const _pf = [paymentData.patientId, paymentData.amount, paymentData.date];
+    const _pdup = recentSubmitKey('payment', user.uid, _pf);
+    if (_pdup) return _pdup.result;
     const rec = await insertRow(T.PAYMENTS, {
         patient_id: paymentData.patientId || null,
         patient_name: patient ? (patient.fullName || null) : null,
@@ -1009,7 +1123,9 @@ export async function processPayment(uid, paymentData) {
         processed_by_email: user.email,
         created_at: nowIso()
     });
-    return { id: rec.id, ...paymentData };
+    const _presult = { id: rec.id, ...paymentData };
+    rememberSubmit('payment', user.uid, _pf, _presult);
+    return _presult;
 }
 
 
