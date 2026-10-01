@@ -194,6 +194,7 @@
             <button class="tab" data-tab="prescriptions">Prescriptions</button>
             <button class="tab" data-tab="documents">Documents</button>
             <button class="tab" data-tab="invoices">Invoices</button>
+            <button class="tab" data-tab="refills">Refill Requests</button>
         </div>
 
         <!-- Patients Tab -->
@@ -222,6 +223,34 @@
             <div class="empty-state" id="invoicesEmpty" style="display: none;">
                 <h3>No invoices yet</h3>
                 <p>Use the "Invoice" button to generate an invoice for a visit.</p>
+            </div>
+        </div>
+
+        <!-- Refills Tab -->
+        <div class="tab-panel" id="refillsPanel">
+            <div class="section-header">
+                <h2>Refill Requests</h2>
+                <p style="color:#666; font-size:14px;">Requests from your patients. Approve or decline - the patient sees your confirmation on their dashboard.</p>
+            </div>
+            <div class="table-container">
+                <table id="refillsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Prescription</th>
+                            <th>Next Available</th>
+                            <th>Notes</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="refillsEmpty" style="display: none;">
+                <h3>No refill requests</h3>
+                <p>Requests from your patients will appear here.</p>
             </div>
         </div>
         <div class="tab-panel active" id="patientsPanel">
@@ -752,6 +781,9 @@
             getDocumentsByStaff,
             uploadDocument,
             deleteDocument,
+            buildPrescriptionPdf,
+            getRefillRequestsForDoctor,
+            respondRefill,
             addPrescription,
             getMyPrescriptions,
             initInactivityTimer,
@@ -774,6 +806,7 @@
         let allAppointments = [];
         let allPrescriptions = [];
         let allDocuments = [];
+        let allRefills = [];
 
         // DOM Elements
         const headerAvatar = document.getElementById('headerAvatar');
@@ -818,7 +851,8 @@
                     loadAppointments(),
                     loadInvoices(),
                     loadPrescriptions(),
-                    loadDocuments()
+                    loadDocuments(),
+                    loadRefills()
                 ]);
 
                 // Update stats
@@ -1637,8 +1671,21 @@
             }
         };
 
-        window.downloadPrescription = function(id) {
-            showToast('PDF generation coming soon', 'info');
+        window.downloadPrescription = async function(id) {
+            const pr = allPrescriptions.find(p => p.id === id);
+            if (!pr) { showToast('Prescription not found', 'error'); return; }
+            try {
+                showToast('Preparing PDF...', 'info');
+                const blob = await buildPrescriptionPdf(pr);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Prescription-${(pr.patientName || 'Patient')}-${pr.date || ''}.pdf`.replace(/\s+/g, '-');
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                showToast('Prescription PDF downloaded', 'success');
+            } catch (error) {
+                showToast('PDF error: ' + error.message, 'error');
+            }
         };
 
         // ============ DOCUMENTS ============
@@ -1730,6 +1777,68 @@
             }
         });
 
+        // ============ REFILL REQUESTS ============
+        async function loadRefills() {
+            try {
+                allRefills = await getRefillRequestsForDoctor();
+            } catch (e) {
+                console.error('Error loading refills:', e);
+                allRefills = [];
+            }
+            renderRefills();
+        }
+
+        function renderRefills() {
+            const tbody = document.getElementById('refillsTable').querySelector('tbody');
+            const empty = document.getElementById('refillsEmpty');
+            if (!tbody) return;
+            if (allRefills.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            tbody.innerHTML = allRefills.map(rf => {
+                const name = `${rf.patientName || ''} ${rf.patientSurname || ''}`.trim() || 'Patient';
+                const d = rf.date || (rf.createdAt ? String(rf.createdAt).slice(0, 10) : '');
+                const statusClass = rf.status === 'pending' ? 'status-pending' : (rf.status === 'approved' ? 'status-completed' : 'status-cancelled');
+                const actions = rf.status === 'pending' ? `
+                    <button class="btn-sm btn-verify" onclick="approveRefill('${rf.id}')">Approve</button>
+                    <button class="btn-sm btn-delete" onclick="declineRefill('${rf.id}')">Decline</button>
+                ` : `<span style="color:#888; font-size:12px;">${rf.doctorNote || 'Handled'}</span>`;
+                return `
+                <tr>
+                    <td>${d ? formatDate(d) : '-'}</td>
+                    <td>${name}</td>
+                    <td>${rf.prescription || rf.medicationName || rf.medication || '-'}</td>
+                    <td>${rf.nextAvailableDate ? formatDate(rf.nextAvailableDate) : '-'}</td>
+                    <td>${rf.notes || '-'}</td>
+                    <td><span class="status-badge ${statusClass}">${rf.status || 'pending'}</span></td>
+                    <td>${actions}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        window.approveRefill = async function(id) {
+            const note = prompt("Doctor's confirmation message (sent to the patient):", "Approved - please collect your prescription at the clinic.");
+            if (note === null) return;
+            try {
+                await respondRefill(id, { status: 'approved', doctorNote: note });
+                showToast('Refill approved - patient notified', 'success');
+                await loadRefills();
+            } catch (error) {
+                showToast('Failed to approve: ' + error.message, 'error');
+            }
+        };
+
+        window.declineRefill = async function(id) {
+            const note = prompt("Reason for declining (sent to the patient):", "Not available - please consult your doctor.");
+            if (note === null) return;
+            try {
+                await respondRefill(id, { status: 'declined', doctorNote: note });
+                showToast('Refill declined - patient notified', 'success');
+                await loadRefills();
+            } catch (error) {
+                showToast('Failed to decline: ' + error.message, 'error');
+            }
+        };
+
         // ============ SIGN OUT ============
         async function signOut() {
             try {
@@ -1778,5 +1887,6 @@
         window.filterPrescriptions = filterPrescriptions;
         window.signOut = signOut;
     </script>
+<p style="text-align:center;color:#999;font-size:11px;padding:6px 0 10px;">v16</p>
 </body>
 </html>
