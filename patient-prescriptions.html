@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Prescriptions - Namibia Health Services</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -202,6 +203,34 @@
         </div>
     </div>
 
+
+    <div class="card" id="refillSection" style="display:none; margin-top: 24px;">
+        <h3>💊 Your Refill Requests</h3>
+        <p style="color:#666; font-size:14px;">The doctor will confirm each request here.</p>
+        <div style="overflow-x:auto;">
+            <table class="data-table" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr><th>Date</th><th>Prescription</th><th>Doctor</th><th>Status / Confirmation</th></tr>
+                </thead>
+                <tbody id="refillTableBody"></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="refillEmpty" style="display:none;"><h3>No refill requests yet</h3></div>
+    </div>
+
+    <div class="modal" id="prescViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Prescription Details</h3>
+                <button class="modal-close" onclick="closePrescViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="prescViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closePrescViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
     <script type="module">
@@ -210,6 +239,7 @@
             getUserProfile,
             getMyPrescriptions,
             getMyRefillRequests,
+            buildPrescriptionPdf,
             initInactivityTimer,
             showToast,
             formatDate
@@ -227,6 +257,8 @@
         const statsCards = document.getElementById('statsCards');
         const prescriptionsTable = document.getElementById('prescriptionsTable').querySelector('tbody');
         const emptyState = document.getElementById('emptyState');
+        const prescViewModal = document.getElementById('prescViewModal');
+        let allPrescriptions = [];
 
         // Check authentication
         onAuthChange(async (user) => {
@@ -250,6 +282,7 @@
                     getMyPrescriptions(),
                     getMyRefillRequests()
                 ]);
+                allPrescriptions = prescriptions;
 
                 // Render stats
                 const activeCount = prescriptions.filter(p => p.status === 'active' || !p.status).length;
@@ -277,6 +310,7 @@
 
                 // Render prescriptions table
                 renderPrescriptions(prescriptions);
+                renderRefillRequests(refills);
 
             } catch (error) {
                 console.error('Error loading prescriptions:', error);
@@ -314,7 +348,7 @@
                 return `
                     <tr>
                         <td>${formatDate(pr.date)}</td>
-                        <td>${pr.doctorSpecialist || pr.doctor_specialist || 'Doctor'}</td>
+                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'TBA'}</td>
                         <td>${pr.ailment || '-'}</td>
                         <td>${pr.treatment || '-'}</td>
                         <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pr.prescription || '-'}</td>
@@ -330,17 +364,65 @@
         }
 
         window.viewPrescription = function(id) {
-            showToast('Prescription details view coming soon', 'info');
+            const pr = allPrescriptions.find(p => p.id === id);
+            if (!pr) { showToast('Prescription not found', 'error'); return; }
+            document.getElementById('prescViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(pr.date)}</span></div>
+                <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${pr.doctorName || pr.doctor_name || 'TBA'}</span></div>
+                <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${pr.ailment || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${pr.treatment || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value" style="white-space:pre-wrap;">${pr.prescription || '-'}</span></div>
+                ${pr.report ? `<div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${pr.report}</span></div>` : ''}
+                <div class="detail"><span class="detail-label">Status</span><span class="detail-value">${pr.status || 'active'}</span></div>
+            `;
+            prescViewModal.classList.add('show');
+        };
+        window.closePrescViewModal = function() { prescViewModal.classList.remove('show'); };
+
+        window.downloadPrescription = async function(id) {
+            const pr = allPrescriptions.find(p => p.id === id);
+            if (!pr) { showToast('Prescription not found', 'error'); return; }
+            try {
+                showToast('Preparing PDF...', 'info');
+                const blob = await buildPrescriptionPdf(pr);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Prescription-${(pr.patientName || 'Patient')}-${pr.date || ''}.pdf`.replace(/\s+/g, '-');
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                showToast('Prescription PDF downloaded', 'success');
+            } catch (error) {
+                showToast('PDF error: ' + error.message, 'error');
+            }
         };
 
-        window.downloadPrescription = function(id) {
-            showToast('PDF download coming soon', 'info');
-        };
+        function renderRefillRequests(refills) {
+            const tbody = document.getElementById('refillTableBody');
+            const section = document.getElementById('refillSection');
+            const empty = document.getElementById('refillEmpty');
+            if (!tbody) return;
+            if (!refills || refills.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            if (refills.length === 0) { empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            tbody.innerHTML = refills.map(r => {
+                const d = r.date || (r.createdAt ? String(r.createdAt).slice(0, 10) : '');
+                const note = r.doctorNote ? `<div style="margin-top:6px; padding:8px; background:#e8f5e9; border-radius:6px; font-size:13px;"><b>Doctor's confirmation:</b> ${r.doctorNote}</div>` : '';
+                return `<tr>
+                    <td>${d ? formatDate(d) : '-'}</td>
+                    <td>${r.prescription || r.medicationName || r.medication || '-'}</td>
+                    <td>${r.doctorName || 'Doctor'}</td>
+                    <td><span class="status-badge status-${r.status === 'pending' ? 'pending' : (r.status === 'approved' ? 'active' : 'expired')}">${r.status || 'pending'}</span>${note}</td>
+                </tr>`;
+            }).join('');
+        }
 
         window.requestRefillForPrescription = function(prescriptionId, prescriptionText) {
-            // Store the prescription info for the refill request
+            const pr = allPrescriptions.find(p => p.id === prescriptionId) || {};
             sessionStorage.setItem('refillPrescriptionId', prescriptionId);
             sessionStorage.setItem('refillPrescriptionText', prescriptionText);
+            sessionStorage.setItem('refillPrescribedBy', pr.prescribedBy || pr.prescribed_by || '');
+            sessionStorage.setItem('refillDoctorName', pr.doctorName || pr.doctor_name || '');
             window.location.href = 'request-refill.html';
         };
 
