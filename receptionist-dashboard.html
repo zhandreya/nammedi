@@ -356,9 +356,10 @@
                             <th>Date</th>
                             <th>Patient</th>
                             <th>ID / Passport</th>
-                            <th>Phone</th>
+                            <th>Reference</th>
                             <th>Amount</th>
-                            <th>Status</th>
+                            <th>Method</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -740,11 +741,7 @@
                             <option value="eft">EFT</option>
                         </select>
                     </div>
-                    <div class="form-group">
-                        <label>Reference #</label>
-                        <input type="text" id="payReference" name="reference" placeholder="Transaction reference">
-                    </div>
-                </div>
+                                    </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Process Payment</button>
@@ -797,6 +794,46 @@
         </div>
     </div>
 
+
+    <div class="modal" id="insuranceViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Insurance Verification</h3>
+                <button class="modal-close" onclick="closeInsuranceViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="insuranceViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeInsuranceViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+ role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Report Details</h3>
+                <button class="modal-close" onclick="closeReportViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="reportViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeReportViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="paymentViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Payment Details</h3>
+                <button class="modal-close" onclick="closePaymentViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="paymentViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closePaymentViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
     <script type="module">
@@ -820,9 +857,17 @@
             getInvoices,
             getPayments,
             markInvoicePaid,
+            deleteInvoice,
+            deletePayment,
             generateInvoicePdf,
             saveInvoicePdf,
             generateReport,
+            getMyReports,
+            updateReport,
+            deleteReport,
+            getInsuranceVerifications,
+            updateInsuranceVerification,
+            deleteInsuranceVerification,
             initInactivityTimer,
             showToast,
             isValidNamibianPhone,
@@ -852,6 +897,9 @@
         const headerRole = document.getElementById('headerRole');
         const headerInstitute = document.getElementById('headerInstitute');
         const statsGrid = document.getElementById('statsGrid');
+        const reportViewModal = document.getElementById('reportViewModal');
+        const paymentViewModal = document.getElementById('paymentViewModal');
+        const insuranceViewModal = document.getElementById('insuranceViewModal');
         const tabs = document.querySelectorAll('.tab');
         const tabPanels = document.querySelectorAll('.tab-panel');
 
@@ -911,8 +959,12 @@
         }
 
         async function loadInsurance() {
-            // For now, using a placeholder - in production, query Firestore collection
-            allInsurance = JSON.parse(localStorage.getItem('insuranceVerifications') || '[]');
+            try {
+                allInsurance = await getInsuranceVerifications();
+            } catch (e) {
+                console.error('Error loading insurance verifications:', e);
+                allInsurance = [];
+            }
             renderInsurance();
         }
 
@@ -965,6 +1017,71 @@
             setTimeout(() => URL.revokeObjectURL(a.href), 5000);
         }
 
+        window.viewPayment = function(id) {
+            const pay = allPayments.find(p => p.id === id);
+            if (!pay) { showToast('Payment not found', 'error'); return; }
+            document.getElementById('paymentViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(pay.date)}</span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${pay.patientName || 'Unknown'} ${pay.patientSurname || ''}</span></div>
+                <div class="detail"><span class="detail-label">ID Number</span><span class="detail-value">${pay.idPassport || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Reference</span><span class="detail-value">${pay.reference || pay.idPassport || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Amount</span><span class="detail-value">NAD ${parseFloat(pay.amount || 0).toFixed(2)}</span></div>
+                <div class="detail"><span class="detail-label">Method</span><span class="detail-value">${pay.method || 'Processed'}</span></div>
+            `;
+            paymentViewModal.classList.add('show');
+        };
+        window.closePaymentViewModal = function() { paymentViewModal.classList.remove('show'); };
+
+        window.downloadPaymentPdf = async function(id) {
+            const pay = allPayments.find(p => p.id === id);
+            if (!pay) { showToast('Payment not found', 'error'); return; }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(16); doc.text('Payment Receipt', 105, 20, { align: 'center' });
+                doc.setFontSize(11);
+                doc.text('Date:', 20, 40); doc.text(formatDate(pay.date), 60, 40);
+                doc.text('Patient:', 20, 50); doc.text(`${pay.patientName || ''} ${pay.patientSurname || ''}`.trim() || 'Unknown', 60, 50);
+                doc.text('ID Number:', 20, 60); doc.text(pay.idPassport || '-', 60, 60);
+                doc.text('Reference:', 20, 70); doc.text(pay.reference || pay.idPassport || '-', 60, 70);
+                doc.text('Method:', 20, 80); doc.text(pay.method || 'Processed', 60, 80);
+                doc.setFontSize(14); doc.text('Amount:', 20, 96); doc.text('NAD ' + parseFloat(pay.amount || 0).toFixed(2), 60, 96);
+                const blob = doc.output('blob');
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `Payment-${pay.patientName || 'receipt'}-${pay.date || ''}.pdf`.replace(/\s+/g, '-');
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                showToast('Payment PDF downloaded', 'success');
+            } catch (error) {
+                showToast('PDF error: ' + error.message, 'error');
+            }
+        };
+
+        window.deletePaymentRow = async function(id) {
+            if (!confirm('Delete this payment record? This cannot be undone.')) return;
+            try {
+                await deletePayment(id);
+                showToast('Payment deleted', 'success');
+                await loadBilling();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete payment: ' + error.message, 'error');
+            }
+        };
+
+        window.deleteInvoiceRow = async function(id) {
+            if (!confirm('Delete this invoice? This cannot be undone.')) return;
+            try {
+                await deleteInvoice(id);
+                showToast('Invoice deleted', 'success');
+                await loadBilling();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete invoice: ' + error.message, 'error');
+            }
+        };
+
         window.markInvoicePaid = async function(id) {
             try {
                 await markInvoicePaid(id);
@@ -977,7 +1094,12 @@
         };
 
         async function loadReports() {
-            allReports = JSON.parse(localStorage.getItem('reports') || '[]');
+            try {
+                allReports = await getMyReports();
+            } catch (e) {
+                console.error('Error loading reports:', e);
+                allReports = [];
+            }
             renderReports();
         }
 
@@ -1484,18 +1606,66 @@
                 <tr>
                     <td>${formatDate(ins.date)}</td>
                     <td>${ins.patientName || 'Unknown'}</td>
-                    <td>${ins.idPassport || '-'}</td>
+                    <td>${ins.idPassport || ins.patientIdPassport || '-'}</td>
                     <td>${ins.medicalAidNumber || '-'}</td>
                     <td><span class="status-badge status-${ins.status}">${ins.status}</span></td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewInsurance('${ins.id}')">View</button>
                         <button class="btn-sm btn-edit" onclick="editInsurance('${ins.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="deleteInsuranceRow('${ins.id}')">Delete</button>
                     </td>
                 </tr>
             `).join('');
         }
 
         function filterInsurance() { renderInsurance(); }
+
+        window.viewInsurance = function(id) {
+            const ins = allInsurance.find(i => i.id === id);
+            if (!ins) { showToast('Record not found', 'error'); return; }
+            document.getElementById('insuranceViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(ins.date)}</span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${ins.patientName || 'Unknown'} ${ins.patientSurname || ''}</span></div>
+                <div class="detail"><span class="detail-label">ID Number</span><span class="detail-value">${ins.idPassport || ins.patientIdPassport || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Medical Aid No.</span><span class="detail-value">${ins.medicalAidNumber || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Payment</span><span class="detail-value">${ins.paymentStatus || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Status</span><span class="detail-value">${ins.status || '-'}</span></div>
+                ${ins.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${ins.notes}</span></div>` : ''}
+            `;
+            insuranceViewModal.classList.add('show');
+        };
+        window.closeInsuranceViewModal = function() { insuranceViewModal.classList.remove('show'); };
+
+        let editingInsuranceId = null;
+        window.editInsurance = function(id) {
+            const ins = allInsurance.find(i => i.id === id);
+            if (!ins) { showToast('Record not found', 'error'); return; }
+            editingInsuranceId = id;
+            populatePatientDropdowns();
+            const form = document.getElementById('verifyInsuranceForm');
+            form.reset();
+            clearAllErrors('verifyInsuranceForm');
+            if (ins.patientId) document.getElementById('viPatient').value = ins.patientId;
+            document.getElementById('viMedicalAid').value = ins.medicalAidNumber || '';
+            document.getElementById('viDate').value = ins.date || '';
+            document.getElementById('viPayment').value = ins.paymentStatus || '';
+            document.getElementById('viStatus').value = ins.status || 'verified';
+            document.getElementById('viNotes').value = ins.notes || '';
+            document.getElementById('verifyInsuranceModalTitle').textContent = 'Edit Insurance Verification';
+            document.getElementById('verifyInsuranceModal').classList.add('show');
+        };
+
+        window.deleteInsuranceRow = async function(id) {
+            if (!confirm('Delete this insurance verification? This cannot be undone.')) return;
+            try {
+                await deleteInsuranceVerification(id);
+                showToast('Verification deleted', 'success');
+                await loadInsurance();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete: ' + error.message, 'error');
+            }
+        };
 
         window.openVerifyInsuranceModal = function(insurance = null) {
             const form = document.getElementById('verifyInsuranceForm');
@@ -1517,6 +1687,17 @@
                 title.textContent = 'Verify Insurance';
             }
 
+            document.getElementById('verifyInsuranceModal').classList.add('show');
+        };
+
+        window.openVerifyInsuranceModal = function() {
+            editingInsuranceId = null;
+            document.getElementById('verifyInsuranceModalTitle').textContent = 'Verify Insurance';
+            populatePatientDropdowns();
+            document.getElementById('verifyInsuranceForm').reset();
+            clearAllErrors('verifyInsuranceForm');
+            const d = document.getElementById('viDate');
+            if (d) d.max = new Date().toISOString().split('T')[0];
             document.getElementById('verifyInsuranceModal').classList.add('show');
         };
 
@@ -1542,9 +1723,16 @@
             }
 
             try {
-                await verifyInsurance(currentUser.uid, data);
-                showToast('Insurance verification submitted', 'success');
+                if (editingInsuranceId) {
+                    await updateInsuranceVerification(editingInsuranceId, data);
+                    showToast('Insurance verification updated', 'success');
+                } else {
+                    await verifyInsurance(currentUser.uid, data);
+                    showToast('Insurance verification submitted', 'success');
+                }
+                editingInsuranceId = null;
                 closeVerifyInsuranceModal();
+                document.getElementById('verifyInsuranceModalTitle').textContent = 'Verify Insurance';
                 await loadInsurance();
                 updateStats();
             } catch (error) {
@@ -1584,6 +1772,7 @@
                             <button class="btn-sm btn-view" onclick="viewInvoice('${inv.id}')">View</button>
                             <button class="btn-sm btn-verify" onclick="downloadInvoicePdf('${inv.id}')">PDF</button>
                             ${!inv.paid ? `<button class="btn-sm btn-verify" onclick="markInvoicePaid('${inv.id}')">Mark Paid</button>` : ''}
+                            <button class="btn-sm btn-delete" onclick="deleteInvoiceRow('${inv.id}')">Delete</button>
                         </td>
                     </tr>
                 `).join('');
@@ -1603,9 +1792,14 @@
                         <td>${formatDate(pay.date)}</td>
                         <td>${pay.patientName || 'Unknown'}</td>
                         <td>${pay.idPassport || '-'}</td>
-                        <td>${pay.cellPhone || '-'}</td>
+                        <td>${pay.reference || pay.idPassport || '-'}</td>
                         <td>NAD ${parseFloat(pay.amount || 0).toFixed(2)}</td>
                         <td><span class="status-badge status-completed">${pay.method || 'Processed'}</span></td>
+                        <td>
+                            <button class="btn-sm btn-view" onclick="viewPayment('${pay.id}')">View</button>
+                            <button class="btn-sm btn-download" onclick="downloadPaymentPdf('${pay.id}')">Download</button>
+                            <button class="btn-sm btn-delete" onclick="deletePaymentRow('${pay.id}')">Delete</button>
+                        </td>
                     </tr>
                 `).join('');
             }
@@ -1683,8 +1877,8 @@
                 patientId: document.getElementById('payPatient').value,
                 date: document.getElementById('payDate').value,
                 amount: parseFloat(document.getElementById('payAmount').value),
-                method: document.getElementById('payMethod').value,
-                reference: document.getElementById('payReference').value
+                method: document.getElementById('payMethod').value
+                // Reference number = the patient's ID number (set automatically)
             };
 
             if (!data.patientId || !data.date || isNaN(data.amount)) {
@@ -1729,9 +1923,12 @@
                     <td>${formatDate(rpt.date)}</td>
                     <td>${rpt.patientName || 'N/A'}</td>
                     <td>${rpt.idPassport || '-'}</td>
-                    <td>${rpt.type.replace('_', ' ')}</td>
+                    <td>${(rpt.type || '').replace('_', ' ')}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
+                        <button class="btn-sm btn-download" onclick="downloadReportPdf('${rpt.id}')">PDF</button>
+                        <button class="btn-sm btn-edit" onclick="editReport('${rpt.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="deleteReportRow('${rpt.id}')">Delete</button>
                     </td>
                 </tr>
             `).join('');
@@ -1739,7 +1936,63 @@
 
         function filterReports() { renderReports(); }
 
+        window.viewReport = function(id) {
+            const rpt = allReports.find(r => r.id === id);
+            if (!rpt) { showToast('Report not found', 'error'); return; }
+            document.getElementById('reportViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(rpt.date)}</span></div>
+                <div class="detail"><span class="detail-label">Type</span><span class="detail-value">${(rpt.type || '').replace('_', ' ')}</span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${rpt.patientName || 'N/A'} ${rpt.patientSurname || ''}</span></div>
+                <div class="detail"><span class="detail-label">ID Number</span><span class="detail-value">${rpt.idPassport || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${rpt.doctorName || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${rpt.description || '-'}</span></div>
+            `;
+            reportViewModal.classList.add('show');
+        };
+        window.closeReportViewModal = function() { reportViewModal.classList.remove('show'); };
+
+        window.downloadReportPdf = function(id) {
+            const rpt = allReports.find(r => r.id === id);
+            if (!rpt) { showToast('Report not found', 'error'); return; }
+            if (!rpt.pdfUrl) { showToast('No PDF stored for this report', 'error'); return; }
+            const a = document.createElement('a');
+            a.href = rpt.pdfUrl; a.download = `Report-${rpt.patientName || 'patient'}-${rpt.date || ''}.pdf`.replace(/\s+/g, '-');
+            document.body.appendChild(a); a.click(); a.remove();
+            showToast('Report PDF downloaded', 'success');
+        };
+
+        let editingReportId = null;
+        window.editReport = function(id) {
+            const rpt = allReports.find(r => r.id === id);
+            if (!rpt) { showToast('Report not found', 'error'); return; }
+            editingReportId = id;
+            populatePatientDropdowns();
+            const form = document.getElementById('reportForm');
+            form.reset();
+            clearAllErrors('reportForm');
+            document.getElementById('rptType').value = rpt.type || '';
+            if (rpt.patientId) document.getElementById('rptPatient').value = rpt.patientId;
+            document.getElementById('rptDate').value = rpt.date || '';
+            document.getElementById('rptDescription').value = rpt.description || '';
+            document.getElementById('reportModalTitle').textContent = 'Edit Report';
+            document.getElementById('reportModal').classList.add('show');
+        };
+
+        window.deleteReportRow = async function(id) {
+            if (!confirm('Delete this report? This cannot be undone.')) return;
+            try {
+                await deleteReport(id);
+                showToast('Report deleted', 'success');
+                await loadReports();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete report: ' + error.message, 'error');
+            }
+        };
+
         window.openReportModal = function() {
+            editingReportId = null;
+            document.getElementById('reportModalTitle').textContent = 'Generate Report';
             populatePatientDropdowns();
             document.getElementById('reportForm').reset();
             clearAllErrors('reportForm');
@@ -1767,9 +2020,16 @@
             }
 
             try {
-                await generateReport(currentUser.uid, data);
-                showToast('Report generated', 'success');
+                if (editingReportId) {
+                    await updateReport(editingReportId, data);
+                    showToast('Report updated', 'success');
+                } else {
+                    await generateReport(currentUser.uid, data);
+                    showToast('Report generated', 'success');
+                }
+                editingReportId = null;
                 closeReportModal();
+                document.getElementById('reportModalTitle').textContent = 'Generate Report';
                 await loadReports();
                 updateStats();
             } catch (error) {
