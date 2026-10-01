@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor's Reports - Namibia Health Services</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -209,7 +210,9 @@
             onAuthChange, 
             getUserProfile,
             getMyPrescriptions,
+            getMyReports,
             getMyPatientDocuments,
+            buildPrescriptionPdf,
             initInactivityTimer,
             showToast,
             formatDate
@@ -249,17 +252,30 @@
                 // In a real implementation, you'd have a dedicated reports collection
                 // For now, we'll extract reports from prescriptions
                 const prescriptions = await getMyPrescriptions();
-                
-                // Extract reports from prescriptions
+
+                // Doctor's reports from prescriptions
                 const reports = prescriptions
                     .filter(p => p.report && p.report.trim())
                     .map(p => ({
                         id: p.id,
                         date: p.date,
-                        doctorSpecialist: p.doctorSpecialist || p.doctor_specialist || 'Doctor',
-                        report: p.report
+                        doctorSpecialist: p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || 'TBA',
+                        report: p.report,
+                        _prescription: p
                     }))
                     .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                // Also include official generated reports (from the reports table)
+                try {
+                    const generated = await getMyReports();
+                    generated.forEach(r => reports.push({
+                        id: 'rpt-' + r.id,
+                        date: r.date,
+                        doctorSpecialist: r.doctorName || 'Staff',
+                        report: r.description,
+                        pdfUrl: r.pdfUrl || null
+                    }));
+                } catch (e) { /* reports table optional */ }
 
                 renderReports(reports);
             } catch (error) {
@@ -299,9 +315,54 @@
             `).join('');
         }
 
-        window.downloadReport = function(id) {
-            showToast('PDF download coming soon', 'info');
+        window.downloadReport = async function(id) {
+            try {
+                const reports = await getAllReportsForDownload();
+                const r = reports.find(x => x.id === id);
+                if (!r) { showToast('Report not found', 'error'); return; }
+                if (r.pdfUrl) {
+                    const a = document.createElement('a');
+                    a.href = r.pdfUrl; a.download = `Report-${r.date || ''}.pdf`;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    showToast('Report downloaded', 'success');
+                    return;
+                }
+                if (r._prescription) {
+                    showToast('Preparing PDF...', 'info');
+                    const blob = await buildPrescriptionPdf(r._prescription);
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `Report-${r._prescription.patientName || 'Patient'}-${r.date || ''}.pdf`.replace(/\s+/g, '-');
+                    document.body.appendChild(a); a.click(); a.remove();
+                    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+                    showToast('Report PDF downloaded', 'success');
+                } else {
+                    showToast('No downloadable file for this report', 'error');
+                }
+            } catch (error) {
+                showToast('Download error: ' + error.message, 'error');
+            }
         };
+
+        // Rebuild the merged report list for downloads (mirrors loadReports)
+        async function getAllReportsForDownload() {
+            const prescriptions = await getMyPrescriptions();
+            const reports = prescriptions
+                .filter(p => p.report && p.report.trim())
+                .map(p => ({
+                    id: p.id, date: p.date,
+                    doctorSpecialist: p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || 'TBA',
+                    report: p.report, _prescription: p
+                }));
+            try {
+                const generated = await getMyReports();
+                generated.forEach(r => reports.push({
+                    id: 'rpt-' + r.id, date: r.date, doctorSpecialist: r.doctorName || 'Staff',
+                    report: r.description, pdfUrl: r.pdfUrl || null
+                }));
+            } catch (e) { /* optional */ }
+            return reports;
+        }
 
         // ============ DOCUMENTS & INVOICES (real, downloadable) ============
         const docsTable = document.getElementById('docsTable').querySelector('tbody');
