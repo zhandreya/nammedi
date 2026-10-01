@@ -619,6 +619,20 @@ export async function createAppointment(appointmentData, maybeData) {
             }
         } catch (e) { /* leave blank -> shows TBA */ }
     }
+    // Institution: from the form, else the patient record, else the booker's institute.
+    let institution = src.institution || null;
+    if (!institution) {
+        try {
+            const patient = await getPatient(src.patientId || src.patient_id);
+            institution = (patient && (patient.institution || patient.institute)) || null;
+        } catch (e) { /* best-effort */ }
+    }
+    if (!institution) {
+        try {
+            const prof = await getUserProfile(user.uid);
+            institution = (prof && prof.institute) || null;
+        } catch (e) { /* best-effort */ }
+    }
     const data = await insertRow(T.APPOINTMENTS, {
         patient_id: src.patientId || src.patient_id || null,
         patient_user_id: src.patientUserId || null,
@@ -627,7 +641,7 @@ export async function createAppointment(appointmentData, maybeData) {
         patient_dob: src.patientDob || src.dob || null,
         patient_id_passport: src.patientIdPassport || null,
         doctor_specialist: doctor,
-        institution: src.institution || null,
+        institution: institution,
         date: src.date,
         time: src.time || null,
         reason: src.reason || null,
@@ -638,7 +652,23 @@ export async function createAppointment(appointmentData, maybeData) {
         created_at: nowIso(),
         updated_at: nowIso()
     });
-    return { id: data.id, ...src };
+    // Record the institute visit (best-effort) so it appears on the patient's dashboard.
+    try {
+        if (institution) {
+            await insertRow(T.INSTITUTES_VISITED, {
+                patient_id: src.patientId || src.patient_id || null,
+                patient_name: src.patientName || src.fullName || null,
+                patient_surname: src.patientSurname || src.surname || null,
+                patient_id_passport: src.patientIdPassport || null,
+                institute: institution,
+                date: src.date,
+                time: src.time || null,
+                doctor_name: doctor,
+                created_at: nowIso()
+            });
+        }
+    } catch (e) { console.warn('institutes_visited record failed:', e); }
+    return { id: data.id, ...src, institution };
 }
 
 export async function getMyAppointments() {
@@ -767,8 +797,26 @@ export async function getPatientDocuments(patientId) {
 }
 
 export async function getMyDocuments() {
-    const user = requireUser();
-    return selectEq(T.DOCUMENTS, 'uploaded_by', user.uid);
+    requireUser();
+    // RLS returns own uploads + (for staff) documents from the same institute.
+    const { data, error } = await supabase.from(T.DOCUMENTS)
+        .select('*').order('upload_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    const rows = data || [];
+    // Enrich with the patient's name (documents store patient_id, not the name).
+    try {
+        const ids = [...new Set(rows.map(d => d.patient_id).filter(Boolean))];
+        if (ids.length) {
+            const { data: pats } = await supabase.from(T.PATIENTS).select('id, full_name, surname').in('id', ids);
+            const pmap = new Map((pats || []).map(p => [p.id, p]));
+            rows.forEach(d => {
+                const p = pmap.get(d.patient_id);
+                if (p) { d.patientName = p.full_name; d.patientSurname = p.surname; }
+            });
+        }
+    } catch (e) { /* best-effort */ }
+    return rows.map(d => ({ ...d, patientId: d.patient_id, fileName: d.file_name, fileUrl: d.file_url,
+        fileSize: d.file_size, fileType: d.file_type, uploadDate: d.upload_date, uploadedBy: d.uploaded_by }));
 }
 
 export async function deleteDocument(documentId) {
@@ -790,38 +838,114 @@ export async function deleteDocument(documentId) {
     }
 }
 
-export async function recordMedicationAdministration(medData) {
+function camelMedRecord(m) {
+    return { ...m, patientId: m.patient_id, patientName: m.patient_name, patientSurname: m.patient_surname,
+              patientIdPassport: m.patient_id_passport, medicationName: m.medication_name,
+              administeredBy: m.administered_by };
+}
+
+export async function recordMedicationAdministration(a, b) {
     const user = requireUser();
+    const data = (b && typeof b === 'object') ? b : a;
+    let patient = null;
+    const patientId = data.patientId || null;
+    if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
+    let prof = null;
+    try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
+    const institute = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
     const rec = await insertRow(T.MEDICATION_RECORDS, {
-        ...medData,
+        patient_id: patientId,
+        patient_name: patient ? (patient.fullName || null) : null,
+        patient_surname: patient ? (patient.surname || null) : null,
+        patient_id_passport: (patient && patient.idPassport) || null,
+        date: data.date,
+        ailment: data.ailment || null,
+        treatment: data.treatment || null,
+        prescription: data.prescription || null,
+        medication_name: data.medicationName || null,
+        strength: data.strength || null,
+        quantity: data.quantity ?? null,
+        notes: data.notes || null,
+        institute,
         administered_by: user.uid,
         administered_by_email: user.email,
         created_at: nowIso()
     });
-    return { id: rec.id, ...medData };
+    // Deduct the administered quantity from the matching inventory item (best-effort).
+    try {
+        if (data.medicationName && data.quantity) {
+            const { data: invRows } = await supabase.from(T.MEDICATION_INVENTORY)
+                .select('*').eq('medication_name', data.medicationName).limit(10);
+            const inv = (invRows || []).find(r => !r.strength || !data.strength || String(r.strength).toLowerCase() === String(data.strength).toLowerCase()) || (invRows || [])[0];
+            if (inv) {
+                await supabase.from(T.MEDICATION_INVENTORY).update({
+                    quantity: Math.max(0, (inv.quantity || 0) - (data.quantity || 0)),
+                    updated_by: user.uid, updated_at: nowIso()
+                }).eq('id', inv.id);
+            }
+        }
+    } catch (e) { console.warn('inventory deduction failed:', e); }
+    return { id: rec.id, ...data };
 }
 
 export async function getMyMedicationRecords() {
-    const user = requireUser();
-    return selectEq(T.MEDICATION_RECORDS, 'administered_by', user.uid);
+    requireUser();
+    // RLS returns own records + (for staff) records from the same institute.
+    const { data, error } = await supabase.from(T.MEDICATION_RECORDS)
+        .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelMedRecord);
+}
+
+export async function updateMedicationRecord(recordId, data) {
+    const row = {};
+    const put = (k, v) => { if (v !== undefined) row[k] = v; };
+    put('date', data.date);
+    put('quantity', data.quantity);
+    put('prescription', data.prescription);
+    put('ailment', data.ailment);
+    put('treatment', data.treatment);
+    put('medication_name', data.medicationName);
+    put('strength', data.strength);
+    put('notes', data.notes);
+    const { error } = await supabase.from(T.MEDICATION_RECORDS).update(row).eq('id', recordId);
+    if (error) throw error;
+    return { id: recordId, ...data };
+}
+
+export async function deleteMedicationRecord(recordId) {
+    await deleteRow(T.MEDICATION_RECORDS, recordId);
 }
 
 export async function updateMedicationInventory(inventoryData) {
     const user = requireUser();
-    const { error } = await supabase.from(T.MEDICATION_INVENTORY).upsert({
-        id: user.uid,
-        ...inventoryData,
-        updated_by: user.uid,
-        updated_at: nowIso()
-    });
-    if (error) throw error;
+    let prof = null;
+    try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
+    const institute = (prof && prof.institute) || null;
+    const items = (inventoryData && inventoryData.medications) || [];
+    for (const item of items) {
+        if (!item.name) continue;
+        const { error } = await supabase.from(T.MEDICATION_INVENTORY).upsert({
+            medication_name: item.name,
+            strength: item.strength || null,
+            quantity: item.quantity || 0,
+            expiry: item.expiry || null,
+            institute,
+            updated_by: user.uid,
+            updated_at: nowIso()
+        }, { onConflict: 'institute,medication_name,strength' });
+        if (error) throw error;
+    }
+    return { saved: items.length };
 }
 
 export async function getMedicationInventory() {
-    const user = requireUser();
-    const { data, error } = await supabase.from(T.MEDICATION_INVENTORY).select('*').eq('id', user.uid).maybeSingle();
+    requireUser();
+    // RLS scopes to the caller's own institute.
+    const { data, error } = await supabase.from(T.MEDICATION_INVENTORY)
+        .select('*').order('medication_name', { ascending: true });
     if (error) throw error;
-    return data;
+    return data || [];
 }
 
 let prescNoIdCol = false;
@@ -881,6 +1005,40 @@ export async function addPrescription(a, b) {
     } else {
         rec = await insertRow(T.PRESCRIPTIONS, base);
     }
+    // Record the ailment/treatment + institute visit (best-effort) so they appear
+    // on the patient's dashboard.
+    try {
+        let prof = null;
+        try { prof = await getUserProfile(user.uid); } catch (e2) { /* ignore */ }
+        const inst = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
+        if (data.ailment) {
+            await insertRow(T.AILMENTS_TREATMENTS, {
+                patient_id: patientId,
+                patient_name: (patient && patient.fullName) || null,
+                patient_surname: (patient && patient.surname) || null,
+                patient_id_passport: (patient && patient.idPassport) || null,
+                date: data.date || null,
+                ailment: data.ailment,
+                treatment: data.treatment || null,
+                doctor_name: doctorName,
+                institute: inst,
+                created_at: nowIso()
+            });
+        }
+        if (inst) {
+            await insertRow(T.INSTITUTES_VISITED, {
+                patient_id: patientId,
+                patient_name: (patient && patient.fullName) || null,
+                patient_surname: (patient && patient.surname) || null,
+                patient_id_passport: (patient && patient.idPassport) || null,
+                institute: inst,
+                date: data.date || null,
+                time: null,
+                doctor_name: doctorName,
+                created_at: nowIso()
+            });
+        }
+    } catch (e) { console.warn('ailment/visit record failed:', e); }
     return {
         id: rec.id,
         patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname,
@@ -1017,31 +1175,166 @@ export async function getMedicalInfo() {
     return data;
 }
 
-export async function generateReport(reportData) {
+async function buildReportPdf({ type, patientName, patientSurname, idPassport, date, description, doctorName, institute }) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text('Namibian Medical Records', 105, 18, { align: 'center' });
+    doc.setFontSize(12); doc.text((institute || 'Medical Institute') + ' - ' + (type || 'Report'), 105, 28, { align: 'center' });
+    doc.setDrawColor(80); doc.line(20, 33, 190, 33);
+    doc.setFontSize(11);
+    doc.text('Patient:', 20, 44); doc.text(`${patientName || ''} ${patientSurname || ''}`.trim() || '-', 60, 44);
+    doc.text('ID Number:', 20, 52); doc.text(idPassport || '-', 60, 52);
+    doc.text('Date:', 20, 60); doc.text(date || '-', 60, 60);
+    doc.text('Doctor:', 20, 68); doc.text(doctorName || 'TBA', 60, 68);
+    doc.setFontSize(11); doc.text('Report:', 20, 82);
+    const lines = doc.splitTextToSize(description || '-', 170);
+    doc.text(lines, 20, 90);
+    return doc.output('blob');
+}
+
+export async function generateReport(a, b) {
     const user = requireUser();
+    const data = (b && typeof b === 'object') ? b : a;
+    let patient = null;
+    const patientId = data.patientId || null;
+    if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
+    let prof = null;
+    try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
+    const doctorName = data.doctorName || (prof && prof.role === 'specialist'
+        ? ([prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null) : null);
+    const institute = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
+    let pdfUrl = null;
+    try {
+        const blob = await buildReportPdf({
+            type: data.type, patientName: patient && patient.fullName, patientSurname: patient && patient.surname,
+            idPassport: (patient && patient.idPassport) || null, date: data.date,
+            description: data.description, doctorName, institute
+        });
+        const fname = `Report-${(data.type || 'report').replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+        const path = `reports/${user.uid}/${Date.now()}_${fname}`;
+        const file = new File([blob], fname, { type: 'application/pdf' });
+        const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: true, contentType: 'application/pdf' });
+        if (!upErr) {
+            const { data: pub } = supabase.storage.from('documents').getPublicUrl(path);
+            pdfUrl = pub.publicUrl;
+        }
+    } catch (e) { console.warn('report PDF failed:', e); }
     const rec = await insertRow(T.REPORTS, {
-        ...reportData,
+        type: data.type || null,
+        patient_id: patientId,
+        patient_name: patient ? (patient.fullName || null) : null,
+        patient_surname: patient ? (patient.surname || null) : null,
+        patient_id_passport: (patient && patient.idPassport) || null,
+        date: data.date,
+        description: data.description || null,
+        doctor_name: doctorName,
+        pdf_url: pdfUrl,
+        institute,
         generated_by: user.uid,
         generated_by_email: user.email,
-        created_at: nowIso()
+        created_at: nowIso(),
+        updated_at: nowIso()
     });
-    return { id: rec.id, ...reportData };
+    return camelReport(rec);
+}
+
+function camelReport(r) {
+    return { ...r, patientId: r.patient_id, patientName: r.patient_name, patientSurname: r.patient_surname,
+             patientIdPassport: r.patient_id_passport, doctorName: r.doctor_name, pdfUrl: r.pdf_url,
+             generatedBy: r.generated_by };
 }
 
 export async function getMyReports() {
     const user = requireUser();
-    return selectEq(T.REPORTS, 'generated_by', user.uid);
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role === 'patient') {
+        const { data, error } = await supabase.from(T.REPORTS)
+            .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(camelReport);
+    }
+    const { data, error } = await supabase.from(T.REPORTS)
+        .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelReport);
 }
 
-export async function verifyInsurance(insuranceData) {
+export async function updateReport(reportId, data) {
+    const row = { updated_at: nowIso() };
+    if (data.type !== undefined) row.type = data.type;
+    if (data.date !== undefined) row.date = data.date;
+    if (data.description !== undefined) row.description = data.description;
+    if (data.doctorName !== undefined) row.doctor_name = data.doctorName;
+    const { error } = await supabase.from(T.REPORTS).update(row).eq('id', reportId);
+    if (error) throw error;
+    return { id: reportId, ...data };
+}
+
+export async function deleteReport(reportId) {
+    const { data } = await supabase.from(T.REPORTS).select('*').eq('id', reportId).maybeSingle();
+    if (data && data.pdf_url) {
+        try {
+            const marker = '/documents/';
+            const idx = data.pdf_url.indexOf(marker);
+            if (idx !== -1) await supabase.storage.from('documents').remove([data.pdf_url.slice(idx + marker.length)]);
+        } catch (e) { console.warn('Could not delete report file:', e); }
+    }
+    await deleteRow(T.REPORTS, reportId);
+}
+
+export async function verifyInsurance(a, b) {
     const user = requireUser();
+    const data = (b && typeof b === 'object') ? b : a;
+    let patient = null;
+    const patientId = data.patientId || null;
+    if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
+    let prof = null;
+    try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
     const rec = await insertRow(T.INSURANCE_VERIFICATIONS, {
-        ...insuranceData,
+        patient_id: patientId,
+        patient_name: patient ? (patient.fullName || null) : null,
+        patient_surname: patient ? (patient.surname || null) : null,
+        patient_id_passport: (patient && patient.idPassport) || null,
+        medical_aid_number: data.medicalAidNumber || data.medicalAid || null,
+        date: data.date,
+        payment_status: data.paymentStatus || null,
+        status: data.status || 'verified',
+        notes: data.notes || null,
+        institute: (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null,
         verified_by: user.uid,
         verified_by_email: user.email,
         created_at: nowIso()
     });
-    return { id: rec.id, ...insuranceData };
+    return { id: rec.id, ...data, patientName: rec.patient_name, patientSurname: rec.patient_surname };
+}
+
+export async function getInsuranceVerifications() {
+    const { data, error } = await supabase.from(T.INSURANCE_VERIFICATIONS)
+        .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(v => ({
+        ...v, patientId: v.patient_id, patientName: v.patient_name, patientSurname: v.patient_surname,
+        patientIdPassport: v.patient_id_passport, medicalAidNumber: v.medical_aid_number,
+        paymentStatus: v.payment_status, verifiedBy: v.verified_by
+    }));
+}
+
+export async function deleteInsuranceVerification(id) {
+    await deleteRow(T.INSURANCE_VERIFICATIONS, id);
+}
+
+export async function updateInsuranceVerification(id, data) {
+    const row = {};
+    const put = (k, v) => { if (v !== undefined) row[k] = v; };
+    put('medical_aid_number', data.medicalAidNumber);
+    put('date', data.date);
+    put('payment_status', data.paymentStatus);
+    put('status', data.status);
+    put('notes', data.notes);
+    const { error } = await supabase.from(T.INSURANCE_VERIFICATIONS).update(row).eq('id', id);
+    if (error) throw error;
+    return { id, ...data };
 }
 
 // Guard against fast double-submits (very common on phones): if the same
@@ -1118,7 +1411,8 @@ export async function processPayment(uid, paymentData) {
         date: paymentData.date,
         amount: paymentData.amount ?? 0,
         method: paymentData.method || null,
-        reference: paymentData.reference || null,
+        // Reference number = the patient's ID number (manual entry removed).
+        reference: (paymentData.reference && String(paymentData.reference).trim()) || (patient && patient.idPassport) || null,
         processed_by: user.uid,
         processed_by_email: user.email,
         created_at: nowIso()
@@ -1156,6 +1450,52 @@ export async function getPayments() {
 
 export async function markInvoicePaid(invoiceId) {
     await updateRow(T.INVOICES, invoiceId, { paid: true, status: 'paid' });
+}
+
+export async function deleteInvoice(invoiceId) {
+    const { data } = await supabase.from(T.INVOICES).select('*').eq('id', invoiceId).maybeSingle();
+    if (data && data.pdf_url) {
+        try {
+            const marker = '/documents/';
+            const idx = data.pdf_url.indexOf(marker);
+            if (idx !== -1) await supabase.storage.from('documents').remove([data.pdf_url.slice(idx + marker.length)]);
+        } catch (e) { console.warn('Could not delete invoice file:', e); }
+    }
+    await deleteRow(T.INVOICES, invoiceId);
+}
+
+export async function deletePayment(paymentId) {
+    await deleteRow(T.PAYMENTS, paymentId);
+}
+
+// ============ PRESCRIPTION PDF (jsPDF, loaded via <script> on the pages) ============
+export async function buildPrescriptionPdf(pr) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const name = `${pr.patientName || ''} ${pr.patientSurname || ''}`.trim() || 'Patient';
+    doc.setFontSize(16); doc.text('Prescription', 105, 18, { align: 'center' });
+    doc.setFontSize(12); doc.text(pr.institute || 'Medical Institute', 105, 28, { align: 'center' });
+    doc.setDrawColor(80); doc.line(20, 33, 190, 33);
+    doc.setFontSize(11);
+    doc.text('Patient:', 20, 44); doc.text(name, 60, 44);
+    doc.text('ID Number:', 20, 52); doc.text(pr.patientIdPassport || '-', 60, 52);
+    doc.text('Date:', 20, 60); doc.text(pr.date || '-', 60, 60);
+    doc.text('Doctor:', 20, 68); doc.text(pr.doctorName || 'TBA', 60, 68);
+    let y = 84;
+    const field = (label, value) => {
+        if (!value) return;
+        doc.text(label + ':', 20, y);
+        const lines = doc.splitTextToSize(String(value), 120);
+        doc.text(lines, 60, y);
+        y += lines.length * 6 + 4;
+    };
+    field('Ailment', pr.ailment);
+    field('Treatment', pr.treatment);
+    field('Prescription', pr.prescription);
+    field('Report', pr.report);
+    doc.setFontSize(9); doc.setTextColor(120);
+    doc.text('Generated by Namibian Medical Records', 20, 287);
+    return doc.output('blob');
 }
 
 // ============ INVOICE PDF (jsPDF, loaded via <script> on the pages) ============
@@ -1288,9 +1628,37 @@ export async function addAilmentTreatment(ailmentData) {
     return { id: rec.id, ...ailmentData };
 }
 
+function camelAilment(a) {
+    return { ...a, patientName: a.patient_name, patientSurname: a.patient_surname,
+             patientIdPassport: a.patient_id_passport, doctorName: a.doctor_name };
+}
+function camelInstitute(v) {
+    return { ...v, patientName: v.patient_name, patientSurname: v.patient_surname,
+              patientIdPassport: v.patient_id_passport, doctorName: v.doctor_name };
+}
+function camelRefill(r) {
+    return { ...r, patientName: r.patient_name, patientSurname: r.patient_surname,
+              patientIdPassport: r.patient_id_passport, doctorName: r.doctor_name,
+              doctorNote: r.doctor_note, nextAvailableDate: r.next_available_date,
+              prescribedBy: r.prescribed_by };
+}
+// Patient: RLS returns only their own rows (matched by ID number / link).
+const TABLE_SORT_DATE = new Set([T.AILMENTS_TREATMENTS, T.INSTITUTES_VISITED, T.PRESCRIPTIONS, T.APPOINTMENTS, T.REPORTS]);
+async function patientScopeSelect(table) {
+    let q = supabase.from(table).select('*');
+    if (TABLE_SORT_DATE.has(table)) q = q.order('date', { ascending: false, nullsFirst: false });
+    q = q.order('created_at', { ascending: false });
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+}
+
 export async function getMyAilmentsTreatments() {
     const user = requireUser();
-    return selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid);
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role === 'patient') return (await patientScopeSelect(T.AILMENTS_TREATMENTS)).map(camelAilment);
+    return (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid)).map(camelAilment);
 }
 
 export async function addInstituteVisited(instituteData) {
@@ -1305,24 +1673,63 @@ export async function addInstituteVisited(instituteData) {
 
 export async function getMyInstitutesVisited() {
     const user = requireUser();
-    return selectEq(T.INSTITUTES_VISITED, 'patient_id', user.uid);
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role === 'patient') return (await patientScopeSelect(T.INSTITUTES_VISITED)).map(camelInstitute);
+    return (await selectEq(T.INSTITUTES_VISITED, 'patient_id', user.uid)).map(camelInstitute);
 }
 
-export async function requestRefill(refillData) {
+export async function requestRefill(a, b) {
     const user = requireUser();
+    const data = (b && typeof b === 'object') ? b : a;
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
     const rec = await insertRow(T.REFILL_REQUESTS, {
-        ...refillData,
         patient_id: user.uid,
+        patient_name: (profile && profile.fullName) || null,
+        patient_surname: (profile && profile.surname) || null,
+        patient_id_passport: (profile && profile.idPassport) || null,
         patient_email: user.email,
+        prescription_id: data.prescriptionId || null,
+        prescription: data.prescription || null,
+        medication_name: data.medication || null,
+        duration: data.duration || null,
+        next_available_date: data.nextAvailableDate || null,
+        notes: data.notes || null,
+        prescribed_by: data.prescribedBy || null,
+        doctor_name: data.doctorName || null,
+        institute: (profile && profile.institute) || null,
         status: 'pending',
         created_at: nowIso()
     });
-    return { id: rec.id, ...refillData };
+    return { id: rec.id, ...data };
+}
+
+// The prescribing doctor sees requests for their own patients (RLS-scoped).
+export async function getRefillRequestsForDoctor() {
+    const user = requireUser();
+    const { data, error } = await supabase.from(T.REFILL_REQUESTS)
+        .select('*').eq('prescribed_by', user.uid)
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelRefill);
+}
+
+// Doctor confirms (or declines) a refill request; the note is the patient's confirmation.
+export async function respondRefill(refillId, response) {
+    const { error } = await supabase.from(T.REFILL_REQUESTS)
+        .update({ status: response.status, doctor_note: response.doctorNote || null })
+        .eq('id', refillId);
+    if (error) throw error;
+    return { id: refillId, status: response.status, doctorNote: response.doctorNote || null };
 }
 
 export async function getMyRefillRequests() {
     const user = requireUser();
-    return selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid);
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (profile && profile.role === 'patient') return (await patientScopeSelect(T.REFILL_REQUESTS)).map(camelRefill);
+    return (await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid)).map(camelRefill);
 }
 
 export async function checkInPatient(checkInData) {
