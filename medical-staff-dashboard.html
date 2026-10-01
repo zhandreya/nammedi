@@ -361,10 +361,12 @@
                         <tr>
                             <th>Date</th>
                             <th>Patient</th>
-                            <th>Ailment</th>
-                            <th>Treatment</th>
+                            <th>ID Number</th>
                             <th>Prescription</th>
+                            <th>Medication</th>
                             <th>Quantity</th>
+                            <th>Left in Stock</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -664,6 +666,13 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
+                        <label>Medication (from inventory)</label>
+                        <select id="maMedication" name="medication" onchange="onMedicationChange()">
+                            <option value="">- No inventory item -</option>
+                        </select>
+                        <input type="hidden" id="maStrength" name="strength">
+                        <label>Strength</label>
+                        <input type="text" id="maStrengthView" name="strengthView" readonly placeholder="Auto from inventory" style="background:#f7f7f7;">
                         <label class="required">Quantity</label>
                         <input type="number" id="maQuantity" name="quantity" required min="1" placeholder="e.g., 30">
                         <div class="error-message" id="maQuantityError"></div>
@@ -801,6 +810,20 @@
         </div>
     </div>
 
+
+    <div class="modal" id="medViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Medication Record</h3>
+                <button class="modal-close" onclick="closeMedViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="medViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeMedViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
     <script type="module">
@@ -829,6 +852,8 @@
             deleteDocument,
             recordMedicationAdministration,
             getMyMedicationRecords,
+            updateMedicationRecord,
+            deleteMedicationRecord,
             updateMedicationInventory,
             getMedicationInventory,
             addTask,
@@ -855,6 +880,7 @@
         let allAppointments = [];
         let allDocuments = [];
         let allMedRecords = [];
+        const medViewModal = document.getElementById('medViewModal');
         let allTasks = [];
 
         // DOM Elements
@@ -1664,22 +1690,111 @@
             }
 
             empty.style.display = 'none';
-            tbody.innerHTML = allMedRecords.map(mr => `
+            tbody.innerHTML = allMedRecords.map(mr => {
+                const name = `${mr.patientName || ''} ${mr.patientSurname || ''}`.trim() || 'Unknown';
+                const med = [mr.medicationName, mr.strength].filter(Boolean).join(' ') || '-';
+                const inv = allInventory.find(v => v.medication_name &&
+                    String(v.medication_name).toLowerCase() === String(mr.medicationName || '').toLowerCase() &&
+                    (!mr.strength || !v.strength || String(v.strength).toLowerCase() === String(mr.strength).toLowerCase()));
+                const left = inv ? (inv.quantity ?? 0) : '-';
+                return `
                 <tr>
                     <td>${formatDate(mr.date)}</td>
-                    <td>${mr.patientName || mr.fullName || 'Unknown'}</td>
-                    <td>${mr.ailment || '-'}</td>
-                    <td>${mr.treatment || '-'}</td>
+                    <td>${name}</td>
+                    <td>${mr.patientIdPassport || '-'}</td>
                     <td>${mr.prescription || '-'}</td>
-                    <td>${mr.quantity || '-'}</td>
-                </tr>
-            `).join('');
+                    <td>${med}</td>
+                    <td>${mr.quantity ?? '-'}</td>
+                    <td>${left}</td>
+                    <td>
+                        <button class="btn-sm btn-view" onclick="viewMedRecord('${mr.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editMedRecord('${mr.id}')">Edit</button>
+                        <button class="btn-sm btn-delete" onclick="deleteMedRecordRow('${mr.id}')">Delete</button>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
-        window.openMedAdminModal = function() {
+        window.viewMedRecord = function(id) {
+            const mr = allMedRecords.find(m => m.id === id);
+            if (!mr) { showToast('Record not found', 'error'); return; }
+            document.getElementById('medViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(mr.date)}</span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${mr.patientName || ''} ${mr.patientSurname || ''}</span></div>
+                <div class="detail"><span class="detail-label">ID Number</span><span class="detail-value">${mr.patientIdPassport || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${mr.ailment || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${mr.treatment || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value">${mr.prescription || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Medication</span><span class="detail-value">${[mr.medicationName, mr.strength].filter(Boolean).join(' ') || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Quantity</span><span class="detail-value">${mr.quantity ?? '-'}</span></div>
+                ${mr.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${mr.notes}</span></div>` : ''}
+            `;
+            medViewModal.classList.add('show');
+        };
+        window.closeMedViewModal = function() { medViewModal.classList.remove('show'); };
+
+        let editingMedRecordId = null;
+        window.editMedRecord = function(id) {
+            const mr = allMedRecords.find(m => m.id === id);
+            if (!mr) { showToast('Record not found', 'error'); return; }
+            editingMedRecordId = id;
             populatePatientDropdowns();
+            loadMedicationOptions();
+            const form = document.getElementById('medAdminForm');
+            form.reset();
+            clearAllErrors('medAdminForm');
+            document.getElementById('maPatient').value = mr.patientId || '';
+            document.getElementById('maDate').value = mr.date || '';
+            document.getElementById('maAilment').value = mr.ailment || '';
+            document.getElementById('maTreatment').value = mr.treatment || '';
+            document.getElementById('maPrescription').value = mr.prescription || '';
+            document.getElementById('maQuantity').value = mr.quantity || '';
+            document.getElementById('maNotes').value = mr.notes || '';
+            document.getElementById('medAdminModalTitle').textContent = 'Edit Medication Record';
+            document.getElementById('medAdminModal').classList.add('show');
+        };
+
+        window.deleteMedRecordRow = async function(id) {
+            if (!confirm('Delete this medication record? This cannot be undone.')) return;
+            try {
+                await deleteMedicationRecord(id);
+                showToast('Record deleted', 'success');
+                await loadMedRecords();
+                updateStats();
+            } catch (error) {
+                showToast('Failed to delete: ' + error.message, 'error');
+            }
+        };
+
+        let allInventory = [];
+        window.loadMedicationOptions = async function() {
+            try {
+                allInventory = await getMedicationInventory();
+            } catch (e) { allInventory = []; }
+            const sel = document.getElementById('maMedication');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">- No inventory item -</option>' +
+                (allInventory || []).map(v => `<option value="${v.medication_name}|${v.strength || ''}">${v.medication_name}${v.strength ? ' ' + v.strength : ''} (stock: ${v.quantity ?? 0})</option>`).join('');
+        };
+        window.onMedicationChange = function() {
+            const sel = document.getElementById('maMedication');
+            const strengthEl = document.getElementById('maStrength');
+            const viewEl = document.getElementById('maStrengthView');
+            if (sel && strengthEl) {
+                const parts = (sel.value || '').split('|');
+                strengthEl.value = parts[1] || '';
+                if (viewEl) viewEl.value = parts[1] || '';
+            }
+        };
+        window.openMedAdminModal = function() {
+            editingMedRecordId = null;
+            document.getElementById('medAdminModalTitle').textContent = 'Record Medication Administration';
+            populatePatientDropdowns();
+            loadMedicationOptions();
             document.getElementById('medAdminForm').reset();
             clearAllErrors('medAdminForm');
+            const strengthEl = document.getElementById('maStrength');
+            if (strengthEl) strengthEl.value = '';
             document.getElementById('maDate').max = new Date().toISOString().split('T')[0];
             document.getElementById('medAdminModal').classList.add('show');
         };
@@ -1697,6 +1812,7 @@
             submitBtn.textContent = 'Recording...';
 
             try {
+                const medParts = (document.getElementById('maMedication').value || '').split('|');
                 const data = {
                     patientId: document.getElementById('maPatient').value,
                     date: document.getElementById('maDate').value,
@@ -1704,13 +1820,21 @@
                     treatment: document.getElementById('maTreatment').value.trim(),
                     prescription: document.getElementById('maPrescription').value.trim(),
                     quantity: parseInt(document.getElementById('maQuantity').value),
+                    medicationName: medParts[0] || null,
+                    strength: medParts[1] || null,
                     notes: document.getElementById('maNotes').value.trim()
                 };
 
-                await recordMedicationAdministration(currentUser.uid, data);
-                showToast('Medication recorded', 'success');
+                if (editingMedRecordId) {
+                    await updateMedicationRecord(editingMedRecordId, data);
+                    showToast('Medication record updated', 'success');
+                } else {
+                    await recordMedicationAdministration(currentUser.uid, data);
+                    showToast('Medication recorded', 'success');
+                }
+                editingMedRecordId = null;
                 closeMedAdminModal();
-                await loadMedRecords();
+                await Promise.all([loadMedRecords(), loadMedicationOptions()]);
                 updateStats();
             } catch (error) {
                 showToast('Error: ' + error.message, 'error');
@@ -1758,13 +1882,12 @@
             container.innerHTML = '';
 
             try {
-                const inventory = await getMedicationInventory() || {};
-                const meds = inventory.medications || [];
-                
-                if (meds.length === 0) {
+                const items = await getMedicationInventory();
+                const list = Array.isArray(items) ? items : [];
+                if (list.length === 0) {
                     addInventoryRow();
                 } else {
-                    meds.forEach((med, i) => addInventoryRow(med, i));
+                    list.forEach((it, i) => addInventoryRow({ name: it.medication_name, strength: it.strength, quantity: it.quantity, expiry: it.expiry }, i));
                 }
             } catch (error) {
                 addInventoryRow();
