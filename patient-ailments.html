@@ -175,6 +175,8 @@
                         <th>Date</th>
                         <th>Ailment</th>
                         <th>Treatment</th>
+                        <th>Doctor</th>
+                        <th>Institute</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -304,6 +306,8 @@
                     <td>${formatDate(a.date || a.createdAt)}</td>
                     <td><strong>${a.ailment || 'Not specified'}</strong></td>
                     <td>${a.treatment || 'Not specified'}</td>
+                    <td>${a.doctorName || a.doctor_name || 'TBA'}</td>
+                    <td>${a.institute || 'TBA'}</td>
                 </tr>
             `).join('');
         }
