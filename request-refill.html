@@ -280,13 +280,19 @@
         // Check authentication
         onAuthChange(async (user) => {
             if (user) {
-                const profile = await getUserProfile(user.uid);
-                if (profile && profile.role === 'patient') {
-                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
-                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
-                    await loadRefillPage(user.uid);
-                } else {
+                // Retry profile reads - a transient Supabase hiccup must not
+                // kick the patient out of the form mid-flow.
+                let profile = null;
+                for (let i = 0; i < 3; i++) {
+                    try { profile = await getUserProfile(user.uid); if (profile) break; } catch (e) { profile = null; }
+                    await new Promise(r => setTimeout(r, 1500));
+                }
+                if (profile && profile.role !== 'patient') {
                     window.location.href = 'dashboard.html';
+                } else {
+                    headerName.textContent = (profile && (profile.fullName || profile.displayName)) || 'Patient';
+                    headerAvatar.src = (profile && profile.profilePictureUrl) || 'default-profile.png';
+                    await loadRefillPage(user.uid);
                 }
             } else {
                 window.location.href = 'login.html';
@@ -295,22 +301,40 @@
 
         async function loadRefillPage(uid) {
             try {
-                const prescriptions = await getMyPrescriptions();
+                // Retry on error or (transiently) empty - the dropdown must not
+                // end up empty while a network call is still flaky.
+                let prescriptions = [];
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        const rows = await getMyPrescriptions();
+                        if (rows && rows.length) { prescriptions = rows; break; }
+                        prescriptions = rows || [];
+                    } catch (e) { prescriptions = []; }
+                    await new Promise(r => setTimeout(r, 2000));
+                }
 
                 // Populate prescription dropdown
                 refillPrescription.innerHTML = '<option value="">Select a prescription to refill</option>';
                 prescriptions.filter(p => p.status === 'active' || !p.status).forEach(p => {
                     const option = document.createElement('option');
                     option.value = p.id;
-                    option.textContent = `${p.prescription || p.prescriptionText || 'Prescription'} (Dr. ${p.doctorSpecialist || p.doctor_specialist || 'Doctor'})`;
+                    option.textContent = `${p.prescription || p.prescriptionText || 'Prescription'} (Dr. ${p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || 'Doctor'})`;
                     option.dataset.prescription = p.prescription || p.prescriptionText || '';
                     option.dataset.doctor = p.doctorSpecialist || p.doctor_specialist || '';
                     option.dataset.date = p.date;
+                    option.dataset.prescribedby = p.prescribedBy || p.prescribed_by || '';
                     refillPrescription.appendChild(option);
                 });
 
-                // Pre-select if coming from prescriptions page
+                // Pre-select if coming from prescriptions page. If the hand-off
+                // values were lost, recover them from the loaded row so the
+                // request still routes to the prescribing doctor.
                 if (preSelectedPrescriptionId) {
+                    const chosen = prescriptions.find(p => p.id === preSelectedPrescriptionId);
+                    if (chosen) {
+                        if (!sessionStorage.getItem('refillPrescribedBy')) sessionStorage.setItem('refillPrescribedBy', chosen.prescribedBy || chosen.prescribed_by || '');
+                        if (!sessionStorage.getItem('refillDoctorName')) sessionStorage.setItem('refillDoctorName', chosen.doctorName || chosen.doctor_name || '');
+                    }
                     refillPrescription.value = preSelectedPrescriptionId;
                     updatePrescriptionInfo();
                     sessionStorage.removeItem('refillPrescriptionId');
@@ -398,7 +422,9 @@
                     prescription: refillPrescription.options[refillPrescription.selectedIndex].dataset.prescription,
                     duration: refillDuration.value.trim(),
                     nextAvailableDate: refillNextDate.value,
-                    notes: refillNotes.value.trim()
+                    notes: refillNotes.value.trim(),
+                    prescribedBy: sessionStorage.getItem('refillPrescribedBy') || (refillPrescription.options[refillPrescription.selectedIndex] && refillPrescription.options[refillPrescription.selectedIndex].dataset.prescribedby) || null,
+                    doctorName: sessionStorage.getItem('refillDoctorName') || (refillPrescription.options[refillPrescription.selectedIndex] && refillPrescription.options[refillPrescription.selectedIndex].dataset.doctor) || null
                 };
 
                 await requestRefill(refillData);
