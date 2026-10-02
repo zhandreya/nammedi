@@ -14,6 +14,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 function slotFromPath() {
     const page = (location.pathname.split('/').pop() || '').toLowerCase();
     if (page.indexOf('patient') === 0) return 'patient';
+    // Only patients use the refill page - keep it on the patient slot so a
+    // staff sign-in in another tab can never hijack its session.
+    if (page === 'request-refill.html') return 'patient';
     if (page === 'receptionist-dashboard.html') return 'receptionist';
     if (page === 'medical-staff-dashboard.html') return 'medicalstaff';
     if (page === 'specialist-dashboard.html') return 'specialist';
