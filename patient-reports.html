@@ -233,15 +233,21 @@
         // Check authentication
         onAuthChange(async (user) => {
             if (user) {
-                const profile = await getUserProfile(user.uid);
-                if (profile && profile.role === 'patient') {
-                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
-                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
-                    await loadReports();
-                    await loadMyDocuments();
-                } else {
-                    window.location.href = 'dashboard.html';
+                // Retry profile reads - a transient Supabase hiccup must not
+                // kick the patient out of the page (or leave it blank).
+                let profile = null;
+                for (let i = 0; i < 3; i++) {
+                    try { profile = await getUserProfile(user.uid); if (profile) break; } catch (e) { profile = null; }
+                    await new Promise(r => setTimeout(r, 1500));
                 }
+                if (profile && profile.role !== 'patient') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                if (profile && (profile.fullName || profile.displayName)) headerName.textContent = profile.fullName || profile.displayName;
+                if (profile && profile.profilePictureUrl) headerAvatar.src = profile.profilePictureUrl;
+                await loadReports();
+                await loadMyDocuments();
             } else {
                 window.location.href = 'login.html';
             }
@@ -251,7 +257,15 @@
             try {
                 // In a real implementation, you'd have a dedicated reports collection
                 // For now, we'll extract reports from prescriptions
-                const prescriptions = await getMyPrescriptions();
+                let prescriptions = [];
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        const rows = await getMyPrescriptions();
+                        if (rows && rows.length) { prescriptions = rows; break; }
+                        prescriptions = rows || [];
+                    } catch (e) { prescriptions = []; }
+                    await new Promise(r => setTimeout(r, 2000));
+                }
 
                 // Doctor's reports from prescriptions
                 const reports = prescriptions
