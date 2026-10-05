@@ -1,4 +1,17 @@
-<!DOCTYPE html>
+<!DOCTYPE
+    <div class="modal" id="aptViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Appointment Details</h3>
+                <button class="modal-close" onclick="closeAptViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="aptViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeAptViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+ html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -275,18 +288,27 @@
         const appointmentsTable = document.getElementById('appointmentsTable').querySelector('tbody');
         const emptyState = document.getElementById('emptyState');
         const scheduleModal = document.getElementById('scheduleModal');
+        const aptViewModal = document.getElementById('aptViewModal');
 
         // Check authentication
         onAuthChange(async (user) => {
             if (user) {
-                const profile = await getUserProfile(user.uid);
-                if (profile && profile.role === 'patient') {
-                    const avatar = document.getElementById('headerAvatar');
-                    if (avatar) avatar.src = profile.profilePictureUrl || profile.profile_picture_url || 'default-profile.png';
-                    await loadAppointments();
-                } else {
-                    window.location.href = 'dashboard.html';
+                // Retry profile reads - a transient Supabase hiccup must not
+                // kick the patient out of the page (or leave it blank).
+                let profile = null;
+                for (let i = 0; i < 3; i++) {
+                    try { profile = await getUserProfile(user.uid); if (profile) break; } catch (e) { profile = null; }
+                    await new Promise(r => setTimeout(r, 1500));
                 }
+                if (profile && profile.role !== 'patient') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                if (profile && profile.profilePictureUrl) {
+                    const av = document.getElementById('headerAvatar');
+                    if (av) av.src = profile.profilePictureUrl;
+                }
+                await loadAppointments();
             } else {
                 window.location.href = 'login.html';
             }
@@ -294,7 +316,15 @@
 
         async function loadAppointments() {
             try {
-                const appointments = await getMyAppointments();
+                let appointments = [];
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        const rows = await getMyAppointments();
+                        if (rows && rows.length) { appointments = rows; break; }
+                        appointments = rows || [];
+                    } catch (e) { appointments = []; }
+                    await new Promise(r => setTimeout(r, 2000));
+                }
                 // Filter to only show appointments for this patient
                 // In a real app, you'd query by patientId
                 // For now, we'll show all appointments from the user's perspective
@@ -342,6 +372,7 @@
                             <button class="btn-sm btn-cancel" onclick="cancelAppointment('${apt.id}')">Cancel</button>
                         ` : ''}
                         <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
+                        <button class="btn-sm btn-delete" onclick="deleteApptRow('${apt.id}')">Delete</button>
                     </td>
                 </tr>
             `).join('');
@@ -372,7 +403,33 @@
         };
 
         window.viewAppointment = function(id) {
-            showToast('Appointment details view coming soon', 'info');
+            const apt = allAppointments.find(a => a.id === id);
+            if (!apt) { showToast('Appointment not found', 'error'); return; }
+            const name = `${apt.patientName || apt.patient_name || ''} ${apt.patientSurname || apt.patient_surname || ''}`.trim();
+            document.getElementById('aptViewBody').innerHTML = `
+                <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(apt.date)}</span></div>
+                <div class="detail"><span class="detail-label">Time</span><span class="detail-value">${apt.time || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Doctor / Specialist</span><span class="detail-value">${apt.doctorSpecialist || apt.doctor_specialist || 'TBA'}</span></div>
+                <div class="detail"><span class="detail-label">Institution</span><span class="detail-value">${apt.institution || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'You'}</span></div>
+                <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${apt.status}">${apt.status}</span></span></div>
+                ${apt.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${apt.notes}</span></div>` : ''}
+            `;
+            aptViewModal.classList.add('show');
+        };
+        window.closeAptViewModal = function() {
+            aptViewModal.classList.remove('show');
+        };
+        window.deleteApptRow = async function(id) {
+            if (!confirm('Delete this appointment? This cannot be undone.')) return;
+            try {
+                await deleteAppointment(id);
+                showToast('Appointment deleted', 'success');
+                await loadAppointments();
+            } catch (error) {
+                showToast('Failed to delete: ' + error.message, 'error');
+            }
         };
 
         document.getElementById('scheduleForm').addEventListener('submit', async (e) => {
