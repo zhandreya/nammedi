@@ -263,14 +263,20 @@
         // Check authentication
         onAuthChange(async (user) => {
             if (user) {
-                const profile = await getUserProfile(user.uid);
-                if (profile && profile.role === 'patient') {
-                    headerName.textContent = profile.fullName || profile.displayName || 'Patient';
-                    headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
-                    await loadPrescriptions();
-                } else {
-                    window.location.href = 'dashboard.html';
+                // Retry profile reads - a transient Supabase hiccup must not
+                // kick the patient out of the page (or leave it blank).
+                let profile = null;
+                for (let i = 0; i < 3; i++) {
+                    try { profile = await getUserProfile(user.uid); if (profile) break; } catch (e) { profile = null; }
+                    await new Promise(r => setTimeout(r, 1500));
                 }
+                if (profile && profile.role !== 'patient') {
+                    window.location.href = 'dashboard.html';
+                    return;
+                }
+                if (profile && (profile.fullName || profile.displayName)) headerName.textContent = profile.fullName || profile.displayName;
+                if (profile && profile.profilePictureUrl) headerAvatar.src = profile.profilePictureUrl;
+                await loadPrescriptions();
             } else {
                 window.location.href = 'login.html';
             }
@@ -278,10 +284,15 @@
 
         async function loadPrescriptions() {
             try {
-                const [prescriptions, refills] = await Promise.all([
-                    getMyPrescriptions(),
-                    getMyRefillRequests()
-                ]);
+                let prescriptions = [], refills = [];
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        const [p, r] = await Promise.all([getMyPrescriptions(), getMyRefillRequests()]);
+                        prescriptions = p || []; refills = r || [];
+                        if (prescriptions.length) break;
+                    } catch (e) { prescriptions = []; refills = []; }
+                    await new Promise(r => setTimeout(r, 2000));
+                }
                 allPrescriptions = prescriptions;
 
                 // Render stats
