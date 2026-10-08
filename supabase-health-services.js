@@ -57,6 +57,26 @@ export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey,
     }
 });
 
+// Fetch with retry: production can be slow; if the first call errors or
+// returns an empty list, retry a few times before giving up. Used by the
+// patient pages so a slow backend never shows a falsely-empty dashboard.
+export async function fetchWithRetry(fetchFn, { attempts = 6, delayMs = 2000 } = {}) {
+    let last = null;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const res = await fetchFn();
+            last = res;
+            const empty = Array.isArray(res) ? res.length === 0 : !res;
+            if (!empty) return res;
+        } catch (e) {
+            last = e;
+        }
+        if (i < attempts - 1) await new Promise(r => setTimeout(r, delayMs));
+    }
+    // All attempts exhausted: return the last value (an array, or [] on error).
+    return Array.isArray(last) ? last : (last && last.data ? last.data : []);
+}
+
 const ROLE_SLOTS = {
     patient: 'patient',
     medical_staff: 'medicalstaff',
@@ -636,6 +656,19 @@ export async function createAppointment(appointmentData, maybeData) {
             institution = (prof && prof.institute) || null;
         } catch (e) { /* best-effort */ }
     }
+    // Double-booking guard: the same doctor cannot hold two appointments
+    // at the same date and time.
+    if (doctor && src.date && src.time) {
+        const { data: clash } = await supabase.from(T.APPOINTMENTS)
+            .select('id')
+            .eq('doctor_specialist', doctor)
+            .eq('date', src.date)
+            .eq('time', String(src.time).slice(0, 5))
+            .in('status', ['scheduled', 'completed']);
+        if (clash && clash.length) {
+            throw new Error(`Double booking: ${doctor} already has an appointment on ${src.date} at ${String(src.time).slice(0, 5)}. Please choose another time.`);
+        }
+    }
     const data = await insertRow(T.APPOINTMENTS, {
         patient_id: src.patientId || src.patient_id || null,
         patient_user_id: src.patientUserId || null,
@@ -708,12 +741,11 @@ export async function getPatientAppointments(patientId) {
 
 export async function getUpcomingAppointments(days = 30) {
     const appointments = await getMyAppointments();
-    const now = new Date();
-    const future = new Date();
-    future.setDate(now.getDate() + days);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const future = new Date(today); future.setDate(today.getDate() + days); future.setHours(23, 59, 59, 999);
     return appointments.filter(apt => {
         const aptDate = new Date(apt.date);
-        return aptDate >= now && aptDate <= future && apt.status === 'scheduled';
+        return !isNaN(aptDate) && aptDate >= today && aptDate <= future && (apt.status === 'scheduled' || !apt.status);
     });
 }
 
@@ -734,6 +766,24 @@ export async function updateAppointment(appointmentId, data) {
     put('notes', data.notes);
     put('status', data.status);
     await updateRow(T.APPOINTMENTS, appointmentId, row);
+}
+
+export async function rescheduleAppointment(appointmentId, date, time) {
+    const { data: row } = await supabase.from(T.APPOINTMENTS).select('*').eq('id', appointmentId).maybeSingle();
+    if (!row) throw new Error('Appointment not found');
+    if (row.doctor_specialist && date && time) {
+        const { data: clash } = await supabase.from(T.APPOINTMENTS)
+            .select('id')
+            .eq('doctor_specialist', row.doctor_specialist)
+            .eq('date', date)
+            .eq('time', String(time).slice(0, 5))
+            .in('status', ['scheduled', 'completed'])
+            .ne('id', appointmentId);
+        if (clash && clash.length) {
+            throw new Error(`Double booking: ${row.doctor_specialist} already has an appointment on ${date} at ${String(time).slice(0, 5)}.`);
+        }
+    }
+    await updateRow(T.APPOINTMENTS, appointmentId, { date, time });
 }
 
 export async function deleteAppointment(appointmentId) {
@@ -983,16 +1033,37 @@ export async function addPrescription(a, b) {
         patient_phone: data.cellPhone || (patient && (patient.cellphone || patient.phone)) || null,
         patient_user_id: data.patientUserId || (patient && (patient.patientUserId || patient.patient_user_id)) || null,
         doctor_name: doctorName,
+        institute: (patient && (patient.institution || patient.institute)) || data.institute || null,
         date: data.date,
         ailment: data.ailment,
         treatment: data.treatment,
         prescription: data.prescription,
         report: data.report,
+        next_available_date: data.nextAvailableDate || data.next_available_date || null,
         status: data.status || 'active',
         prescribed_by: user.uid,
         prescribed_by_email: user.email,
         created_at: nowIso()
     };
+    // Also record this as an ailment & treatment so the patient's ailments
+    // table and medical history stay in sync with prescriptions.
+    try {
+        if (data.ailment || data.treatment) {
+            await insertRow(T.AILMENTS_TREATMENTS, {
+                patient_id: patientId,
+                patient_name: base.patient_name,
+                patient_surname: base.patient_surname,
+                patient_id_passport: (patient && patient.idPassport) || null,
+                doctor_name: doctorName,
+                institute: base.institute,
+                ailment: data.ailment || null,
+                treatment: data.treatment || null,
+                date: data.date || null,
+                created_at: nowIso()
+            });
+        }
+    } catch (e) { console.warn('ailment record failed:', e); }
+
     // patient_id_passport is added by a one-time SQL migration; insert with it
     // when available, and fall back to without it until the migration has run.
     let rec;
@@ -1383,6 +1454,8 @@ export async function createInvoice(uid, invoiceData) {
         cell_phone: patient ? (patient.cellphone || patient.phone || null) : null,
         fee: invoiceData.fee ?? 0,
         paid: paid,
+        institute: (patient && (patient.institution || patient.institute)) || invoiceData.institute || null,
+        doctor_name: invoiceData.doctorName || invoiceData.doctor_name || null,
         status: invoiceData.status || (paid ? 'paid' : 'pending'),
         created_by: user.uid,
         created_by_email: user.email,
@@ -1496,6 +1569,7 @@ export async function buildPrescriptionPdf(pr) {
     field('Treatment', pr.treatment);
     field('Prescription', pr.prescription);
     field('Report', pr.report);
+    field('Next Available', pr.nextAvailableDate || pr.next_available_date || '');
     doc.setFontSize(9); doc.setTextColor(120);
     doc.text('Generated by Namibian Medical Records', 20, 287);
     return doc.output('blob');
@@ -1518,17 +1592,24 @@ export function buildInvoicePdf(invoice) {
     doc.text(`Invoice No: ${invoice.invoiceNumber || '-'}`, 14, 42);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
     doc.text(`Date: ${invoice.date ? String(invoice.date).slice(0, 10) : '-'}`, 14, 50);
+    if (invoice.institute || invoice.institution) {
+        doc.text(`Institute: ${invoice.institute || invoice.institution}`, 14, 58);
+    }
+    if (invoice.doctorName || invoice.doctor_name) {
+        doc.text(`Prescribing Doctor: ${invoice.doctorName || invoice.doctor_name}`, 14, (invoice.institute || invoice.institution) ? 66 : 58);
+    }
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(invoice.paid ? 27 : 198, invoice.paid ? 94 : 40, invoice.paid ? 60 : 40);
     doc.text(`Status: ${invoice.paid ? 'PAID' : 'UNPAID'}`, 196, 42, { align: 'right' });
     doc.setTextColor(30, 30, 30);
     doc.setFont('helvetica', 'normal');
-    doc.line(14, 58, 196, 58);
+    const extra = (invoice.institute || invoice.institution ? 8 : 0) + (invoice.doctorName || invoice.doctor_name ? 8 : 0);
+    doc.line(14, 58 + extra, 196, 58 + extra);
     doc.setFont('helvetica', 'bold');
-    doc.text('Billed to:', 14, 68);
+    doc.text('Billed to:', 14, 68 + extra);
     doc.setFont('helvetica', 'normal');
-    doc.text(name, 14, 76);
-    let y = 84;
+    doc.text(name, 14, 76 + extra);
+    let y = 84 + extra;
     if (invoice.idPassport) { doc.text(`ID/Passport: ${invoice.idPassport}`, 14, y); y += 8; }
     if (invoice.cellPhone) { doc.text(`Phone: ${invoice.cellPhone}`, 14, y); y += 8; }
     y += 10;
@@ -1720,11 +1801,24 @@ export async function getRefillRequestsForDoctor() {
 
 // Doctor confirms (or declines) a refill request; the note is the patient's confirmation.
 export async function respondRefill(refillId, response) {
+    // The DB check constraint only allows pending/approved/rejected.
+    const status = response.status === 'declined' ? 'rejected' : response.status;
+    let req = null;
+    try { req = (await supabase.from(T.REFILL_REQUESTS).select('prescription_id, next_available_date').eq('id', refillId).maybeSingle()).data; } catch (e) { /* ignore */ }
     const { error } = await supabase.from(T.REFILL_REQUESTS)
-        .update({ status: response.status, doctor_note: response.doctorNote || null })
+        .update({ status, doctor_note: response.doctorNote || null })
         .eq('id', refillId);
     if (error) throw error;
-    return { id: refillId, status: response.status, doctorNote: response.doctorNote || null };
+    // An approved refill runs across the patient's prescription: the next
+    // available date is carried onto the underlying prescription.
+    if (status === 'approved' && req && req.prescription_id && req.next_available_date) {
+        try {
+            await supabase.from(T.PRESCRIPTIONS)
+                .update({ next_available_date: req.next_available_date })
+                .eq('id', req.prescription_id);
+        } catch (e) { /* best-effort */ }
+    }
+    return { id: refillId, status, doctorNote: response.doctorNote || null };
 }
 
 export async function getMyRefillRequests() {
@@ -1733,6 +1827,34 @@ export async function getMyRefillRequests() {
     try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
     if (profile && profile.role === 'patient') return (await patientScopeSelect(T.REFILL_REQUESTS)).map(camelRefill);
     return (await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid)).map(camelRefill);
+}
+
+export async function getMyInsuranceVerifications() {
+    const user = requireUser();
+    const { data } = await supabase.from('insurance_verifications').select('*');
+    if (data && data.length) return data.map(v => ({ ...v, patientName: v.patient_name, patientSurname: v.patient_surname, idPassport: v.patient_id_passport, medicalAidNumber: v.medical_aid_number, paymentStatus: v.payment_status, verifiedByEmail: v.verified_by_email }));
+    return [];
+}
+
+export function buildInsurancePdf(v) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const name = `${v.patientName || ''} ${v.patientSurname || ''}`.trim() || 'Patient';
+    doc.setFontSize(16); doc.text('Insurance Verification', 105, 24, { align: 'center' });
+    if (v.institute) { doc.setFontSize(12); doc.text(v.institute, 105, 34, { align: 'center' }); }
+    doc.setDrawColor(80); doc.line(20, 40, 190, 40);
+    doc.setFontSize(11);
+    const row = (label, value, y) => { doc.text(label + ':', 20, y); doc.text(String(value || '-'), 70, y); };
+    row('Patient', name, 52);
+    row('ID Number', v.idPassport, 62);
+    row('Medical Aid No.', v.medicalAidNumber, 72);
+    row('Verification Date', v.date, 82);
+    row('Payment Status', v.paymentStatus, 92);
+    row('Status', v.status, 102);
+    if (v.notes) { doc.text('Notes:', 20, 116); doc.text(String(v.notes).slice(0, 100), 20, 124); }
+    doc.setFontSize(9); doc.setTextColor(120);
+    doc.text('Generated by Namibian Medical Records', 20, 287);
+    return doc;
 }
 
 export async function checkInPatient(checkInData) {
