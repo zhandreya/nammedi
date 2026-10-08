@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Create Account - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -108,7 +109,7 @@
         <h1>Create Account</h1>
         <p class="subtitle">Namibia Health Services Portal</p>
 
-        <form id="signupForm" novalidate>
+        <form id="signupForm" autocomplete="off" novalidate>
             <div class="form-group">
                 <label for="role">I am registering as:</label>
                 <select id="role" name="role" required class="role-select">
@@ -125,26 +126,26 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="fullName">First Name(s) *</label>
-                        <input type="text" id="fullName" name="fullName" autocomplete="given-name" placeholder="John">
+                        <input type="text" id="fullName" name="fullName" autocomplete="off" placeholder="John">
                         <div class="error-message" id="fullNameError"></div>
                     </div>
                     <div class="form-group">
                         <label for="surname">Surname *</label>
-                        <input type="text" id="surname" name="surname" autocomplete="family-name" placeholder="Doe">
+                        <input type="text" id="surname" name="surname" autocomplete="off" placeholder="Doe">
                         <div class="error-message" id="surnameError"></div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required autocomplete="email" placeholder="john.doe@clinic.na">
+                    <input type="email" id="email" name="email" required autocomplete="off" placeholder="john.doe@clinic.na">
                     <div class="error-message" id="emailError"></div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="phone">Phone Number *</label>
-                        <input type="tel" id="phone" name="phone" required placeholder="061 123 4567" autocomplete="tel">
+                        <input type="tel" id="phone" name="phone" required placeholder="061 123 4567" autocomplete="off">
                         <div class="error-message" id="phoneError"></div>
                     </div>
                     <div class="form-group">
@@ -199,26 +200,26 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="pFullName">First Name(s) *</label>
-                        <input type="text" id="pFullName" name="pFullName" autocomplete="given-name" placeholder="John">
+                        <input type="text" id="pFullName" name="pFullName" autocomplete="off" placeholder="John">
                         <div class="error-message" id="pFullNameError"></div>
                     </div>
                     <div class="form-group">
                         <label for="pSurname">Surname *</label>
-                        <input type="text" id="pSurname" name="pSurname" autocomplete="family-name" placeholder="Doe">
+                        <input type="text" id="pSurname" name="pSurname" autocomplete="off" placeholder="Doe">
                         <div class="error-message" id="pSurnameError"></div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="pEmail">Email Address *</label>
-                    <input type="email" id="pEmail" name="pEmail" required autocomplete="email" placeholder="john@example.com">
+                    <input type="email" id="pEmail" name="pEmail" required autocomplete="off" placeholder="john@example.com">
                     <div class="error-message" id="pEmailError"></div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="pPhone">Phone Number *</label>
-                        <input type="tel" id="pPhone" name="pPhone" required placeholder="081 123 4567" autocomplete="tel">
+                        <input type="tel" id="pPhone" name="pPhone" required placeholder="081 123 4567" autocomplete="off">
                         <div class="error-message" id="pPhoneError"></div>
                     </div>
                     <div class="form-group">
@@ -254,7 +255,7 @@
             <div class="form-group">
                 <label for="password">Password *</label>
                 <div class="input-wrapper">
-                    <input type="password" id="password" name="password" required autocomplete="new-password" placeholder="At least 6 characters">
+                    <input type="password" id="password" name="password" required autocomplete="off" placeholder="At least 6 characters">
                 </div>
                 <div class="password-requirements">Minimum 6 characters</div>
                 <div class="error-message" id="passwordError"></div>
@@ -262,7 +263,7 @@
 
             <div class="form-group">
                 <label for="confirmPassword">Confirm Password *</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password" placeholder="Confirm your password">
+                <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="off" placeholder="Confirm your password">
                 <div class="error-message" id="confirmPasswordError"></div>
             </div>
 
@@ -706,5 +707,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a2c8e2c6b9498a59',t:'MTc4Njk3MTg3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
