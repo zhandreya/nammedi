@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Doctor's Reports - Namibia Health Services</title>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,6 +137,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -182,6 +184,26 @@
             <p>Reports from your healthcare providers will appear here.</p>
         </div>
 
+        <h2 style="margin: 32px 0 16px; color: #1a1a1a;">Insurance Verifications</h2>
+        <div class="table-container">
+            <table id="insuranceTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Medical Aid No.</th>
+                        <th>Payment Status</th>
+                        <th>Status</th>
+                        <th>Download</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="insuranceEmptyState" style="display: none;">
+            <h3>No insurance verifications yet</h3>
+            <p>Insurance verifications done by your healthcare providers will appear here.</p>
+        </div>
+
         <h2 style="margin: 32px 0 16px; color: #1a1a1a;">Documents &amp; Invoices</h2>
         <div class="table-container">
             <table id="docsTable">
@@ -212,6 +234,8 @@
             getMyPrescriptions,
             getMyReports,
             getMyPatientDocuments,
+            getMyInsuranceVerifications,
+            buildInsurancePdf,
             buildPrescriptionPdf,
             initInactivityTimer,
             showToast,
@@ -219,7 +243,7 @@
         } from './supabase-health-services.js';
 
         // Initialize inactivity timer
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired. Redirecting...', 'info');
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
@@ -248,6 +272,7 @@
                 if (profile && profile.profilePictureUrl) headerAvatar.src = profile.profilePictureUrl;
                 await loadReports();
                 await loadMyDocuments();
+                await loadMyInsurance();
             } else {
                 window.location.href = 'login.html';
             }
@@ -381,6 +406,43 @@
         // ============ DOCUMENTS & INVOICES (real, downloadable) ============
         const docsTable = document.getElementById('docsTable').querySelector('tbody');
         const docsEmpty = document.getElementById('docsEmptyState');
+        let myInsurance = [];
+        async function loadMyInsurance() {
+            try { myInsurance = await getMyInsuranceVerifications(); } catch (e) { myInsurance = []; }
+            renderMyInsurance();
+        }
+        function renderMyInsurance() {
+            const tbody = document.getElementById('insuranceTable').querySelector('tbody');
+            const empty = document.getElementById('insuranceEmptyState');
+            if (!myInsurance.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+            empty.style.display = 'none';
+            tbody.innerHTML = myInsurance.map(v => `
+                <tr>
+                    <td>${v.date ? formatDate(v.date) : '-'}</td>
+                    <td>${v.medicalAidNumber || '-'}</td>
+                    <td>${v.paymentStatus || '-'}</td>
+                    <td>${v.status || '-'}</td>
+                    <td><button class="btn-sm btn-download" onclick="downloadInsurancePdf('${v.id}')">PDF</button></td>
+                </tr>
+            `).join('');
+        }
+        window.downloadInsurancePdf = function(id) {
+            const v = myInsurance.find(x => x.id === id);
+            if (!v) { showToast('Not found', 'error'); return; }
+            try {
+                const doc = buildInsurancePdf(v);
+                const url = URL.createObjectURL(doc.output('blob'));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Insurance-Verification-${v.date || ''}.pdf`.replace(/\s+/g, '-');
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast('Insurance verification downloaded', 'success');
+            } catch (err) {
+                showToast('PDF error: ' + err.message, 'error');
+            }
+        };
+
         let myDocuments = [];
 
         async function loadMyDocuments() {
