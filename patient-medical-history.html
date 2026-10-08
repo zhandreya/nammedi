@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Medical History - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -109,6 +110,8 @@
         .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; transition: all 0.2s; }
         .btn-view { background: #e3f2fd; color: #1565c0; }
         .btn-view:hover { background: #bbdefb; }
+        .btn-resched { background: #fff8e1; color: #f57f17; }
+        .btn-resched:hover { background: #ffecb3; }
         .btn-download { background: #f3e5f5; color: #7b1fa2; }
         .btn-download:hover { background: #e1bee7; }
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
@@ -130,6 +133,14 @@
             .container { padding: 16px; margin: 10px auto 20px; }
             #backBtn { top: 10px; left: 10px; padding: 8px 12px; }
         }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-header h3 { margin: 0; color: #1a1a1a; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 4px; }
+        .modal-close:hover { color: #333; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
     </style>
 </head>
 <body>
@@ -137,6 +148,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -223,21 +235,64 @@
 
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
+
+    <div class="modal" id="histViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="histViewTitle">Details</h3>
+                <button class="modal-close" onclick="closeHistViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="histViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeHistViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="histReschedModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Reschedule Appointment</h3>
+                <button class="modal-close" onclick="closeReschedModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="reschedForm" novalidate>
+                <div class="form-group">
+                    <label class="required">New Date</label>
+                    <input type="date" id="reschedDate" name="date" required>
+                    <div class="error-message" id="reschedDateError"></div>
+                </div>
+                <div class="form-group">
+                    <label class="required">New Time</label>
+                    <input type="time" id="reschedTime" name="time" required>
+                    <div class="error-message" id="reschedTimeError"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReschedModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Reschedule</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { 
             onAuthChange, 
             getUserProfile,
             getMyAppointments,
+            fetchWithRetry,
             getMyPrescriptions,
             getMyAilmentsTreatments,
             getMyInstitutesVisited,
+            getMyReports,
+            buildPrescriptionPdf,
+            rescheduleAppointment,
             initInactivityTimer,
             showToast,
             formatDate
         } from './supabase-health-services.js';
 
         // Initialize inactivity timer
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired. Redirecting...', 'info');
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
@@ -263,14 +318,16 @@
             }
         });
 
-        async function loadMedicalHistory(uid) {
+        async function loadMedicalHistory(uid) { void uid;
             try {
+                let reports = [];
                 const [appointments, prescriptions, ailments, institutes] = await Promise.all([
-                    getMyAppointments(),
-                    getMyPrescriptions(),
-                    getMyAilmentsTreatments(),
-                    getMyInstitutesVisited()
+                    fetchWithRetry(() => getMyAppointments()),
+                    fetchWithRetry(() => getMyPrescriptions()),
+                    fetchWithRetry(() => getMyAilmentsTreatments()),
+                    fetchWithRetry(() => getMyInstitutesVisited())
                 ]);
+                try { reports = await getMyReports(); } catch (e) { reports = []; }
 
                 // Render overview cards
                 renderHistoryCards(appointments, prescriptions, ailments, institutes);
@@ -278,7 +335,7 @@
                 // Render detailed tables
                 renderAppointmentsTable(appointments);
                 renderPrescriptionsTable(prescriptions);
-                renderReportsTable(appointments);
+                renderReportsTable(appointments, prescriptions, reports);
                 renderAilmentsTable(ailments);
 
             } catch (error) {
@@ -319,6 +376,7 @@
         }
 
         function renderAppointmentsTable(appointments) {
+            allAppts = appointments;
             const tbody = document.getElementById('appointmentsTable').querySelector('tbody');
             tbody.innerHTML = appointments
                 .sort((a, b) => b.date.localeCompare(a.date))
@@ -330,6 +388,9 @@
                         <td>${apt.reason || '-'}</td>
                         <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
                         <td>
+                            ${apt.status === 'scheduled' ? `
+                            <button class="btn-sm btn-resched" onclick="openReschedModal('${apt.id}')">Reschedule</button>
+                            ` : ''}
                             <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
                         </td>
                     </tr>
@@ -337,13 +398,14 @@
         }
 
         function renderPrescriptionsTable(prescriptions) {
+            allPresc = prescriptions;
             const tbody = document.getElementById('prescriptionsTable').querySelector('tbody');
             tbody.innerHTML = prescriptions
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(pr => `
                     <tr>
                         <td>${formatDate(pr.date)}</td>
-                        <td>${pr.doctorSpecialist || pr.doctor_specialist || 'Doctor'}</td>
+                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'TBA'}</td>
                         <td>${pr.ailment || '-'}</td>
                         <td>${pr.treatment || '-'}</td>
                         <td>${pr.prescription || '-'}</td>
@@ -355,17 +417,27 @@
                 `).join('') || '<tr><td colspan="6" style="text-align:center; color:#666; padding:40px;">No prescriptions found</td></tr>';
         }
 
-        function renderReportsTable(appointments) {
+        // Doctor's reports: generated reports plus the report field on
+        // prescriptions, so this table always aligns with the prescriptions data.
+        function renderReportsTable(appointments, prescriptions, reports) {
             const tbody = document.getElementById('reportsTable').querySelector('tbody');
-            // Use completed appointments with notes as reports
-            const reports = appointments.filter(a => a.status === 'completed' && a.notes);
-            tbody.innerHTML = reports
+            const rows = [];
+            allReportsRows = reports || [];
+            (reports || []).forEach(r => {
+                rows.push({ id: 'rpt-' + r.id, date: r.date, doctor: r.doctorName || r.doctor_name || 'TBA', text: r.description || r.report || '' });
+            });
+            (prescriptions || []).forEach(pr => {
+                if (pr.report && pr.report.trim()) {
+                    rows.push({ id: 'pr-' + pr.id, date: pr.date, doctor: pr.doctorName || pr.doctor_name || 'TBA', text: pr.report });
+                }
+            });
+            tbody.innerHTML = rows
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
                 .map(rpt => `
                     <tr>
                         <td>${formatDate(rpt.date)}</td>
-                        <td>${rpt.doctorSpecialist || rpt.doctor_specialist || 'Doctor'}</td>
-                        <td>${rpt.notes || 'No detailed report available'}</td>
+                        <td>${rpt.doctor}</td>
+                        <td>${rpt.text || 'No detailed report available'}</td>
                         <td>
                             <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
                         </td>
@@ -386,21 +458,104 @@
                 `).join('') || '<tr><td colspan="3" style="text-align:center; color:#666; padding:40px;">No ailments & treatments recorded</td></tr>';
         }
 
+        let allAppts = [], allPresc = [], allReportsRows = [];
+        window.showDetailModal = function(title, bodyHtml) {
+            document.getElementById('histViewTitle').textContent = title;
+            document.getElementById('histViewBody').innerHTML = bodyHtml;
+            document.getElementById('histViewModal').classList.add('show');
+        };
+        window.closeHistViewModal = function() { document.getElementById('histViewModal').classList.remove('show'); };
         window.viewAppointment = function(id) {
-            showToast('Appointment details view coming soon', 'info');
+            const apt = allAppts.find(a => a.id === id);
+            if (!apt) { showToast('Appointment not found', 'error'); return; }
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+            showDetailModal('Appointment Details',
+                d('Date', formatDate(apt.date)) + d('Time', apt.time) +
+                d('Institution', apt.institution) +
+                d('Doctor / Specialist', apt.doctorSpecialist || apt.doctor_specialist) +
+                d('Reason', apt.reason) +
+                d('Status', `<span class="status-badge status-${apt.status}">${apt.status}</span>`) +
+                d('Notes', apt.notes)
+            );
         };
-
         window.viewPrescription = function(id) {
-            showToast('Prescription details view coming soon', 'info');
+            const pr = allPresc.find(p => p.id === id);
+            if (!pr) { showToast('Prescription not found', 'error'); return; }
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+            showDetailModal('Prescription Details',
+                d('Date', formatDate(pr.date)) +
+                d('Doctor', pr.doctorName || pr.doctor_name || pr.doctorSpecialist) +
+                d('Institute', pr.institute) +
+                d('Ailment', pr.ailment) + d('Treatment', pr.treatment) +
+                d('Prescription', `<span style="white-space:pre-wrap;">${pr.prescription}</span>`) +
+                d('Report', `<span style="white-space:pre-wrap;">${pr.report}</span>`) +
+                d('Next Available', pr.nextAvailableDate || pr.next_available_date)
+            );
+        };
+        window.downloadPrescription = async function(id) {
+            const pr = allPresc.find(p => p.id === id);
+            if (!pr) { showToast('Prescription not found', 'error'); return; }
+            try {
+                const doc = buildPrescriptionPdf({
+                    patientName: pr.patientName || pr.patient_name,
+                    patientSurname: pr.patientSurname || pr.patient_surname,
+                    patientIdPassport: pr.patientIdPassport || pr.patient_id_passport,
+                    doctorName: pr.doctorName || pr.doctor_name,
+                    institute: pr.institute,
+                    date: pr.date, ailment: pr.ailment, treatment: pr.treatment,
+                    prescription: pr.prescription, report: pr.report,
+                    nextAvailableDate: pr.nextAvailableDate || pr.next_available_date
+                });
+                const url = URL.createObjectURL(doc.output('blob'));
+                const a = document.createElement('a');
+                a.href = url; a.download = `Prescription-${formatDate(pr.date)}.pdf`;
+                document.body.appendChild(a); a.click(); a.remove();
+                showToast('PDF downloaded', 'success');
+            } catch (err) {
+                showToast('PDF failed: ' + err.message, 'error');
+            }
+        };
+        window.viewReport = function(key) {
+            let rpt = null;
+            if (key.startsWith('pr-')) {
+                const pr = allPresc.find(p => 'pr-' + p.id === key);
+                if (pr) rpt = { date: pr.date, doctor: pr.doctorName || pr.doctor_name, text: pr.report };
+            } else {
+                const r = (allReportsRows || []).find(x => 'rpt-' + x.id === key);
+                if (r) rpt = { date: r.date, doctor: r.doctorName || r.doctor_name, text: r.description || r.report };
+            }
+            if (!rpt) { showToast('Report not found', 'error'); return; }
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+            showDetailModal('Report', d('Date', formatDate(rpt.date)) + d('Doctor', rpt.doctor) + d('Report', `<span style="white-space:pre-wrap;">${rpt.text}</span>`));
         };
 
-        window.downloadPrescription = function(id) {
-            showToast('PDF download coming soon', 'info');
+        let reschedId = null;
+        window.openReschedModal = function(id) {
+            reschedId = id;
+            const apt = allAppts.find(a => a.id === id);
+            document.getElementById('reschedForm').reset();
+            if (apt) {
+                document.getElementById('reschedDate').value = apt.date || '';
+                document.getElementById('reschedTime').value = String(apt.time || '').slice(0, 5);
+            }
+            document.getElementById('reschedDate').min = new Date().toISOString().split('T')[0];
+            document.getElementById('histReschedModal').classList.add('show');
         };
-
-        window.viewReport = function(id) {
-            showToast('Report view coming soon', 'info');
-        };
+        window.closeReschedModal = function() { document.getElementById('histReschedModal').classList.remove('show'); };
+        document.getElementById('reschedForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = document.getElementById('reschedDate').value;
+            const time = document.getElementById('reschedTime').value;
+            if (!date || !time) { showToast('Please choose both a new date and time', 'error'); return; }
+            try {
+                await rescheduleAppointment(reschedId, date, time);
+                showToast('Appointment rescheduled', 'success');
+                closeReschedModal();
+                await loadMedicalHistory();
+            } catch (err) {
+                showToast(err.message || 'Failed to reschedule', 'error');
+            }
+        });
 
         // Cleanup
         window.addEventListener('beforeunload', () => cleanupInactivity());
