@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Medical Staff Dashboard - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,6 +162,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -787,6 +789,10 @@
                         <label>Treatment</label>
                         <input type="text" id="invTreatment" name="treatment" placeholder="Treatment details">
                     </div>
+                    <div class="form-group">
+                        <label>Prescribing Doctor (for invoice PDF)</label>
+                        <input type="text" id="invDoctor" name="doctorName" placeholder="e.g. Dr. J. Smith">
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -825,6 +831,28 @@
     </div>
 
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
+
+
+    <div class="modal" id="docSecModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Security Clearance Required</h3>
+                <button class="modal-close" onclick="closeDocSecModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="docSecForm" onsubmit="return false;">
+                <p style="color:#333; font-size:14px; margin-bottom:12px;">You are about to permanently delete a patient document. This action cannot be undone. Type <b>DELETE</b> to confirm your clearance.</p>
+                <div class="form-group">
+                    <label class="required">Type DELETE to confirm</label>
+                    <input type="text" id="docSecConfirm" name="confirm" autocomplete="off" placeholder="DELETE">
+                    <div class="error-message" id="docSecError"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDocSecModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="submitDocSec()">Delete Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script type="module">
         import { 
@@ -867,7 +895,7 @@
         } from './supabase-health-services.js';
 
         // Initialize inactivity timer (1 hour)
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired due to inactivity. Redirecting...', 'info');
             await signOut();
             setTimeout(() => window.location.href = 'login.html', 2000);
@@ -1091,6 +1119,7 @@
                 reason: document.getElementById('invReason').value,
                 prescription: document.getElementById('invPrescription').value,
                 treatment: document.getElementById('invTreatment').value,
+                doctorName: document.getElementById('invDoctor').value.trim(),
                 fee: parseFloat(document.getElementById('invFee').value),
                 paid: document.getElementById('invPaid').value === 'true'
             };
@@ -1628,9 +1657,31 @@
 
         function filterDocuments() { renderDocuments(); }
 
+
+        let docSecId = null;
         window.confirmDeleteDocument = function(id) {
-            if (confirm('Delete this document?')) deleteDocument(id);
+            docSecId = id;
+            document.getElementById('docSecConfirm').value = '';
+            document.getElementById('docSecError').textContent = '';
+            document.getElementById('docSecModal').classList.add('show');
         };
+        window.closeDocSecModal = function() { document.getElementById('docSecModal').classList.remove('show'); };
+        window.submitDocSec = async function() {
+            const v = document.getElementById('docSecConfirm').value.trim().toUpperCase();
+            if (v !== 'DELETE') {
+                document.getElementById('docSecError').textContent = 'Security clearance failed - type DELETE exactly.';
+                return;
+            }
+            closeDocSecModal();
+            try {
+                await deleteDocument(docSecId);
+                showToast('Document deleted', 'success');
+                if (typeof loadDocuments === 'function') await loadDocuments();
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        };
+
 
         window.openUploadModal = function() {
             populatePatientDropdowns();
