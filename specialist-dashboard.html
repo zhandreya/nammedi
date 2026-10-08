@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Specialist Dashboard - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -164,6 +165,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -230,7 +232,6 @@
         <div class="tab-panel" id="refillsPanel">
             <div class="section-header">
                 <h2>Refill Requests</h2>
-                <p style="color:#666; font-size:14px;">Requests from your patients. Approve or decline - the patient sees your confirmation on their dashboard.</p>
             </div>
             <div class="table-container">
                 <table id="refillsTable">
@@ -361,6 +362,7 @@
                             <th>Treatment</th>
                             <th>Prescription</th>
                             <th>Report</th>
+                            <th>Next Available</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -635,6 +637,10 @@
                 <div class="form-group">
                     <label>Doctor's Report / Notes</label>
                     <textarea id="prReport" name="report" rows="3" placeholder="Clinical notes, follow-up instructions..."></textarea>
+                    <div class="form-group">
+                        <label>Next Available Date (refill/return)</label>
+                        <input type="date" id="prNextDate" name="nextAvailableDate">
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closePrescriptionModal()">Cancel</button>
@@ -758,6 +764,28 @@
 
     <div id="globalToast" class="toast" role="alert" aria-live="polite"></div>
 
+
+    <div class="modal" id="docSecModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Security Clearance Required</h3>
+                <button class="modal-close" onclick="closeDocSecModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="docSecForm" onsubmit="return false;">
+                <p style="color:#333; font-size:14px; margin-bottom:12px;">You are about to permanently delete a patient document. This action cannot be undone. Type <b>DELETE</b> to confirm your clearance.</p>
+                <div class="form-group">
+                    <label class="required">Type DELETE to confirm</label>
+                    <input type="text" id="docSecConfirm" name="confirm" autocomplete="off" placeholder="DELETE">
+                    <div class="error-message" id="docSecError"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeDocSecModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="submitDocSec()">Delete Document</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { 
             onAuthChange, 
@@ -793,7 +821,7 @@
         } from './supabase-health-services.js';
 
         // Initialize inactivity timer (1 hour)
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired due to inactivity. Redirecting...', 'info');
             await signOut();
             setTimeout(() => window.location.href = 'login.html', 2000);
@@ -871,7 +899,31 @@
         }
 
         async function loadAppointments() {
-            allAppointments = await getAppointmentsByStaff(currentUser.uid);
+            let appts = await getAppointmentsByStaff(currentUser.uid);
+            // This dashboard shows appointments made FOR THIS DOCTOR.
+            try {
+                const me = currentProfile;
+                const names = [];
+                if (me) {
+                    const full = String(me.fullName || '').trim();
+                    const sur = String(me.surname || '').trim();
+                    if (sur) names.push(sur);
+                    if (full) names.push(full, `${full} ${sur}`.trim());
+                }
+                if (names.length) {
+                    const mine = appts.filter(a => {
+                        const doc = String(a.doctorSpecialist || a.doctor_specialist || '').trim().toLowerCase();
+                        if (!doc) return false;
+                        return names.some(n => {
+                            const nn = String(n).trim().toLowerCase();
+                            if (!nn) return false;
+                            return doc.includes(nn) || nn.includes(doc);
+                        });
+                    });
+                    if (mine.length) appts = mine;
+                }
+            } catch (e) { /* show all on any problem */ }
+            allAppointments = appts;
             renderAppointments();
         }
 
@@ -1556,6 +1608,7 @@
                     <td>${pr.treatment || '-'}</td>
                     <td>${pr.prescription || '-'}</td>
                     <td>${pr.report || '-'}</td>
+                    <td>${pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : (pr.next_available_date ? formatDate(pr.next_available_date) : '-')}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewPrescription('${pr.id}')">View</button>
                         <button class="btn-sm btn-download" onclick="downloadPrescription('${pr.id}')">PDF</button>
@@ -1612,6 +1665,7 @@
                     treatment: document.getElementById('prTreatment').value.trim(),
                     prescription: document.getElementById('prPrescription').value.trim(),
                     report: document.getElementById('prReport').value.trim(),
+                    nextAvailableDate: document.getElementById('prNextDate').value || null,
                     cellPhone: document.getElementById('prCellPhone').value.trim()
                 };
 
@@ -1727,9 +1781,31 @@
 
         function filterDocuments() { renderDocuments(); }
 
+
+        let docSecId = null;
         window.confirmDeleteDocument = function(id) {
-            if (confirm('Delete this document?')) deleteDocument(id);
+            docSecId = id;
+            document.getElementById('docSecConfirm').value = '';
+            document.getElementById('docSecError').textContent = '';
+            document.getElementById('docSecModal').classList.add('show');
         };
+        window.closeDocSecModal = function() { document.getElementById('docSecModal').classList.remove('show'); };
+        window.submitDocSec = async function() {
+            const v = document.getElementById('docSecConfirm').value.trim().toUpperCase();
+            if (v !== 'DELETE') {
+                document.getElementById('docSecError').textContent = 'Security clearance failed - type DELETE exactly.';
+                return;
+            }
+            closeDocSecModal();
+            try {
+                await deleteDocument(docSecId);
+                showToast('Document deleted', 'success');
+                if (typeof loadDocuments === 'function') await loadDocuments();
+            } catch (e) {
+                showToast('Delete failed: ' + e.message, 'error');
+            }
+        };
+
 
         window.openUploadModal = function() {
             populatePatientDropdowns();
@@ -1796,7 +1872,7 @@
             empty.style.display = 'none';
             tbody.innerHTML = allRefills.map(rf => {
                 const name = `${rf.patientName || ''} ${rf.patientSurname || ''}`.trim() || 'Patient';
-                const d = rf.date || (rf.createdAt ? String(rf.createdAt).slice(0, 10) : '');
+                const d = rf.date || (rf.created_at ? String(rf.created_at).slice(0, 10) : '');
                 const statusClass = rf.status === 'pending' ? 'status-pending' : (rf.status === 'approved' ? 'status-completed' : 'status-cancelled');
                 const actions = rf.status === 'pending' ? `
                     <button class="btn-sm btn-verify" onclick="approveRefill('${rf.id}')">Approve</button>
