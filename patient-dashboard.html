@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Patient Dashboard - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -122,6 +123,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -156,6 +158,7 @@
             onAuthChange, 
             getUserProfile,
             getUpcomingAppointments,
+            fetchWithRetry,
             getMyAilmentsTreatments,
             getMyInstitutesVisited,
             getMyPrescriptions,
@@ -166,8 +169,16 @@
             formatDate
         } from './supabase-health-services.js';
 
+        // If the data loaded empty (slow backend), re-fetch when the tab regains focus.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const statsText = (document.getElementById('statsGrid') || {}).textContent || '';
+                const empty = /0\s*Upcoming/.test(statsText) || (statsText.match(/0/g) || []).length >= 4;
+                if (empty && window.__lastProfile) loadDashboard(window.__lastProfile);
+            }
+        });
         // Initialize inactivity timer
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired due to inactivity. Redirecting...', 'info');
             await signOut();
             setTimeout(() => window.location.href = 'login.html', 2000);
@@ -191,6 +202,7 @@
                         .join(' ');
                     headerName.textContent = `Hello, ${displayName || 'Patient'}`;
                     headerAvatar.src = profile.profilePictureUrl || 'default-profile.png';
+                    window.__lastProfile = profile;
                     await loadDashboard(profile);
                 } else if (profile) {
                     // Wrong role, redirect
@@ -207,11 +219,11 @@
             try {
                 // Load stats in parallel
                 const [appointments, ailments, institutes, prescriptions, refills] = await Promise.all([
-                    getUpcomingAppointments(30),
-                    getMyAilmentsTreatments(),
-                    getMyInstitutesVisited(),
-                    getMyPrescriptions(),
-                    getMyRefillRequests()
+                    fetchWithRetry(() => getUpcomingAppointments(30)),
+                    fetchWithRetry(() => getMyAilmentsTreatments()),
+                    fetchWithRetry(() => getMyInstitutesVisited()),
+                    fetchWithRetry(() => getMyPrescriptions()),
+                    fetchWithRetry(() => getMyRefillRequests())
                 ]);
 
                 // Update stats
