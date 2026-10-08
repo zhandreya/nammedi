@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Sign In - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -102,10 +103,10 @@
         <h1>Welcome Back</h1>
         <p class="subtitle">Sign in to access Namibia Health Services</p>
 
-        <form id="loginForm" novalidate>
+        <form id="loginForm" autocomplete="off" novalidate>
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com">
+                <input type="email" id="email" name="email" required autocomplete="off" placeholder="you@example.com">
                 <div class="error-message" id="emailError"></div>
             </div>
 
@@ -196,11 +197,8 @@
         const passwordError = document.getElementById('passwordError');
         const rememberMe = document.getElementById('rememberMe');
 
-        // Check for remembered email
-        if (localStorage.getItem('rememberedEmail')) {
-            emailInput.value = localStorage.getItem('rememberedEmail');
-            rememberMe.checked = true;
-        }
+        // Privacy: the login form is always blank - never pre-fill previous details.
+        try { localStorage.removeItem('rememberedEmail'); } catch (e) { /* ignore */ }
 
                 let formSubmitted = false;
 
@@ -283,12 +281,8 @@
                 formSubmitted = true;
                 const { user } = await signIn(emailInput.value.trim(), passwordInput.value);
 
-                // Handle remember me
-                if (rememberMe.checked) {
-                    localStorage.setItem('rememberedEmail', emailInput.value.trim());
-                } else {
-                    localStorage.removeItem('rememberedEmail');
-                }
+                // (remembered-email prefill removed for privacy)
+                try { localStorage.removeItem('rememberedEmail'); } catch (e) { /* ignore */ }
 
                 showToast('Welcome back!', 'success');
 
@@ -315,5 +309,25 @@
         });
     </script>
 <p style="text-align:center;color:#999;font-size:11px;padding:6px 0 10px;">v18</p>
+
+<script>
+    // Item: the sign-in page must never show previous details.
+    (function () {
+        function clearAll() {
+            document.querySelectorAll('input, select, textarea').forEach(function (el) {
+                try {
+                    if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+                    else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                    else el.value = '';
+                } catch (e) {}
+            });
+        }
+        // clear immediately (kills any browser autofill that landed first)
+        clearAll();
+        window.addEventListener('DOMContentLoaded', clearAll);
+        // re-clear after a short delay (autofill can re-populate after load)
+        setTimeout(clearAll, 500);
+    })();
+</script>
 </body>
 </html>
