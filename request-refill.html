@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Request Refill - Namibia Health Services</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -169,6 +170,7 @@
 
     <div class="header">
         <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -250,7 +252,7 @@
         } from './supabase-health-services.js';
 
         // Initialize inactivity timer
-        const cleanupInactivity = initInactivityTimer(60 * 60 * 1000, async () => {
+        const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired. Redirecting...', 'info');
             await signOut();
             setTimeout(() => window.location.href = 'login.html', 2000);
@@ -320,7 +322,7 @@
                     option.value = p.id;
                     option.textContent = `${p.prescription || p.prescriptionText || 'Prescription'} (Dr. ${p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || 'Doctor'})`;
                     option.dataset.prescription = p.prescription || p.prescriptionText || '';
-                    option.dataset.doctor = p.doctorSpecialist || p.doctor_specialist || '';
+                    option.dataset.doctor = p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || '';
                     option.dataset.date = p.date;
                     option.dataset.prescribedby = p.prescribedBy || p.prescribed_by || '';
                     refillPrescription.appendChild(option);
