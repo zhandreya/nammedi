@@ -1079,8 +1079,10 @@ export async function addPrescription(a, b) {
     } else {
         rec = await insertRow(T.PRESCRIPTIONS, base);
     }
-    // Record the ailment/treatment + institute visit (best-effort) so they appear
-    // on the patient's dashboard.
+    // Record the ailment/treatment (best-effort) so it appears on the
+    // patient's ailments & treatments tables. Note: institutes_visited is
+    // NOT auto-recorded here - visits only appear when they are actually
+    // scheduled (appointments), never silently.
     try {
         let prof = null;
         try { prof = await getUserProfile(user.uid); } catch (e2) { /* ignore */ }
@@ -1099,20 +1101,7 @@ export async function addPrescription(a, b) {
                 created_at: nowIso()
             });
         }
-        if (inst) {
-            await insertRow(T.INSTITUTES_VISITED, {
-                patient_id: patientId,
-                patient_name: (patient && patient.fullName) || null,
-                patient_surname: (patient && patient.surname) || null,
-                patient_id_passport: (patient && patient.idPassport) || null,
-                institute: inst,
-                date: data.date || null,
-                time: null,
-                doctor_name: doctorName,
-                created_at: nowIso()
-            });
-        }
-    } catch (e) { console.warn('ailment/visit record failed:', e); }
+    } catch (e) { console.warn('ailment record failed:', e); }
     return {
         id: rec.id,
         patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname,
@@ -1324,6 +1313,34 @@ function camelReport(r) {
              patientIdPassport: r.patient_id_passport, idPassport: r.patient_id_passport,
              doctorName: r.doctor_name, pdfUrl: r.pdf_url,
              generatedBy: r.generated_by, generatedByEmail: r.generated_by_email };
+}
+
+function normDocName(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+// Best-effort: match the doctor name on each row against registered users so
+// we can show the doctor's specialization (e.g. "Doctor of Cardiology").
+async function resolveDoctorSpecializations(rows) {
+    rows.forEach(r => (r.specialization = null));
+    if (!rows.length) return rows;
+    let users = [];
+    try {
+        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession');
+        users = data || [];
+    } catch (e) { /* caller may not be able to read users - degrade to '-' */ }
+    for (const r of rows) {
+        const dn = normDocName(r.doctorName);
+        if (!dn) continue;
+        for (const u of users) {
+            const full = normDocName(`${u.full_name || ''} ${u.surname || ''}`);
+            const sur = normDocName(u.surname);
+            const first = normDocName(u.full_name);
+            const hit = (full.length >= 4 && dn.includes(full)) ||
+                (sur.length >= 4 && first.length >= 3 && dn.includes(sur) && dn.includes(first));
+            if (hit) { r.specialization = u.profession || null; break; }
+        }
+    }
+    return rows;
 }
 
 // When a report has no doctor name, show who actually generated it:
@@ -1766,7 +1783,30 @@ function camelRefill(r) {
               patientIdPassport: r.patient_id_passport, doctorName: r.doctor_name,
               doctorNote: r.doctor_note, nextAvailableDate: r.next_available_date,
               prescriptionDate: r.prescription_date, ailment: r.ailment, treatment: r.treatment,
-              prescribedBy: r.prescribed_by };
+              prescriptionId: r.prescription_id, prescribedBy: r.prescribed_by };
+}
+// Old refill requests have no prescription date / ailment / treatment stored -
+// recover them from the linked prescription row.
+async function backfillRefillPrescData(rows) {
+    const camel = rows.map(camelRefill);
+    const need = [...new Set(camel
+        .filter(r => r.prescriptionId && (!r.prescriptionDate || !r.ailment || !r.treatment))
+        .map(r => r.prescriptionId))];
+    if (need.length) {
+        try {
+            const { data } = await supabase.from(T.PRESCRIPTIONS)
+                .select('id, date, ailment, treatment').in('id', need);
+            const pmap = new Map((data || []).map(p => [p.id, p]));
+            camel.forEach(r => {
+                const p = r.prescriptionId ? pmap.get(r.prescriptionId) : null;
+                if (!p) return;
+                if (!r.prescriptionDate) r.prescriptionDate = p.date;
+                if (!r.ailment) r.ailment = p.ailment;
+                if (!r.treatment) r.treatment = p.treatment;
+            });
+        } catch (e) { /* best-effort */ }
+    }
+    return camel;
 }
 // Patient: RLS returns only their own rows (matched by ID number / link).
 const TABLE_SORT_DATE = new Set([T.AILMENTS_TREATMENTS, T.INSTITUTES_VISITED, T.PRESCRIPTIONS, T.APPOINTMENTS, T.REPORTS]);
@@ -1826,7 +1866,7 @@ export async function getMyAilmentsTreatments() {
             merged.push(a);
         }
         merged.sort((x, y) => new Date(y.date || 0) - new Date(x.date || 0));
-        return merged;
+        return resolveDoctorSpecializations(merged);
     }
     return (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid)).map(camelAilment);
 }
@@ -1854,6 +1894,23 @@ export async function requestRefill(a, b) {
     const data = (b && typeof b === 'object') ? b : a;
     let profile = null;
     try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    // Automatic block: a refill cannot be requested before the prescription's
+    // next available date.
+    if (data.prescriptionId) {
+        try {
+            const { data: pr } = await supabase.from(T.PRESCRIPTIONS)
+                .select('date, next_available_date').eq('id', data.prescriptionId).maybeSingle();
+            const next = pr && pr.next_available_date;
+            const today = new Date().toISOString().split('T')[0];
+            if (next && today < String(next).slice(0, 10)) {
+                throw new Error(`Refill requests are blocked until the next available date (${String(next).slice(0, 10)}).`);
+            }
+            if (!data.prescriptionDate && pr && pr.date) data.prescriptionDate = String(pr.date).slice(0, 10);
+        } catch (e) {
+            if (e && /blocked until/.test(String(e.message || e))) throw e;
+            // best-effort lookup - do not block the request on lookup failure
+        }
+    }
     const rec = await insertRow(T.REFILL_REQUESTS, {
         patient_id: user.uid,
         patient_name: (profile && profile.fullName) || null,
@@ -1885,7 +1942,7 @@ export async function getRefillRequestsForDoctor() {
         .select('*').eq('prescribed_by', user.uid)
         .order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(camelRefill);
+    return backfillRefillPrescData(data || []);
 }
 
 // Doctor confirms (or declines) a refill request; the note is the patient's confirmation.
@@ -1914,8 +1971,8 @@ export async function getMyRefillRequests() {
     const user = requireUser();
     let profile = null;
     try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
-    if (profile && profile.role === 'patient') return (await patientScopeSelect(T.REFILL_REQUESTS)).map(camelRefill);
-    return (await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid)).map(camelRefill);
+    if (profile && profile.role === 'patient') return backfillRefillPrescData(await patientScopeSelect(T.REFILL_REQUESTS));
+    return backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid));
 }
 
 export async function getMyInsuranceVerifications() {

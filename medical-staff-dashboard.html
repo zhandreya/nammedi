@@ -144,10 +144,9 @@
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
-        .detail { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
-        .detail:last-child { border-bottom: none; }
-        .detail-label { color: #666; font-weight: 600; white-space: nowrap; }
-        .detail-value { color: #1a1a1a; font-weight: 500; text-align: right; word-break: break-word; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; word-break: break-word; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
@@ -1108,7 +1107,7 @@
         // ============ STANDARD VIEW MODAL (same-looking message for every View button) ============
         function vd(label, value) {
             const empty = (value === null || value === undefined || String(value).trim() === '');
-            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? 'Where applicable' : value}</span></div>`;
+            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? '-' : value}</span></div>`;
         }
         window.openGenericView = function(title, html, extraActions) {
             document.getElementById('genericViewTitle').textContent = title;
@@ -1787,12 +1786,21 @@
             }
 
             empty.style.display = 'none';
+            const normMed = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+            const findStock = mr => {
+                const n = normMed(mr.medicationName);
+                if (!n) return null;
+                const hit = allInventory.find(v => v.medication_name &&
+                    normMed(v.medication_name) === n &&
+                    (!mr.strength || !v.strength || normMed(v.strength) === normMed(mr.strength))) ||
+                    allInventory.find(v => v.medication_name &&
+                        (normMed(v.medication_name).includes(n) || n.includes(normMed(v.medication_name))));
+                return hit || null;
+            };
             tbody.innerHTML = allMedRecords.map(mr => {
                 const name = `${mr.patientName || ''} ${mr.patientSurname || ''}`.trim() || 'Unknown';
                 const med = [mr.medicationName, mr.strength].filter(Boolean).join(' ') || '-';
-                const inv = allInventory.find(v => v.medication_name &&
-                    String(v.medication_name).toLowerCase() === String(mr.medicationName || '').toLowerCase() &&
-                    (!mr.strength || !v.strength || String(v.strength).toLowerCase() === String(mr.strength).toLowerCase()));
+                const inv = findStock(mr);
                 const left = inv ? (inv.quantity ?? 0) : '-';
                 return `
                 <tr>
@@ -1815,7 +1823,7 @@
         window.viewMedRecord = function(id) {
             const mr = allMedRecords.find(m => m.id === id);
             if (!mr) { showToast('Record not found', 'error'); return; }
-            const wa = v => (v === null || v === undefined || String(v).trim() === '') ? 'Where applicable' : v;
+            const wa = v => (v === null || v === undefined || String(v).trim() === '') ? '-' : v;
             document.getElementById('medViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${wa(formatDate(mr.date))}</span></div>
                 <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${wa(`${mr.patientName || ''} ${mr.patientSurname || ''}`.trim())}</span></div>
@@ -1869,6 +1877,9 @@
             try {
                 allInventory = await getMedicationInventory();
             } catch (e) { allInventory = []; }
+            // Refresh the medication table now the stock list is available, so
+            // the "Left in Stock" column always reflects current inventory.
+            renderMedRecords();
             const sel = document.getElementById('maMedication');
             if (!sel) return;
             sel.innerHTML = '<option value="">- No inventory item -</option>' +

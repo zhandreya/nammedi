@@ -179,6 +179,7 @@
         </div>
         <div class="header-actions">
             <button class="btn btn-secondary" onclick="window.location.href='patient-prescriptions.html'">Back to Prescriptions</button>
+            <button class="btn btn-secondary" onclick="window.location.href='patient-dashboard.html'">Back to Dashboard</button>
         </div>
     </div>
 
@@ -212,6 +213,7 @@
                     <option value="">Select a prescription to refill</option>
                 </select>
                 <div class="error-message" id="refillPrescriptionError"></div>
+                <div id="refillBlockNotice" style="display:none; margin-top:10px; padding:12px 14px; border-radius:8px; background:#fdecea; border:1px solid #f5c6cb; color:#842029; font-size:14px;"></div>
             </div>
 
             <div class="form-group">
@@ -326,6 +328,7 @@
                     option.dataset.date = p.date || '';
                     option.dataset.ailment = p.ailment || '';
                     option.dataset.treatment = p.treatment || '';
+                    option.dataset.nextavailable = p.nextAvailableDate || p.next_available_date || '';
                     option.dataset.prescribedby = p.prescribedBy || p.prescribed_by || '';
                     refillPrescription.appendChild(option);
                 });
@@ -354,6 +357,27 @@
             }
         }
 
+        function refillBlockReason() {
+            const opt = refillPrescription.options[refillPrescription.selectedIndex];
+            if (!opt || !opt.value) return null;
+            const next = String(opt.dataset.nextavailable || '').slice(0, 10);
+            const today = new Date().toISOString().split('T')[0];
+            if (next && today < next) return next;
+            return null;
+        }
+        function applyRefillBlock() {
+            const notice = document.getElementById('refillBlockNotice');
+            const btn = document.getElementById('submitBtn');
+            const next = refillBlockReason();
+            if (next) {
+                notice.textContent = `⛔ This refill request is blocked until ${formatDate(next)} (the next available date of the prescription).`;
+                notice.style.display = 'block';
+                if (btn) { btn.disabled = true; }
+            } else {
+                notice.style.display = 'none';
+                if (btn) { btn.disabled = false; }
+            }
+        }
         function updatePrescriptionInfo() {
             const selectedOption = refillPrescription.options[refillPrescription.selectedIndex];
             if (selectedOption.value) {
@@ -364,6 +388,7 @@
             } else {
                 prescriptionInfo.style.display = 'none';
             }
+            applyRefillBlock();
         }
 
         // Form validation
@@ -390,6 +415,14 @@
 
             if (!refillPrescription.value) {
                 setError(refillPrescription, document.getElementById('refillPrescriptionError'), 'Please select a prescription');
+                isValid = false;
+            }
+
+            // Automatic block: no refill requests before the next available date
+            const blockedUntil = refillBlockReason();
+            if (blockedUntil) {
+                applyRefillBlock();
+                showToast(`Refill requests are blocked until ${formatDate(blockedUntil)} (next available date)`, 'error');
                 isValid = false;
             }
 

@@ -119,6 +119,9 @@
         .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; border: 1px solid #eee; }
         .card h3 { margin: 0 0 16px; color: #1a1a1a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; }
         .card .detail { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; }
         .card .detail-label { font-weight: 600; color: #333; display: block; margin-bottom: 4px; }
         .card .detail-value { color: #666; }
@@ -226,6 +229,8 @@
                         <th>Date</th>
                         <th>Ailment</th>
                         <th>Treatment</th>
+                        <th>Doctor</th>
+                        <th>Specialization</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -454,8 +459,10 @@
                         <td>${formatDate(at.date || at.createdAt)}</td>
                         <td>${at.ailment || '-'}</td>
                         <td>${at.treatment || '-'}</td>
+                        <td>${at.doctorName || at.doctor_name || 'Staff'}</td>
+                        <td>${at.specialization || '-'}</td>
                     </tr>
-                `).join('') || '<tr><td colspan="3" style="text-align:center; color:#666; padding:40px;">No ailments & treatments recorded</td></tr>';
+                `).join('') || '<tr><td colspan="5" style="text-align:center; color:#666; padding:40px;">No ailments & treatments recorded</td></tr>';
         }
 
         let allAppts = [], allPresc = [], allReportsRows = [];

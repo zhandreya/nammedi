@@ -116,6 +116,9 @@
         .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
         .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 20px; border: 1px solid #eee; }
         .card h3 { margin: 0 0 12px; color: #1a1a1a; display: flex; align-items: center; gap: 8px; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; }
         .card .detail { margin: 8px 0; }
         .card .detail-label { font-weight: 600; color: #333; display: block; margin-bottom: 4px; font-size: 13px; }
         .card .detail-value { color: #666; font-size: 14px; }
@@ -354,27 +357,34 @@
             `).join('');
         }
 
+        // Preview first in a new tab, then start the download from the same path
+        function previewAndDownload(url, filename) {
+            try { window.open(url, '_blank'); } catch (e) { /* popup blocked - download only */ }
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
         window.downloadReport = async function(id) {
             try {
                 const reports = await getAllReportsForDownload();
                 const r = reports.find(x => x.id === id);
                 if (!r) { showToast('Report not found', 'error'); return; }
                 if (r.pdfUrl) {
-                    const a = document.createElement('a');
-                    a.href = r.pdfUrl; a.download = `Report-${r.date || ''}.pdf`;
-                    document.body.appendChild(a); a.click(); a.remove();
-                    showToast('Report downloaded', 'success');
+                    previewAndDownload(r.pdfUrl, `Report-${r.date || ''}.pdf`.replace(/\s+/g, '-'));
+                    showToast('Report previewed - download started', 'success');
                     return;
                 }
                 if (r._prescription) {
                     showToast('Preparing PDF...', 'info');
                     const blob = await buildPrescriptionPdf(r._prescription);
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `Report-${r._prescription.patientName || 'Patient'}-${r.date || ''}.pdf`.replace(/\s+/g, '-');
-                    document.body.appendChild(a); a.click(); a.remove();
-                    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-                    showToast('Report PDF downloaded', 'success');
+                    const url = URL.createObjectURL(blob);
+                    previewAndDownload(url, `Report-${r._prescription.patientName || 'Patient'}-${r.date || ''}.pdf`.replace(/\s+/g, '-'));
+                    setTimeout(() => URL.revokeObjectURL(url), 5000);
+                    showToast('Report previewed - download started', 'success');
                 } else {
                     showToast('No downloadable file for this report', 'error');
                 }
@@ -422,7 +432,7 @@
                     <td>${v.medicalAidNumber || '-'}</td>
                     <td>${v.paymentStatus || '-'}</td>
                     <td>${v.status || '-'}</td>
-                    <td><button class="btn-sm btn-download" onclick="downloadInsurancePdf('${v.id}')">PDF</button></td>
+                    <td><button class="btn-sm btn-download" onclick="downloadInsurancePdf('${v.id}')">Download</button></td>
                 </tr>
             `).join('');
         }
@@ -432,12 +442,9 @@
             try {
                 const doc = buildInsurancePdf(v);
                 const url = URL.createObjectURL(doc.output('blob'));
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Insurance-Verification-${v.date || ''}.pdf`.replace(/\s+/g, '-');
-                document.body.appendChild(a); a.click(); a.remove();
+                previewAndDownload(url, `Insurance-Verification-${v.date || ''}.pdf`.replace(/\s+/g, '-'));
                 setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast('Insurance verification downloaded', 'success');
+                showToast('Insurance verification previewed - download started', 'success');
             } catch (err) {
                 showToast('PDF error: ' + err.message, 'error');
             }
@@ -483,15 +490,8 @@
             const doc = myDocuments.find(x => x.id === id);
             const url = doc && doc.fileUrl;
             if (!url) { showToast('No file available', 'error'); return; }
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = doc.fileName || 'document';
-            a.target = '_blank';
-            a.rel = 'noopener';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            showToast('Download started', 'success');
+            previewAndDownload(url, doc.fileName || 'document');
+            showToast('Document previewed - download started', 'success');
         };
 
         // Cleanup

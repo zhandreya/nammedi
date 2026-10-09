@@ -148,10 +148,9 @@
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
-        .detail { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
-        .detail:last-child { border-bottom: none; }
-        .detail-label { color: #666; font-weight: 600; white-space: nowrap; }
-        .detail-value { color: #1a1a1a; font-weight: 500; text-align: right; word-break: break-word; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; word-break: break-word; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
@@ -304,9 +303,9 @@
                 <table id="insuranceTable">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Patient Name</th>
+                            <th>Patient</th>
                             <th>ID / Passport</th>
+                            <th>Date</th>
                             <th>Medical Aid #</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -399,9 +398,9 @@
                 <table id="reportsTable">
                     <thead>
                         <tr>
-                            <th>Date</th>
                             <th>Patient</th>
                             <th>ID / Passport</th>
+                            <th>Date</th>
                             <th>Type</th>
                             <th>Actions</th>
                         </tr>
@@ -1022,7 +1021,7 @@
         // ============ STANDARD VIEW MODAL (same-looking message for every View button) ============
         function vd(label, value) {
             const empty = (value === null || value === undefined || String(value).trim() === '');
-            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? 'Where applicable' : value}</span></div>`;
+            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? '-' : value}</span></div>`;
         }
         window.openGenericView = function(title, html, extraActions) {
             document.getElementById('genericViewTitle').textContent = title;
@@ -1655,9 +1654,9 @@
             empty.style.display = 'none';
             tbody.innerHTML = filtered.map(ins => `
                 <tr>
-                    <td>${formatDate(ins.date)}</td>
-                    <td>${ins.patientName || 'Unknown'}</td>
+                    <td>${ins.patientName || 'Unknown'} ${ins.patientSurname || ''}</td>
                     <td>${ins.idPassport || ins.patientIdPassport || '-'}</td>
+                    <td>${formatDate(ins.date)}</td>
                     <td>${ins.medicalAidNumber || '-'}</td>
                     <td><span class="status-badge status-${ins.status}">${ins.status}</span></td>
                     <td>
@@ -1949,6 +1948,14 @@
         });
 
         // ============ REPORTS ============
+        // Report rows sometimes lack the patient's ID/Passport - resolve it
+        // from the patient record so the detail always shows the ID/Passport.
+        function reportIdPassport(rpt) {
+            if (rpt.idPassport || rpt.patientIdPassport) return rpt.idPassport || rpt.patientIdPassport;
+            const p = (allPatients || []).find(x => x.id === rpt.patientId || x.id === rpt.patient_id);
+            return (p && p.idPassport) || '-';
+        }
+
         function renderReports() {
             const tbody = document.getElementById('reportsTable').querySelector('tbody');
             const empty = document.getElementById('reportsEmpty');
@@ -1971,9 +1978,9 @@
             empty.style.display = 'none';
             tbody.innerHTML = filtered.map(rpt => `
                 <tr>
+                    <td>${rpt.patientName || 'N/A'} ${rpt.patientSurname || ''}</td>
+                    <td>${reportIdPassport(rpt)}</td>
                     <td>${formatDate(rpt.date)}</td>
-                    <td>${rpt.patientName || 'N/A'}</td>
-                    <td>${rpt.idPassport || '-'}</td>
                     <td>${(rpt.type || '').replace('_', ' ')}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
@@ -1994,9 +2001,9 @@
                 vd('Date', formatDate(rpt.date)) +
                 vd('Type', (rpt.type || '').replace('_', ' ')) +
                 vd('Patient', `${rpt.patientName || 'N/A'} ${rpt.patientSurname || ''}`.trim()) +
-                vd('ID/Passport', rpt.idPassport || rpt.patientIdPassport) +
+                vd('ID/Passport', reportIdPassport(rpt)) +
                 vd('Doctor', rpt.doctorName) +
-                `<div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${(rpt.description === null || rpt.description === undefined || String(rpt.description).trim() === '') ? 'Where applicable' : rpt.description}</span></div>`;
+                `<div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${rpt.description || '-'}</span></div>`;
             reportViewModal.classList.add('show');
         };
         window.closeReportViewModal = function() { reportViewModal.classList.remove('show'); };

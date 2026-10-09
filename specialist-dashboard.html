@@ -147,10 +147,9 @@
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
-        .detail { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
-        .detail:last-child { border-bottom: none; }
-        .detail-label { color: #666; font-weight: 600; white-space: nowrap; }
-        .detail-value { color: #1a1a1a; font-weight: 500; text-align: right; word-break: break-word; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; word-break: break-word; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
@@ -1057,7 +1056,7 @@
         // ============ STANDARD VIEW MODAL (same-looking message for every View button) ============
         function vd(label, value) {
             const empty = (value === null || value === undefined || String(value).trim() === '');
-            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? 'Where applicable' : value}</span></div>`;
+            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? '-' : value}</span></div>`;
         }
         window.openGenericView = function(title, html, extraActions) {
             document.getElementById('genericViewTitle').textContent = title;
@@ -1928,7 +1927,7 @@
                 const actions = rf.status === 'pending' ? `
                     <button class="btn-sm btn-verify" onclick="approveRefill('${rf.id}')">Approve</button>
                     <button class="btn-sm btn-delete" onclick="declineRefill('${rf.id}')">Decline</button>
-                ` : `<span style="color:#888; font-size:12px;">${rf.doctorNote || 'Handled'}</span>`;
+                ` : `<span style="color:#1a1a1a; font-size:12px;">${rf.doctorNote || 'Handled'}</span>`;
                 const at = [rf.ailment, rf.treatment].filter(Boolean).join(' - ');
                 return `
                 <tr>
