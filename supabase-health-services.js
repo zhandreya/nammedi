@@ -1257,9 +1257,9 @@ async function buildReportPdf({ type, patientName, patientSurname, idPassport, d
     doc.setDrawColor(80); doc.line(20, 33, 190, 33);
     doc.setFontSize(11);
     doc.text('Patient:', 20, 44); doc.text(`${patientName || ''} ${patientSurname || ''}`.trim() || '-', 60, 44);
-    doc.text('ID Number:', 20, 52); doc.text(idPassport || '-', 60, 52);
+    doc.text('ID/Passport:', 20, 52); doc.text(idPassport || '-', 60, 52);
     doc.text('Date:', 20, 60); doc.text(date || '-', 60, 60);
-    doc.text('Doctor:', 20, 68); doc.text(doctorName || 'TBA', 60, 68);
+    doc.text('Doctor:', 20, 68); doc.text(doctorName || 'Staff', 60, 68);
     doc.setFontSize(11); doc.text('Report:', 20, 82);
     const lines = doc.splitTextToSize(description || '-', 170);
     doc.text(lines, 20, 90);
@@ -1274,8 +1274,13 @@ export async function generateReport(a, b) {
     if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
     let prof = null;
     try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
-    const doctorName = data.doctorName || (prof && prof.role === 'specialist'
-        ? ([prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null) : null);
+    // A report made by a doctor carries the doctor's name; a report made by
+    // anyone else is labelled 'Receptionist' / 'Staff' - never left as TBA.
+    const doctorName = data.doctorName || (prof
+        ? (prof.role === 'specialist'
+            ? ([prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || 'Staff')
+            : (prof.role === 'receptionist' ? 'Receptionist' : 'Staff'))
+        : 'Staff');
     const institute = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
     let pdfUrl = null;
     try {
@@ -1285,7 +1290,9 @@ export async function generateReport(a, b) {
             description: data.description, doctorName, institute
         });
         const fname = `Report-${(data.type || 'report').replace(/\s+/g, '-')}-${Date.now()}.pdf`;
-        const path = `reports/${user.uid}/${Date.now()}_${fname}`;
+        // Saving path starts with the patient's ID / Passport number
+        const pathStart = (patient && patient.idPassport) || patientId || 'general';
+        const path = `reports/${pathStart}/${Date.now()}_${fname}`;
         const file = new File([blob], fname, { type: 'application/pdf' });
         const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: true, contentType: 'application/pdf' });
         if (!upErr) {
@@ -1314,8 +1321,37 @@ export async function generateReport(a, b) {
 
 function camelReport(r) {
     return { ...r, patientId: r.patient_id, patientName: r.patient_name, patientSurname: r.patient_surname,
-             patientIdPassport: r.patient_id_passport, doctorName: r.doctor_name, pdfUrl: r.pdf_url,
-             generatedBy: r.generated_by };
+             patientIdPassport: r.patient_id_passport, idPassport: r.patient_id_passport,
+             doctorName: r.doctor_name, pdfUrl: r.pdf_url,
+             generatedBy: r.generated_by, generatedByEmail: r.generated_by_email };
+}
+
+// When a report has no doctor name, show who actually generated it:
+// a specialist's name, or 'Receptionist' / 'Staff' - never 'TBA'.
+async function resolveReportDoctors(rows) {
+    const need = [...new Set(rows.filter(r => !r.doctor_name && r.generated_by).map(r => r.generated_by))];
+    const names = {};
+    if (need.length > 0) {
+        try {
+            const { data } = await supabase.from(T.USERS)
+                .select('id, role, full_name, surname')
+                .in('id', need);
+            for (const u of data || []) names[u.id] = u;
+        } catch (e) { /* best-effort */ }
+    }
+    for (const r of rows) {
+        if (r.doctor_name) continue;
+        const u = r.generated_by ? names[r.generated_by] : null;
+        if (!u) { r.doctor_name = 'Staff'; continue; }
+        if (u.role === 'specialist') {
+            r.doctor_name = [u.surname, u.full_name].filter(Boolean).map(s => String(s).trim()).join(' ') || 'Staff';
+        } else if (u.role === 'receptionist') {
+            r.doctor_name = 'Receptionist';
+        } else {
+            r.doctor_name = 'Staff';
+        }
+    }
+    return rows;
 }
 
 export async function getMyReports() {
@@ -1326,12 +1362,12 @@ export async function getMyReports() {
         const { data, error } = await supabase.from(T.REPORTS)
             .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
         if (error) throw error;
-        return (data || []).map(camelReport);
+        return (await resolveReportDoctors(data || [])).map(camelReport);
     }
     const { data, error } = await supabase.from(T.REPORTS)
         .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(camelReport);
+    return (await resolveReportDoctors(data || [])).map(camelReport);
 }
 
 export async function updateReport(reportId, data) {
@@ -1536,6 +1572,11 @@ export async function deleteInvoice(invoiceId) {
             const idx = data.pdf_url.indexOf(marker);
             if (idx !== -1) await supabase.storage.from('documents').remove([data.pdf_url.slice(idx + marker.length)]);
         } catch (e) { console.warn('Could not delete invoice file:', e); }
+        // The invoice PDF is also stored in the documents table so the patient
+        // can download it - remove that row too, or the deleted invoice keeps
+        // showing on the patient's Documents & Invoices and staff dashboards.
+        try { await supabase.from(T.DOCUMENTS).delete().eq('file_url', data.pdf_url); }
+        catch (e) { console.warn('Could not delete invoice document row:', e); }
     }
     await deleteRow(T.INVOICES, invoiceId);
 }
@@ -1554,9 +1595,9 @@ export async function buildPrescriptionPdf(pr) {
     doc.setDrawColor(80); doc.line(20, 33, 190, 33);
     doc.setFontSize(11);
     doc.text('Patient:', 20, 44); doc.text(name, 60, 44);
-    doc.text('ID Number:', 20, 52); doc.text(pr.patientIdPassport || '-', 60, 52);
+    doc.text('ID/Passport:', 20, 52); doc.text(pr.patientIdPassport || '-', 60, 52);
     doc.text('Date:', 20, 60); doc.text(pr.date || '-', 60, 60);
-    doc.text('Doctor:', 20, 68); doc.text(pr.doctorName || 'TBA', 60, 68);
+    doc.text('Doctor:', 20, 68); doc.text(pr.doctorName || 'Staff', 60, 68);
     let y = 84;
     const field = (label, value) => {
         if (!value) return;
@@ -1724,6 +1765,7 @@ function camelRefill(r) {
     return { ...r, patientName: r.patient_name, patientSurname: r.patient_surname,
               patientIdPassport: r.patient_id_passport, doctorName: r.doctor_name,
               doctorNote: r.doctor_note, nextAvailableDate: r.next_available_date,
+              prescriptionDate: r.prescription_date, ailment: r.ailment, treatment: r.treatment,
               prescribedBy: r.prescribed_by };
 }
 // Patient: RLS returns only their own rows (matched by ID number / link).
@@ -1741,7 +1783,51 @@ export async function getMyAilmentsTreatments() {
     const user = requireUser();
     let profile = null;
     try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
-    if (profile && profile.role === 'patient') return (await patientScopeSelect(T.AILMENTS_TREATMENTS)).map(camelAilment);
+    if (profile && profile.role === 'patient') {
+        // Collect ailment & treatment data from the dedicated table AND from
+        // the patient's prescriptions, so the table is never empty when the
+        // patient has any medical history recorded.
+        const [rows, presc] = await Promise.all([
+            patientScopeSelect(T.AILMENTS_TREATMENTS),
+            (async () => { try {
+                const { data, error } = await supabase.from(T.PRESCRIPTIONS)
+                    .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+                if (error) throw error;
+                return data || [];
+            } catch (e) { return []; } })()
+        ]);
+        const merged = [];
+        const seen = new Set();
+        for (const r of rows) {
+            const a = camelAilment(r);
+            const key = `${String(a.ailment || '').toLowerCase()}|${String(a.treatment || '').toLowerCase()}|${a.date || ''}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(a);
+        }
+        for (const p of presc) {
+            if (!p.ailment && !p.treatment) continue;
+            const a = {
+                id: 'pr-' + p.id,
+                createdAt: p.created_at,
+                patientId: p.patient_id,
+                patientName: p.patient_name, patientSurname: p.patient_surname,
+                patientIdPassport: p.patient_id_passport,
+                doctorName: p.doctor_name,
+                institute: p.institute,
+                ailment: p.ailment || null,
+                treatment: p.treatment || null,
+                date: p.date || null,
+                source: 'prescription'
+            };
+            const key = `${String(a.ailment || '').toLowerCase()}|${String(a.treatment || '').toLowerCase()}|${a.date || ''}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(a);
+        }
+        merged.sort((x, y) => new Date(y.date || 0) - new Date(x.date || 0));
+        return merged;
+    }
     return (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid)).map(camelAilment);
 }
 
@@ -1776,6 +1862,9 @@ export async function requestRefill(a, b) {
         patient_email: user.email,
         prescription_id: data.prescriptionId || null,
         prescription: data.prescription || null,
+        prescription_date: data.prescriptionDate || null,
+        ailment: data.ailment || null,
+        treatment: data.treatment || null,
         medication_name: data.medication || null,
         duration: data.duration || null,
         next_available_date: data.nextAvailableDate || null,
@@ -1846,7 +1935,7 @@ export function buildInsurancePdf(v) {
     doc.setFontSize(11);
     const row = (label, value, y) => { doc.text(label + ':', 20, y); doc.text(String(value || '-'), 70, y); };
     row('Patient', name, 52);
-    row('ID Number', v.idPassport, 62);
+    row('ID/Passport', v.idPassport, 62);
     row('Medical Aid No.', v.medicalAidNumber, 72);
     row('Verification Date', v.date, 82);
     row('Payment Status', v.paymentStatus, 92);

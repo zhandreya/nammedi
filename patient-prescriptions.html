@@ -58,8 +58,8 @@
         }
         .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #0066cc;
@@ -152,7 +152,7 @@
 
     <div class="header">
         <div class="header-left">
-            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -221,7 +221,7 @@
         <div style="overflow-x:auto;">
             <table class="data-table" style="width:100%; border-collapse:collapse;">
                 <thead>
-                    <tr><th>Date</th><th>Prescription</th><th>Doctor</th><th>Next Available</th><th>Status / Confirmation</th></tr>
+                    <tr><th>Date</th><th>Prescription Date</th><th>Ailment / Treatment</th><th>Prescription</th><th>Doctor</th><th>Next Available</th><th>Status / Confirmation</th></tr>
                 </thead>
                 <tbody id="refillTableBody"></tbody>
             </table>
@@ -370,7 +370,7 @@
                 return `
                     <tr>
                         <td>${formatDate(pr.date)}</td>
-                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'TBA'}</td>
+                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}</td>
                         <td>${pr.ailment || '-'}</td>
                         <td>${pr.treatment || '-'}</td>
                         <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pr.prescription || '-'}</td>
@@ -391,7 +391,7 @@
             if (!pr) { showToast('Prescription not found', 'error'); return; }
             document.getElementById('prescViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(pr.date)}</span></div>
-                <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${pr.doctorName || pr.doctor_name || 'TBA'}</span></div>
+                <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${pr.doctorName || pr.doctor_name || 'Staff'}</span></div>
                 <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${pr.ailment || '-'}</span></div>
                 <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${pr.treatment || '-'}</span></div>
                 <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value" style="white-space:pre-wrap;">${pr.prescription || '-'}</span></div>
@@ -431,10 +431,13 @@
             tbody.innerHTML = refills.map(r => {
                 const d = r.date || (r.created_at ? String(r.created_at).slice(0, 10) : '');
                 const note = r.doctorNote ? `<div style="margin-top:6px; padding:8px; background:#e8f5e9; border-radius:6px; font-size:13px;"><b>Doctor's confirmation:</b> ${r.doctorNote}</div>` : '';
+                const at = [r.ailment, r.treatment].filter(Boolean).join(' - ');
                 return `<tr>
                     <td>${d ? formatDate(d) : '-'}</td>
+                    <td>${r.prescriptionDate ? formatDate(r.prescriptionDate) : '-'}</td>
+                    <td>${at || '-'}</td>
                     <td>${r.prescription || r.medicationName || r.medication || '-'}</td>
-                    <td>${r.doctorName || r.doctor_name || 'TBA'}</td>
+                    <td>${r.doctorName || r.doctor_name || 'Staff'}</td>
                     <td>${r.nextAvailableDate ? formatDate(r.nextAvailableDate) : '-'}</td>
                     <td><span class="status-badge status-${r.status === 'pending' ? 'pending' : (r.status === 'approved' ? 'active' : 'expired')}">${r.status || 'pending'}</span>${note}</td>
                 </tr>`;

@@ -57,8 +57,8 @@
         }
         .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #0066cc;
@@ -123,7 +123,7 @@
 
     <div class="header">
         <div class="header-left">
-            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -271,7 +271,7 @@
 
                 // Upcoming Appointments
                 if (appointments.length === 0) {
-                    upcomingAppointments.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No upcoming appointments. <a href="patient-appointments.html" style="color: #0066cc;">Schedule one</a></p>';
+                    upcomingAppointments.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No upcoming appointments. Appointments are booked by the clinic — they will appear here.</p>';
                 } else {
                     upcomingAppointments.innerHTML = `
                         <div style="overflow-x: auto;">
@@ -290,7 +290,7 @@
                                         <tr style="border-bottom: 1px solid #eee;">
                                             <td style="padding: 12px;">${formatDate(apt.date)}</td>
                                             <td style="padding: 12px;">${apt.time || '-'}</td>
-                                            <td style="padding: 12px;">${apt.doctorSpecialist || apt.doctor_specialist || 'TBA'}</td>
+                                            <td style="padding: 12px;">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
                                             <td style="padding: 12px;">${apt.reason || '-'}</td>
                                             <td style="padding: 12px;"><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${apt.status || 'scheduled'}</span></td>
                                         </tr>

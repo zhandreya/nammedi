@@ -58,8 +58,8 @@
         }
         .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #0066cc;
@@ -147,6 +147,10 @@
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
         .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+        .detail { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 10px 12px; border-bottom: 1px solid #eef2f7; font-size: 14px; }
+        .detail:last-child { border-bottom: none; }
+        .detail-label { color: #666; font-weight: 600; white-space: nowrap; }
+        .detail-value { color: #1a1a1a; font-weight: 500; text-align: right; word-break: break-word; }
         .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); padding: 14px 24px; border-radius: 8px; color: white; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
@@ -165,7 +169,7 @@
 
     <div class="header">
         <div class="header-left">
-            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -239,6 +243,8 @@
                         <tr>
                             <th>Date</th>
                             <th>Patient</th>
+                            <th>Prescription Date</th>
+                            <th>Ailment / Treatment</th>
                             <th>Prescription</th>
                             <th>Next Available</th>
                             <th>Notes</th>
@@ -260,7 +266,7 @@
                 <div class="filter-bar">
                     <div class="filter-group">
                         <label>Search:</label>
-                        <input type="text" id="patientSearch" placeholder="Name, ID, phone..." oninput="filterPatients()">
+                        <input type="text" id="patientSearch" placeholder="Name, ID/Passport, phone..." oninput="filterPatients()">
                     </div>
                 </div>
             </div>
@@ -358,6 +364,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Patient</th>
+                            <th>ID / Passport</th>
                             <th>Ailment</th>
                             <th>Treatment</th>
                             <th>Prescription</th>
@@ -786,6 +793,18 @@
         </div>
     </div>
 
+    <!-- Standard View modal: every View button opens this same-looking details view -->
+    <div class="modal" id="genericViewModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="genericViewTitle">Details</h3>
+                <button class="modal-close" onclick="closeGenericViewModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="genericViewBody" style="padding: 4px 2px;"></div>
+            <div class="modal-actions" id="genericViewActions"></div>
+        </div>
+    </div>
+
     <script type="module">
         import { 
             onAuthChange, 
@@ -1035,10 +1054,42 @@
             }
         };
 
-        window.viewInvoice = async function(id) {
+        // ============ STANDARD VIEW MODAL (same-looking message for every View button) ============
+        function vd(label, value) {
+            const empty = (value === null || value === undefined || String(value).trim() === '');
+            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? 'Where applicable' : value}</span></div>`;
+        }
+        window.openGenericView = function(title, html, extraActions) {
+            document.getElementById('genericViewTitle').textContent = title;
+            document.getElementById('genericViewBody').innerHTML = html;
+            document.getElementById('genericViewActions').innerHTML = (extraActions || '') +
+                '<button type="button" class="btn btn-secondary" onclick="closeGenericViewModal()">Close</button>';
+            document.getElementById('genericViewModal').classList.add('show');
+        };
+        window.closeGenericViewModal = function() { document.getElementById('genericViewModal').classList.remove('show'); };
+
+        window.viewInvoice = function(id) {
+            const inv = allInvoices.find(x => x.id === id);
+            if (!inv) { showToast('Invoice not found', 'error'); return; }
+            openGenericView('Invoice Details',
+                vd('Invoice #', inv.invoiceNumber || ('INV-' + inv.id.slice(-8).toUpperCase())) +
+                vd('Patient', `${inv.patientName || ''} ${inv.patientSurname || ''}`.trim()) +
+                vd('ID/Passport', inv.idPassport) +
+                vd('Date', formatDate(inv.date)) +
+                vd('Reason', inv.reason) +
+                vd('Prescription', inv.prescription) +
+                vd('Treatment', inv.treatment) +
+                vd('Doctor', inv.doctorName) +
+                vd('Amount', 'NAD ' + parseFloat(inv.fee || 0).toFixed(2)) +
+                vd('Status', inv.paid ? 'Paid' : 'Unpaid') +
+                vd('Institute', inv.institute),
+                `<button type="button" class="btn btn-primary" onclick="openInvoicePdf('${inv.id}')">PDF</button>`
+            );
+        };
+        window.openInvoicePdf = async function(id) {
             try {
                 const inv = allInvoices.find(x => x.id === id);
-                if (!inv) { showToast('Invoice not found', 'error'); return; }
+                if (!inv) return;
                 const blob = await generateInvoicePdf(inv);
                 window.open(URL.createObjectURL(blob), '_blank');
             } catch (error) {
@@ -1216,21 +1267,19 @@
 
         window.viewPatient = function(id) {
             const patient = allPatients.find(p => p.id === id);
-            if (patient) {
-                const details = `
-                    Name: ${patient.fullName} ${patient.surname}
-                    DOB: ${formatDate(patient.dob)} (Age: ${patient.age})
-                    Gender: ${patient.gender}
-                    ID/Passport: ${patient.idPassport}
-                    Phone: ${patient.cellphone || patient.phone}
-                    Insurance: ${patient.insurance}
-                    Institution: ${patient.institution}
-                    Reason: ${patient.reason}
-                    Notes: ${patient.notes || 'None'}
-                    Created: ${formatDate(patient.createdAt)}
-                `;
-                alert(details);
-            }
+            if (!patient) return;
+            openGenericView('Patient Details',
+                vd('Name', `${patient.fullName || ''} ${patient.surname || ''}`.trim()) +
+                vd('DOB', formatDate(patient.dob)) +
+                vd('Gender', patient.gender) +
+                vd('ID/Passport', patient.idPassport) +
+                vd('Phone', patient.cellphone || patient.phone) +
+                vd('Insurance', patient.insurance) +
+                vd('Institution', patient.institution) +
+                vd('Reason', patient.reason) +
+                vd('Notes', patient.notes) +
+                vd('Created', formatDate(patient.createdAt))
+            );
         };
 
         window.editPatient = function(id) {
@@ -1604,6 +1653,7 @@
                 <tr>
                     <td>${formatDate(pr.date)}</td>
                     <td>${pr.patientName || 'Unknown'}</td>
+                    <td>${pr.patientIdPassport || '-'}</td>
                     <td>${pr.ailment || '-'}</td>
                     <td>${pr.treatment || '-'}</td>
                     <td>${pr.prescription || '-'}</td>
@@ -1711,18 +1761,19 @@
 
         window.viewPrescription = function(id) {
             const pr = allPrescriptions.find(p => p.id === id);
-            if (pr) {
-                const details = `
-                    Date: ${formatDate(pr.date)}
-                    Patient: ${pr.patientName || 'Unknown'}
-                    Ailment: ${pr.ailment}
-                    Treatment: ${pr.treatment}
-                    Prescription: ${pr.prescription}
-                    Report: ${pr.report || 'None'}
-                    Cell Phone: ${pr.cellPhone || 'N/A'}
-                `;
-                alert(details);
-            }
+            if (!pr) return;
+            openGenericView('Prescription Details',
+                vd('Date', formatDate(pr.date)) +
+                vd('Patient', `${pr.patientName || ''} ${pr.patientSurname || ''}`.trim()) +
+                vd('ID/Passport', pr.patientIdPassport) +
+                vd('Ailment', pr.ailment) +
+                vd('Treatment', pr.treatment) +
+                vd('Prescription', pr.prescription) +
+                vd('Report', pr.report) +
+                vd('Doctor', pr.doctorName) +
+                vd('Next Available', pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : null) +
+                vd('Cell Phone', pr.cellPhone)
+            );
         };
 
         window.downloadPrescription = async function(id) {
@@ -1878,10 +1929,13 @@
                     <button class="btn-sm btn-verify" onclick="approveRefill('${rf.id}')">Approve</button>
                     <button class="btn-sm btn-delete" onclick="declineRefill('${rf.id}')">Decline</button>
                 ` : `<span style="color:#888; font-size:12px;">${rf.doctorNote || 'Handled'}</span>`;
+                const at = [rf.ailment, rf.treatment].filter(Boolean).join(' - ');
                 return `
                 <tr>
                     <td>${d ? formatDate(d) : '-'}</td>
                     <td>${name}</td>
+                    <td>${rf.prescriptionDate ? formatDate(rf.prescriptionDate) : '-'}</td>
+                    <td>${at || '-'}</td>
                     <td>${rf.prescription || rf.medicationName || rf.medication || '-'}</td>
                     <td>${rf.nextAvailableDate ? formatDate(rf.nextAvailableDate) : '-'}</td>
                     <td>${rf.notes || '-'}</td>

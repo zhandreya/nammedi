@@ -57,8 +57,8 @@
         }
         .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #0066cc;
@@ -170,7 +170,7 @@
 
     <div class="header">
         <div class="header-left">
-            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;">
             <img id="headerAvatar" src="default-profile.png" alt="Profile" class="profile-avatar" onerror="this.onerror=null;this.src='default-profile.png';">
             <div class="header-info">
                 <h1 id="headerName">Loading...</h1>
@@ -323,7 +323,9 @@
                     option.textContent = `${p.prescription || p.prescriptionText || 'Prescription'} (Dr. ${p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || 'Doctor'})`;
                     option.dataset.prescription = p.prescription || p.prescriptionText || '';
                     option.dataset.doctor = p.doctorName || p.doctor_name || p.doctorSpecialist || p.doctor_specialist || '';
-                    option.dataset.date = p.date;
+                    option.dataset.date = p.date || '';
+                    option.dataset.ailment = p.ailment || '';
+                    option.dataset.treatment = p.treatment || '';
                     option.dataset.prescribedby = p.prescribedBy || p.prescribed_by || '';
                     refillPrescription.appendChild(option);
                 });
@@ -419,14 +421,18 @@
             submitBtn.textContent = 'Submitting...';
 
             try {
+                const selOpt = refillPrescription.options[refillPrescription.selectedIndex];
                 const refillData = {
                     prescriptionId: refillPrescription.value,
-                    prescription: refillPrescription.options[refillPrescription.selectedIndex].dataset.prescription,
+                    prescription: selOpt ? selOpt.dataset.prescription : null,
+                    prescriptionDate: (selOpt && selOpt.dataset.date) || null,
+                    ailment: (selOpt && selOpt.dataset.ailment) || null,
+                    treatment: (selOpt && selOpt.dataset.treatment) || null,
                     duration: refillDuration.value.trim(),
                     nextAvailableDate: refillNextDate.value,
                     notes: refillNotes.value.trim(),
-                    prescribedBy: sessionStorage.getItem('refillPrescribedBy') || (refillPrescription.options[refillPrescription.selectedIndex] && refillPrescription.options[refillPrescription.selectedIndex].dataset.prescribedby) || null,
-                    doctorName: sessionStorage.getItem('refillDoctorName') || (refillPrescription.options[refillPrescription.selectedIndex] && refillPrescription.options[refillPrescription.selectedIndex].dataset.doctor) || null
+                    prescribedBy: sessionStorage.getItem('refillPrescribedBy') || (selOpt && selOpt.dataset.prescribedby) || null,
+                    doctorName: sessionStorage.getItem('refillDoctorName') || (selOpt && selOpt.dataset.doctor) || null
                 };
 
                 await requestRefill(refillData);
