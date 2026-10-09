@@ -1,8 +1,0 @@
-/*.html
-  Cache-Control: no-cache, must-revalidate
-/nammedi/*.html
-  Cache-Control: no-cache, must-revalidate
-/*.js
-  Cache-Control: max-age=60
-/nammedi/*.js
-  Cache-Control: max-age=60
