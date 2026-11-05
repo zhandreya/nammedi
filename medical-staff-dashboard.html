@@ -125,6 +125,8 @@
         .btn-view { background: #e3f2fd; color: #1565c0; }
         .btn-view:hover { background: #bbdefb; }
         .btn-edit { background: #e8f5e9; color: #2e7d32; }
+        .btn-attend { background: #e8f5e9; color: #1b5e20; font-weight: 600; }
+        .btn-attend:hover { background: #c8e6c9; }
         .btn-edit:hover { background: #c8e6c9; }
         .btn-delete { background: #fce4ec; color: #c62828; }
         .btn-delete:hover { background: #f8bbd0; }
@@ -761,6 +763,14 @@
                     </select>
                     <div class="error-message" id="invPatientError"></div>
                 </div>
+                <div class="form-group">
+                    <label class="required">Visit (confirmed attendance)</label>
+                    <select id="invAppointment" name="appointmentId" required>
+                        <option value="">Select patient first</option>
+                    </select>
+                    <div class="error-message" id="invAppointmentError"></div>
+                    <p style="color:#666; font-size:12px; margin-top:6px;">An invoice can only be issued for a visit the patient's attendance has been confirmed for.</p>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="required">Date</label>
@@ -869,6 +879,21 @@
         </div>
     </div>
 
+    <!-- Patient full medical history (retrieved by doctors/staff) -->
+    <div class="modal" id="historyModal" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="historyTitle">Patient Medical History</h3>
+                <button class="modal-close" onclick="closePatientHistory()" aria-label="Close">&times;</button>
+            </div>
+            <div id="historyTabs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;"></div>
+            <div id="historyBody" style="max-height:55vh; overflow-y:auto; padding:2px;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closePatientHistory()">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { 
             onAuthChange, 
@@ -890,7 +915,18 @@
             saveInvoicePdf,
             updateAppointment,
             deleteAppointment,
+            confirmAppointmentAttendance,
+            getConfirmedAppointmentsForPatient,
             getDocumentsByStaff,
+            getPatientDocuments,
+            getPatientAppointments,
+            getPrescriptionsForPatient,
+            getPatientAilments,
+            getPatientReports,
+            getPatientRefills,
+            getPatientInstitutes,
+            getPatientInvoices,
+            getPatientPayments,
             uploadDocument,
             deleteDocument,
             recordMedicationAdministration,
@@ -1072,8 +1108,43 @@
             document.getElementById('invDate').max = new Date().toISOString().split('T')[0];
             // Pre-fill today's date so the invoice always carries a date
             document.getElementById('invDate').value = new Date().toISOString().split('T')[0];
+            const invApt = document.getElementById('invAppointment');
+            if (invApt) invApt.innerHTML = '<option value="">Select patient first</option>';
             document.getElementById('invoiceModal').classList.add('show');
         };
+
+        // Load the patient's confirmed-attendance visits into the invoice form.
+        // Without a confirmed visit the invoice cannot be generated.
+        window.loadInvoiceAppointments = async function() {
+            const sel = document.getElementById('invAppointment');
+            const patientId = document.getElementById('invPatient').value;
+            if (!sel) return;
+            if (!patientId) {
+                sel.innerHTML = '<option value="">Select patient first</option>';
+                return;
+            }
+            sel.innerHTML = '<option value="">Loading visits...</option>';
+            try {
+                const appts = await getConfirmedAppointmentsForPatient(patientId);
+                if (!appts || appts.length === 0) {
+                    sel.innerHTML = '<option value="">No confirmed attendance for this patient</option>';
+                    return;
+                }
+                sel.innerHTML = '<option value="">Select the confirmed visit</option>' +
+                    appts.map(a => {
+                        const dt = `${formatDate(a.date)}${a.time ? ' ' + String(a.time).slice(0, 5) : ''}`;
+                        const doc = a.doctorSpecialist || a.doctor_specialist || 'Staff';
+                        const who = a.confirmedByEmail || a.confirmed_by_email || '';
+                        return `<option value="${a.id}">${dt} - ${doc}${who ? ' (confirmed by ' + who + ')' : ''}</option>`;
+                    }).join('');
+            } catch (e) {
+                sel.innerHTML = '<option value="">Could not load visits</option>';
+            }
+        };
+        document.getElementById('invPatient').addEventListener('change', function() {
+            document.getElementById('invAppointment').innerHTML = '<option value="">Loading visits...</option>';
+            loadInvoiceAppointments();
+        });
 
         window.closeInvoiceModal = function() {
             document.getElementById('invoiceModal').classList.remove('show');
@@ -1117,15 +1188,146 @@
             document.getElementById('genericViewModal').classList.add('show');
         };
         window.closeGenericViewModal = function() { document.getElementById('genericViewModal').classList.remove('show'); };
+        // ============ PATIENT FULL MEDICAL HISTORY (doctors/staff retrieval) ============
+        let historySections = [];
+        function safeHistCall(fn, arg) {
+            return Promise.resolve().then(() => fn(arg)).catch(e => { console.warn('history section failed:', e); return []; });
+        }
+        function histTable(rows, cols, emptyMsg) {
+            if (!rows || rows.length === 0) return `<p style="color:#666; padding:12px 4px; font-size:14px;">${emptyMsg || 'None recorded'}</p>`;
+            const head = cols.map(c => `<th>${c[0]}</th>`).join('');
+            const body = rows.slice().reverse().map(r => `<tr>${cols.map(c => {
+                const v = c[1](r);
+                return `<td>${v == null || v === '' ? '-' : v}</td>`;
+            }).join('')}</tr>`).join('');
+            return `<div class="table-container"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+        }
+        function patientAge(dob) {
+            if (!dob) return '';
+            const d = new Date(String(dob).slice(0, 10));
+            if (isNaN(d.getTime())) return '';
+            return Math.max(0, Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000))) + ' years';
+        }
+        window.showPatientHistory = async function(patientId) {
+            const p = (allPatients || []).find(x => x.id === patientId);
+            if (!p) { showToast('Patient not found', 'error'); return; }
+            const modal = document.getElementById('historyModal');
+            const tabsEl = document.getElementById('historyTabs');
+            const bodyEl = document.getElementById('historyBody');
+            document.getElementById('historyTitle').textContent = `Medical History - ${[p.fullName, p.surname].filter(Boolean).join(' ') || 'Patient'}`;
+            tabsEl.innerHTML = '';
+            bodyEl.innerHTML = '<p style="color:#666; padding:8px 2px;">Loading full medical history\u2026</p>';
+            modal.classList.add('show');
+            const [apts, prs, ails, rpts, rfs, docs, insts, invs, pays] = await Promise.all([
+                safeHistCall(getPatientAppointments, patientId),
+                safeHistCall(getPrescriptionsForPatient, patientId),
+                safeHistCall(getPatientAilments, patientId),
+                safeHistCall(getPatientReports, patientId),
+                safeHistCall(getPatientRefills, patientId),
+                safeHistCall(getPatientDocuments, patientId),
+                safeHistCall(getPatientInstitutes, patientId),
+                safeHistCall(getPatientInvoices, patientId),
+                safeHistCall(getPatientPayments, patientId)
+            ]);
+            const age = patientAge(p.dob);
+            const det = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value == null || value === '' ? '-' : value}</span></div>`;
+            historySections = [
+                ['Details',
+                    det('Name', [p.fullName, p.surname].filter(Boolean).join(' ')) +
+                    det('ID/Passport', p.idPassport) +
+                    det('DOB', `${formatDate(p.dob) || '-'}${age ? ' (' + age + ')' : ''}`) +
+                    det('Gender', p.gender) +
+                    det('Phone', p.cellphone || p.phone) +
+                    det('Insurance', p.insurance) +
+                    det('Institution', p.institution || p.institute) +
+                    det('Reason', p.reason) +
+                    det('Notes', p.notes)],
+                ['Appointments', histTable(apts, [
+                    ['Date', a => `${formatDate(a.date)}${a.time ? ' ' + String(a.time).slice(0, 5) : ''}`],
+                    ['Doctor', a => a.doctorSpecialist || a.doctor_specialist || 'Staff'],
+                    ['Reason', a => a.reason],
+                    ['Status', a => `${a.status || '-'}${a.attendance_confirmed ? ' (attended)' : ''}`]
+                ])],
+                ['Prescriptions', histTable(prs, [
+                    ['Date', r => formatDate(r.date)],
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
+                    ['Ailment', r => r.ailment],
+                    ['Treatment', r => r.treatment],
+                    ['Prescription', r => r.prescription]
+                ])],
+                ['Ailments & Treatments', histTable(ails, [
+                    ['Date', r => formatDate(r.date)],
+                    ['Ailment', r => r.ailment],
+                    ['Treatment', r => r.treatment],
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff']
+                ])],
+                ['Reports', histTable(rpts, [
+                    ['Date', r => formatDate(r.date)],
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
+                    ['Report', r => { const t = r.description || r.report || ''; return t.length > 140 ? t.slice(0, 140) + '\u2026' : t; }]
+                ])],
+                ['Refill Requests', histTable(rfs, [
+                    ['Date', r => formatDate(r.date || (r.created_at ? String(r.created_at).slice(0, 10) : ''))],
+                    ['Prescription', r => r.prescription || r.medicationName],
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
+                    ['Status', r => r.status || 'pending']
+                ])],
+                ['Documents', histTable(docs, [
+                    ['Name', r => r.fileName || r.file_name],
+                    ['Category', r => r.category],
+                    ['Date', r => formatDate(r.uploadDate || r.upload_date || (r.createdAt ? String(r.createdAt).slice(0, 10) : ''))]
+                ])],
+                ['Institutes Visited', histTable(insts, [
+                    ['Institute', r => r.institute],
+                    ['Date', r => formatDate(r.date)],
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff']
+                ])],
+                ['Invoices', histTable(invs, [
+                    ['No.', r => r.invoiceNumber || ('INV-' + String(r.id).slice(-8).toUpperCase())],
+                    ['Date', r => formatDate(r.date)],
+                    ['Reason', r => r.reason],
+                    ['Amount', r => 'NAD ' + parseFloat(r.fee || 0).toFixed(2)],
+                    ['Status', r => r.paid ? 'Paid' : 'Unpaid']
+                ])],
+                ['Payments', histTable(pays, [
+                    ['Date', r => formatDate(r.date)],
+                    ['Amount', r => 'NAD ' + parseFloat(r.amount || 0).toFixed(2)],
+                    ['Method', r => r.method],
+                    ['Reference', r => r.reference]
+                ])]
+            ];
+            const renderTab = i => {
+                tabsEl.innerHTML = '';
+                historySections.forEach((s, j) => {
+                    const b = document.createElement('button');
+                    b.className = 'btn ' + (j === i ? 'btn-primary' : 'btn-secondary');
+                    b.style.cssText = 'padding:8px 14px; font-size:13px;';
+                    b.textContent = s[0];
+                    b.onclick = () => renderTab(j);
+                    tabsEl.appendChild(b);
+                });
+                bodyEl.innerHTML = historySections[i][1];
+                bodyEl.scrollTop = 0;
+            };
+            renderTab(0);
+        };
+        window.closePatientHistory = function() {
+            const m = document.getElementById('historyModal');
+            if (m) m.classList.remove('show');
+            historySections = [];
+        };
+
 
         window.viewInvoice = function(id) {
             const inv = allInvoices.find(x => x.id === id);
             if (!inv) { showToast('Invoice not found', 'error'); return; }
+            const apt = inv.appointmentId ? (allAppointments || []).find(a => a.id === inv.appointmentId) : null;
             openGenericView('Invoice Details',
                 vd('Invoice #', inv.invoiceNumber || ('INV-' + inv.id.slice(-8).toUpperCase())) +
                 vd('Patient', `${inv.patientName || ''} ${inv.patientSurname || ''}`.trim()) +
                 vd('ID/Passport', inv.idPassport) +
                 vd('Date', formatDate(inv.date)) +
+                vd('Visit (attendance)', apt ? `${formatDate(apt.date)}${apt.time ? ' ' + String(apt.time).slice(0, 5) : ''} - ${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}` : (inv.appointmentId ? 'Confirmed visit' : null)) +
                 vd('Reason', inv.reason) +
                 vd('Prescription', inv.prescription) +
                 vd('Treatment', inv.treatment) +
@@ -1162,6 +1364,7 @@
 
             const data = {
                 patientId: document.getElementById('invPatient').value,
+                appointmentId: document.getElementById('invAppointment').value,
                 date: document.getElementById('invDate').value,
                 reason: document.getElementById('invReason').value,
                 prescription: document.getElementById('invPrescription').value,
@@ -1173,6 +1376,13 @@
 
             if (!data.patientId || !data.date || !data.reason || isNaN(data.fee)) {
                 showToast('Fill all required fields', 'error');
+                return;
+            }
+            // Billing gate: the invoice must be linked to a confirmed visit
+            if (!data.appointmentId) {
+                const aptErr = document.getElementById('invAppointmentError');
+                if (aptErr) { aptErr.textContent = 'The patient has no confirmed attendance yet. Confirm the visit in Appointments first.'; aptErr.classList.add('visible'); }
+                showToast('Invoice blocked: confirm the patient\'s attendance first', 'error');
                 return;
             }
 
@@ -1225,6 +1435,7 @@
                     <td>${patient.institution || '-'}</td>
                     <td>${patient.reason || '-'}</td>
                     <td>
+                        <button class="btn-sm btn-view" onclick="showPatientHistory('${patient.id}')">History</button>
                         <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
                         <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
                         <button class="btn-sm btn-delete" onclick="confirmDeletePatient('${patient.id}')">Delete</button>
@@ -1504,7 +1715,16 @@
             }
 
             empty.style.display = 'none';
-            tbody.innerHTML = filtered.map(apt => `
+            const todayStr = new Date().toISOString().split('T')[0];
+            tbody.innerHTML = filtered.map(apt => {
+                const attended = apt.attendanceConfirmed === true || apt.attendance_confirmed === true;
+                const due = String(apt.date || '').slice(0, 10) <= todayStr;
+                const attendCell = attended
+                    ? `<span class="status-badge status-completed" title="${apt.confirmedByEmail || apt.confirmed_by_email || 'Confirmed by staff'}">Attended &#10003;</span>`
+                    : (apt.status === 'scheduled' && due
+                        ? `<button class="btn-sm btn-attend" onclick="confirmAttendance('${apt.id}')">Confirm Attendance</button>`
+                        : '');
+                return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
                     <td>${apt.time || '-'}</td>
@@ -1513,12 +1733,26 @@
                     <td>${apt.reason || '-'}</td>
                     <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
                     <td>
+                        ${attendCell}
                         <button class="btn-sm btn-edit" onclick="editAppointment('${apt.id}')">Edit</button>
                         <button class="btn-sm btn-delete" onclick="confirmDeleteAppointment('${apt.id}')">Delete</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
+
+        // Staff confirm the patient's attendance once the appointment is due -
+        // this is what allows the visit to be billed (invoices require it).
+        window.confirmAttendance = async function(id) {
+            if (!confirm('Confirm that the patient visited for this appointment? This allows the visit to be billed.')) return;
+            try {
+                await confirmAppointmentAttendance(id);
+                showToast('Attendance confirmed - visit can now be billed', 'success');
+                await loadAppointments();
+            } catch (error) {
+                showToast('Failed to confirm attendance: ' + error.message, 'error');
+            }
+        };
 
         function filterAppointments() { renderAppointments(); }
 

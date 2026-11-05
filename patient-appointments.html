@@ -331,14 +331,16 @@
             }
 
             emptyState.style.display = 'none';
-            appointmentsTable.innerHTML = filtered.map(apt => `
+            appointmentsTable.innerHTML = filtered.map(apt => {
+                const attended = apt.attendanceConfirmed === true || apt.attendance_confirmed === true;
+                return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
                     <td>${apt.time || '-'}</td>
                     <td>${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
                     <td>${apt.institution || '-'}</td>
                     <td>${apt.reason || '-'}</td>
-                    <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
+                    <td><span class="status-badge status-${apt.status}">${apt.status}</span>${attended ? ' <span class="status-badge status-completed">Attended</span>' : ''}</td>
                     <td>
                         ${apt.status === 'scheduled' ? `
                             <button class="btn-sm btn-cancel" onclick="cancelAppointment('${apt.id}')">Cancel</button>
@@ -349,8 +351,8 @@
                         <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
                         <button class="btn-sm btn-delete" onclick="deleteApptRow('${apt.id}')">Delete</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
         window.cancelAppointment = async function(id) {
@@ -377,6 +379,7 @@
                 <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || '-'}</span></div>
                 <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'You'}</span></div>
                 <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${apt.status}">${apt.status}</span></span></div>
+                <div class="detail"><span class="detail-label">Attendance</span><span class="detail-value">${apt.attendanceConfirmed === true || apt.attendance_confirmed === true ? 'Confirmed by the clinic' : '-'}</span></div>
                 ${apt.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${apt.notes}</span></div>` : ''}
             `;
             aptViewModal.classList.add('show');

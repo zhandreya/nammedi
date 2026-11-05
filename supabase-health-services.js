@@ -768,6 +768,60 @@ export async function updateAppointment(appointmentId, data) {
     await updateRow(T.APPOINTMENTS, appointmentId, row);
 }
 
+// Staff only: confirm that the patient actually visited for this appointment.
+// Only possible once the appointment date has arrived (is due). The database
+// guard (trg_attendance_guard) additionally blocks patients from flipping the flag.
+export async function confirmAppointmentAttendance(appointmentId) {
+    const user = requireUser();
+    let profile = null;
+    try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+    if (!profile || !['receptionist', 'medical_staff', 'specialist'].includes(profile.role)) {
+        throw new Error('Only clinic staff can confirm attendance.');
+    }
+    const { data: row, error } = await supabase.from(T.APPOINTMENTS)
+        .select('*').eq('id', appointmentId).maybeSingle();
+    if (error) throw error;
+    if (!row) throw new Error('Appointment not found');
+    const today = new Date().toISOString().split('T')[0];
+    const aptDate = String(row.date || '').slice(0, 10);
+    if (aptDate && aptDate > today) {
+        throw new Error(`Attendance can be confirmed once the appointment date (${aptDate}) has arrived.`);
+    }
+    await supabase.from(T.APPOINTMENTS).update({
+        attendance_confirmed: true,
+        confirmed_by: user.uid,
+        confirmed_by_email: user.email,
+        confirmed_at: nowIso()
+    }).eq('id', appointmentId);
+    return { id: appointmentId, attendanceConfirmed: true, confirmedBy: user.uid, confirmedAt: nowIso() };
+}
+
+// Confirmed-attendance visits for a patient - used to gate invoice generation
+// (an invoice may only be issued for a visit the patient actually attended).
+export async function getConfirmedAppointmentsForPatient(patientId) {
+    requireUser();
+    if (!patientId) return [];
+    const { data, error } = await supabase.from(T.APPOINTMENTS)
+        .select('*')
+        .eq('patient_id', patientId)
+        .eq('attendance_confirmed', true)
+        .order('date', { ascending: false, nullsFirst: false })
+        .order('confirmed_at', { ascending: false })
+        .limit(50);
+    if (error) throw error;
+    return (data || []).map(a => ({
+        ...a,
+        patientId: a.patient_id,
+        patientName: a.patient_name,
+        patientSurname: a.patient_surname,
+        patientIdPassport: a.patient_id_passport,
+        doctorSpecialist: a.doctor_specialist,
+        attendanceConfirmed: a.attendance_confirmed,
+        confirmedByEmail: a.confirmed_by_email,
+        confirmedAt: a.confirmed_at
+    }));
+}
+
 export async function rescheduleAppointment(appointmentId, date, time) {
     const { data: row } = await supabase.from(T.APPOINTMENTS).select('*').eq('id', appointmentId).maybeSingle();
     if (!row) throw new Error('Appointment not found');
@@ -1045,25 +1099,8 @@ export async function addPrescription(a, b) {
         prescribed_by_email: user.email,
         created_at: nowIso()
     };
-    // Also record this as an ailment & treatment so the patient's ailments
-    // table and medical history stay in sync with prescriptions.
-    try {
-        if (data.ailment || data.treatment) {
-            await insertRow(T.AILMENTS_TREATMENTS, {
-                patient_id: patientId,
-                patient_name: base.patient_name,
-                patient_surname: base.patient_surname,
-                patient_id_passport: (patient && patient.idPassport) || null,
-                doctor_name: doctorName,
-                institute: base.institute,
-                ailment: data.ailment || null,
-                treatment: data.treatment || null,
-                date: data.date || null,
-                created_at: nowIso()
-            });
-        }
-    } catch (e) { console.warn('ailment record failed:', e); }
-
+    // The ailment & treatment is recorded once, below, after the prescription
+    // is saved (recording it here too would create duplicate rows).
     // patient_id_passport is added by a one-time SQL migration; insert with it
     // when available, and fall back to without it until the migration has run.
     let rec;
@@ -1144,6 +1181,68 @@ export async function getMyPrescriptions() {
 
 export async function getPatientPrescriptions(patientUserId) {
     return (await selectEq(T.PRESCRIPTIONS, 'patient_user_id', patientUserId)).map(camelPrescription);
+}
+
+// ============ Full medical history retrieval (staff/doctors) ============
+// All lookups are RLS-scoped: staff only see data of their own institute.
+export async function getPrescriptionsForPatient(patientId) {
+    if (!patientId) return [];
+    return (await selectEq(T.PRESCRIPTIONS, 'patient_id', patientId)).map(camelPrescription);
+}
+export async function getPatientAilments(patientId) {
+    if (!patientId) return [];
+    const rows = (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', patientId)).map(camelAilment);
+    // Older prescriptions recorded some ailments twice - drop exact duplicates.
+    const seen = new Set();
+    return rows.filter(r => {
+        const key = `${String(r.ailment || '').toLowerCase()}|${String(r.treatment || '').toLowerCase()}|${r.date || ''}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+export async function getPatientReports(patientId) {
+    if (!patientId) return [];
+    const { data, error } = await supabase.from(T.REPORTS)
+        .select('*').eq('patient_id', patientId)
+        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelReport);
+}
+export async function getPatientRefills(patientId) {
+    if (!patientId) return [];
+    return backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', patientId));
+}
+export async function getPatientInstitutes(patientId) {
+    if (!patientId) return [];
+    return (await selectEq(T.INSTITUTES_VISITED, 'patient_id', patientId)).map(camelInstitute);
+}
+export async function getPatientInvoices(patientId) {
+    if (!patientId) return [];
+    const { data, error } = await supabase.from(T.INVOICES)
+        .select('*').eq('patient_id', patientId)
+        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(i => ({
+        id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
+        invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
+        treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
+        idPassport: i.id_passport, cellPhone: i.cell_phone,
+        pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at,
+        appointmentId: i.appointment_id, institute: i.institute, doctorName: i.doctor_name
+    }));
+}
+export async function getPatientPayments(patientId) {
+    if (!patientId) return [];
+    const { data, error } = await supabase.from(T.PAYMENTS)
+        .select('*').eq('patient_id', patientId)
+        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(p => ({
+        id: p.id, date: p.date, patientName: p.patient_name, patientSurname: p.patient_surname,
+        idPassport: p.id_passport, amount: p.amount, method: p.method, reference: p.reference,
+        status: p.status, processedBy: p.processed_by, createdAt: p.created_at
+    }));
 }
 
 export async function addTask(taskData) {
@@ -1494,7 +1593,7 @@ export async function createInvoice(uid, invoiceData) {
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const invoiceNumber = invoiceData.invoiceNumber || `INV-${stamp}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
     const paid = invoiceData.paid === true || invoiceData.paid === 'true';
-    const rec = await insertRow(T.INVOICES, {
+    const invRow = {
         patient_id: invoiceData.patientId || null,
         patient_name: patient ? (patient.fullName || null) : (invoiceData.patientName || null),
         patient_surname: patient ? (patient.surname || null) : (invoiceData.patientSurname || null),
@@ -1509,12 +1608,23 @@ export async function createInvoice(uid, invoiceData) {
         paid: paid,
         institute: (patient && (patient.institution || patient.institute)) || invoiceData.institute || null,
         doctor_name: invoiceData.doctorName || invoiceData.doctor_name || null,
+        appointment_id: invoiceData.appointmentId || invoiceData.appointment_id || null,
         status: invoiceData.status || (paid ? 'paid' : 'pending'),
         created_by: user.uid,
         created_by_email: user.email,
         created_at: nowIso()
-    });
-    const _result = { ...rec, patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url };
+    };
+    let rec;
+    try {
+        rec = await insertRow(T.INVOICES, invRow);
+    } catch (e) {
+        if (e && /appointment_id/.test(String(e.message || e))) {
+            // column not migrated yet - retry without the visit link
+            const { appointment_id, ...rest } = invRow;
+            rec = await insertRow(T.INVOICES, rest);
+        } else throw e;
+    }
+    const _result = { ...rec, patientId: rec.patient_id, patientName: rec.patient_name, patientSurname: rec.patient_surname, idPassport: rec.id_passport, cellPhone: rec.cell_phone, invoiceNumber: rec.invoice_number, pdfUrl: rec.pdf_url, appointmentId: rec.appointment_id };
     rememberSubmit('invoice', user.uid, _f, _result);
     return _result;
 }
@@ -1562,7 +1672,8 @@ export async function getInvoices() {
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
         treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
         idPassport: i.id_passport, cellPhone: i.cell_phone,
-        pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at
+        pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at,
+        appointmentId: i.appointment_id, institute: i.institute, doctorName: i.doctor_name
     }));
 }
 
@@ -2116,7 +2227,10 @@ export async function getAppointmentsByStaff() {
         patientIdPassport: a.patient_id_passport,
         doctorSpecialist: a.doctor_specialist,
         createdBy: a.created_by,
-        createdByEmail: a.created_by_email
+        createdByEmail: a.created_by_email,
+        attendanceConfirmed: a.attendance_confirmed,
+        confirmedByEmail: a.confirmed_by_email,
+        confirmedAt: a.confirmed_at
     }));
 }
 export const getPatientById = getPatient;
@@ -2131,7 +2245,10 @@ export default {
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
     getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, saveInvoicePdf, getMyPatientDocuments,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
-    updateAppointment, deleteAppointment,
+    getPrescriptionsForPatient, getPatientAilments, getPatientReports, getPatientRefills,
+    getPatientInstitutes, getPatientInvoices, getPatientPayments,
+    updateAppointment, deleteAppointment, rescheduleAppointment,
+    confirmAppointmentAttendance, getConfirmedAppointmentsForPatient,
     uploadDocument, getPatientDocuments, getMyDocuments, deleteDocument,
     recordMedicationAdministration, getMyMedicationRecords, updateMedicationInventory, getMedicationInventory,
     addPrescription, getMyPrescriptions, getPatientPrescriptions,
