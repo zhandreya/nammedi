@@ -37,7 +37,7 @@
         .subtitle { text-align: center; color: #666; margin-bottom: 32px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        input {
+        input, select {
             width: 100%;
             padding: 12px 16px;
             border: 2px solid #e0e0e0;
@@ -46,8 +46,12 @@
             font-family: inherit;
             box-sizing: border-box;
             transition: border-color 0.2s;
+            background: #fff;
         }
-        input:focus { outline: none; border-color: #0066cc; }
+        input:focus, select:focus { outline: none; border-color: #0066cc; }
+        .back-to-start { text-align: center; margin: 0 0 14px; }
+        .back-to-start a { color: #0066cc; font-size: 14px; font-weight: 600; text-decoration: none; }
+        .back-to-start a:hover { text-decoration: underline; }
         input.error { border-color: #f44336; }
         .error-message { color: #f44336; font-size: 13px; margin-top: 6px; display: none; }
         .error-message.visible { display: block; }
@@ -99,11 +103,24 @@
     </style>
 </head>
 <body>
+    <div class="back-to-start"><a href="start.html">&larr; Back to Start</a></div>
     <div class="card">
         <h1>Welcome Back</h1>
         <p class="subtitle">Sign in to access Namibia Health Services</p>
 
         <form id="loginForm" autocomplete="off" novalidate>
+            <div class="form-group">
+                <label for="loginRole">I am a</label>
+                <select id="loginRole" name="loginRole">
+                    <option value="">Select your role</option>
+                    <option value="patient">Patient / Member of Public</option>
+                    <option value="medical_staff">Medical Staff / Healthcare Professional</option>
+                    <option value="receptionist">Receptionist / Medical Institute</option>
+                    <option value="specialist">Specialist (Dr)</option>
+                </select>
+                <div class="error-message" id="loginRoleError"></div>
+            </div>
+
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" required autocomplete="off" placeholder="you@example.com">
@@ -147,6 +164,7 @@
     <script type="module">
         import { 
             signIn, 
+            signOut,
             isValidEmail,
             initInactivityTimer,
             getUserProfile,
@@ -244,6 +262,15 @@
             });
         });
 
+        // Clear the role-lock message when the person changes their role choice
+        const loginRoleSelect = document.getElementById('loginRole');
+        if (loginRoleSelect) {
+            loginRoleSelect.addEventListener('change', () => {
+                const roleErr = document.getElementById('loginRoleError');
+                if (roleErr) { roleErr.textContent = ''; roleErr.classList.remove('visible'); }
+            });
+        }
+
         // Validate form
         function validateForm() {
             let isValid = true;
@@ -283,6 +310,33 @@
 
                 // (remembered-email prefill removed for privacy)
                 try { localStorage.removeItem('rememberedEmail'); } catch (e) { /* ignore */ }
+
+                // Role lock: a person who picks a role may only sign in if
+                // their account is registered under that exact role.
+                const roleSelect = document.getElementById('loginRole');
+                const selectedRole = roleSelect ? roleSelect.value : '';
+                if (selectedRole) {
+                    let prof = null;
+                    try { prof = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
+                    if (prof && prof.role && prof.role !== selectedRole) {
+                        const ROLE_NAMES = {
+                            patient: 'a Patient',
+                            medical_staff: 'Medical Staff',
+                            receptionist: 'a Receptionist',
+                            specialist: 'a Specialist'
+                        };
+                        const msg = `This account is registered as ${ROLE_NAMES[prof.role] || prof.role}. Please select "${ROLE_NAMES[selectedRole] || selectedRole}" to sign in.`;
+                        const roleErr = document.getElementById('loginRoleError');
+                        if (roleErr) { roleErr.textContent = msg; roleErr.classList.add('visible'); }
+                        showToast(msg, 'error');
+                        // Drop the session so this account cannot slip into
+                        // the wrong role's dashboard.
+                        try { await signOut(); } catch (e) { /* ignore */ }
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Sign In';
+                        return;
+                    }
+                }
 
                 showToast('Welcome back!', 'success');
 
