@@ -252,6 +252,7 @@
             rescheduleAppointment,
             updateAppointment,
             deleteAppointment,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -259,7 +260,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -336,10 +338,10 @@
                 return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
-                    <td>${apt.time || '-'}</td>
+                    <td>${apt.time || 'N/A'}</td>
                     <td>${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
-                    <td>${apt.institution || '-'}</td>
-                    <td>${apt.reason || '-'}</td>
+                    <td>${apt.institution || 'N/A'}</td>
+                    <td>${apt.reason || 'N/A'}</td>
                     <td><span class="status-badge status-${apt.status}">${apt.status}</span>${attended ? ' <span class="status-badge status-completed">Attended</span>' : ''}</td>
                     <td>
                         ${apt.status === 'scheduled' ? `
@@ -373,10 +375,10 @@
             const name = `${apt.patientName || apt.patient_name || ''} ${apt.patientSurname || apt.patient_surname || ''}`.trim();
             document.getElementById('aptViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(apt.date)}</span></div>
-                <div class="detail"><span class="detail-label">Time</span><span class="detail-value">${apt.time || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Time</span><span class="detail-value">${apt.time || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Doctor / Specialist</span><span class="detail-value">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</span></div>
-                <div class="detail"><span class="detail-label">Institution</span><span class="detail-value">${apt.institution || '-'}</span></div>
-                <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Institution</span><span class="detail-value">${apt.institution || 'N/A'}</span></div>
+                <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'You'}</span></div>
                 <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${apt.status}">${apt.status}</span></span></div>
                 <div class="detail"><span class="detail-label">Attendance</span><span class="detail-value">${apt.attendanceConfirmed === true || apt.attendance_confirmed === true ? 'Confirmed by the clinic' : '-'}</span></div>

@@ -202,6 +202,7 @@
             onAuthChange, 
             getUserProfile,
             getMyAilmentsTreatments,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -209,7 +210,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -327,8 +329,8 @@
                     <td><strong>${a.ailment || 'Not specified'}</strong></td>
                     <td>${a.treatment || 'Not specified'}</td>
                     <td>${a.doctorName || a.doctor_name || 'Staff'}</td>
-                    <td>${a.specialization || '-'}</td>
-                    <td>${a.institute || '-'}</td>
+                    <td>${a.specialization || 'N/A'}</td>
+                    <td>${a.institute || 'N/A'}</td>
                 </tr>
             `).join('');
         }

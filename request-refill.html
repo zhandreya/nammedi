@@ -381,8 +381,8 @@
         function updatePrescriptionInfo() {
             const selectedOption = refillPrescription.options[refillPrescription.selectedIndex];
             if (selectedOption.value) {
-                refillPrescriptionName.textContent = selectedOption.dataset.prescription || '-';
-                refillDoctor.textContent = selectedOption.dataset.doctor || '-';
+                refillPrescriptionName.textContent = selectedOption.dataset.prescription || 'N/A';
+                refillDoctor.textContent = selectedOption.dataset.doctor || 'N/A';
                 refillDate.textContent = selectedOption.dataset.date ? formatDate(selectedOption.dataset.date) : '-';
                 prescriptionInfo.style.display = 'block';
             } else {

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
+    <title>Contact Institutes - Namibia Health Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Lato, sans-serif;
+            background-image: url('Desert Scope.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            line-height: 1.6;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        #backBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            background-color: transparent;
+            border: 1px solid #333;
+            cursor: pointer;
+            color: #000000;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+        #backBtn:hover { background-color: #f5f5f5; border-color: #ccc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        #backBtn:focus { outline: 3px solid #0066cc; outline-offset: 2px; }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 24px;
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .header-info h1 { margin: 0 0 4px; color: #1a1a1a; font-size: 1.8rem; }
+        .header-info .role { color: #0066cc; font-weight: 600; }
+        .header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: white; box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 102, 204, 0.4); }
+        .container {
+            background-color: rgba(120, 120, 128, 0.30);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 5px;
+            margin: 50px auto;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 16px; }
+        .section-header h2 { margin: 0; color: #1a1a1a; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; border: 1px solid #eee; }
+        .card h3 { margin: 0 0 16px; color: #1a1a1a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+        .detail { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .detail-label { color: #555; font-size: 13px; flex-shrink: 0; }
+        .detail-value { color: #1a1a1a; font-weight: 600; font-size: 14px; text-align: right; }
+        .card .detail { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 6px; }
+        .card .detail-label { font-weight: 600; color: #333; display: block; margin-bottom: 4px; font-size: 13px; }
+        .card .detail-value { color: #666; font-size: 14px; }
+        .table-container { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; font-weight: 700; color: #333; }
+        tr:hover { background-color: #f8f9fa; }
+        .type-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+        .type-state { background: #e3f2fd; color: #004499; }
+        .type-private { background: #e8f5e9; color: #2e7d32; }
+        .subheading { margin: 28px 0 12px; color: #1a1a1a; font-size: 1.2rem; }
+        .note { background: #fff8e1; border: 1px solid #ffe082; color: #6d4c00; border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; }
+        a.tel { color: #0066cc; text-decoration: none; font-weight: 600; }
+        a.tel:hover { text-decoration: underline; }
+        a.mail { color: #0066cc; text-decoration: none; }
+        a.mail:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .header h1 { font-size: 1.4rem; }
+            .container { padding: 16px; margin: 10px auto 20px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="backBtn" onclick="window.history.back()" aria-label="Go back">Back</button>
+
+    <div class="header">
+        <div class="header-left">
+            <img src="Nam heart.jpeg" alt="Namibia Health Services" style="width:96px;height:96px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+            <div class="header-info">
+                <h1>Contact Institutes</h1>
+                <div class="role">Medical Institutions of Namibia</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="window.history.back()">Back to Dashboard</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="section-header">
+            <h2>Medical Institutions - Contact Details</h2>
+        </div>
+
+        <!-- Overview Cards -->
+        <div class="card-grid">
+            <div class="card">
+                <h3>🏥 State Institutions</h3>
+                <div class="detail"><span class="detail-label">Listed</span><span class="detail-value">10</span></div>
+                <div class="detail"><span class="detail-label">Includes</span><span class="detail-value">Hospitals, Health Centres &amp; Ministry</span></div>
+            </div>
+            <div class="card">
+                <h3>🏢 Private Institutions</h3>
+                <div class="detail"><span class="detail-label">Listed</span><span class="detail-value">11</span></div>
+                <div class="detail"><span class="detail-label">Includes</span><span class="detail-value">Private Hospitals &amp; Clinics</span></div>
+            </div>
+            <div class="card">
+                <h3>🚑 Emergency</h3>
+                <div class="detail"><span class="detail-label">Windhoek Emergency / Ambulance</span><span class="detail-value">21 1111</span></div>
+                <div class="detail"><span class="detail-label">Hours</span><span class="detail-value">24 hours</span></div>
+            </div>
+        </div>
+
+        <div class="note">
+            Contact details are provided as a public reference. Where an institution has not published an email address, the field is shown as N/A.
+        </div>
+
+        <h3 class="subheading">State Institutions</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Institution</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Telephone</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Ministry of Health &amp; Social Services (HQ)</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Private Bag 13198, Windhoek (Khomas Regional Office)</td>
+                        <td><a class="tel" href="tel:+264612039111">+264 61 203 9111</a> / <a class="tel" href="tel:+264612035001">+264 61 203 5001</a></td>
+                        <td><a class="mail" href="mailto:Public.Relations@mhss.gov.na">Public.Relations@mhss.gov.na</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Windhoek Central Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Florence Nightingale St, Windhoek</td>
+                        <td><a class="tel" href="tel:+264612039111">+264 61 203 9111</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Katutura State Hospital (National Referral)</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Bach St, Windhoek</td>
+                        <td><a class="tel" href="tel:+264612034000">+264 61 203 4000</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Katutura Health Centre</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Windhoek</td>
+                        <td><a class="tel" href="tel:+26461261374">+264 61 261 374</a> / <a class="tel" href="tel:+26461215801">+264 61 215 801</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Okuryangava Health Centre</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Windhoek</td>
+                        <td><a class="tel" href="tel:+26461210414">+264 61 210 414</a> / <a class="tel" href="tel:+26461262591">+264 61 262 591</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Oshakati State (Intermediate) Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Dr J. Augustinus Rd, Oshakati</td>
+                        <td><a class="tel" href="tel:+264652233000">+264 65 223 3000</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Katima Mulilo State Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Hospital Rd, Katima Mulilo</td>
+                        <td><a class="tel" href="tel:+26466251400">+264 66 251 400</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Keetmanshoop State Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>2nd St &amp; Hospital Rd, Keetmanshoop</td>
+                        <td><a class="tel" href="tel:+264632209000">+264 63 220 9000</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Walvis Bay State Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>3rd Road East, Walvis Bay</td>
+                        <td><a class="tel" href="tel:+26464203141">+264 64 203 141</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Welwitschia Hospital</strong></td>
+                        <td><span class="type-badge type-state">State</span></td>
+                        <td>Sam Nujoma Ave, Walvis Bay</td>
+                        <td><a class="tel" href="tel:+26464218911">+264 64 218 911</a></td>
+                        <td>N/A</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subheading">Private Institutions</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Institution</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Telephone</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Mediclinic Windhoek</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Heliodoor St, Eros, P.O. Box 9819, Windhoek</td>
+                        <td><a class="tel" href="tel:+264614331000">+264 61 433 1000</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mediclinic Cottage Hospital</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Otjiwarongo</td>
+                        <td><a class="tel" href="tel:064412200">064 412 200</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Mediclinic Otjiwarongo</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Otjiwarongo</td>
+                        <td><a class="tel" href="tel:067303734">067 303 734</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lady Pohamba Private Hospital</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Windhoek</td>
+                        <td><a class="tel" href="tel:+264833359040">+264 83 335 9040</a> / <a class="tel" href="tel:+264833359000">+264 83 335 9000</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Catholic (Mission) Hospital</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>92 St&uuml;bel St, Windhoek</td>
+                        <td><a class="tel" href="tel:+26461237237">+264 61 237 237</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Khomas Medical Centre</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Windhoek</td>
+                        <td><a class="tel" href="tel:061385600">061 385 600</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rhino Park Private Hospital</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Hosea Kutako Dr, Windhoek</td>
+                        <td><a class="tel" href="tel:061225434">061 225 434</a></td>
+                        <td>N/A</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MetHealth (Clinic Group) - Head Office</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Maerua Park, Windhoek</td>
+                        <td><a class="tel" href="tel:+264612876000">+264 61 287 6000</a></td>
+                        <td><a class="mail" href="mailto:enquiries@methealth.com.na">enquiries@methealth.com.na</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>MetHealth Keetmanshoop</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Keetmanshoop</td>
+                        <td><a class="tel" href="tel:063224905">063 224 905</a> / <a class="tel" href="tel:063224908">063 224 908</a></td>
+                        <td><a class="mail" href="mailto:keetmans@methealth.com.na">keetmans@methealth.com.na</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>MetHealth Oshakati</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Oshakati</td>
+                        <td><a class="tel" href="tel:065220177">065 220 177</a> / <a class="tel" href="tel:065220774">065 220 774</a></td>
+                        <td><a class="mail" href="mailto:oshakati1@methealth.com.na">oshakati1@methealth.com.na</a></td>
+                    </tr>
+                    <tr>
+                        <td><strong>MetHealth Walvis Bay</strong></td>
+                        <td><span class="type-badge type-private">Private</span></td>
+                        <td>Walvis Bay</td>
+                        <td><a class="tel" href="tel:064200253">064 200 253</a> / <a class="tel" href="tel:064200276">064 200 276</a> / <a class="tel" href="tel:064200563">064 200 563</a></td>
+                        <td><a class="mail" href="mailto:walvis1@methealth.com.na">walvis1@methealth.com.na</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

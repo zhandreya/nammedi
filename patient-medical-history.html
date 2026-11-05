@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/jpeg" href="Nam%20heart.jpeg">
     <title>Medical History - Namibia Health Services</title>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
@@ -290,7 +291,9 @@
             getMyInstitutesVisited,
             getMyReports,
             buildPrescriptionPdf,
+            previewAndSavePdf,
             rescheduleAppointment,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -298,7 +301,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -388,9 +392,9 @@
                 .map(apt => `
                     <tr>
                         <td>${formatDate(apt.date)}</td>
-                        <td>${apt.institution || '-'}</td>
+                        <td>${apt.institution || 'N/A'}</td>
                         <td>${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
-                        <td>${apt.reason || '-'}</td>
+                        <td>${apt.reason || 'N/A'}</td>
                         <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
                         <td>
                             ${apt.status === 'scheduled' ? `
@@ -411,9 +415,9 @@
                     <tr>
                         <td>${formatDate(pr.date)}</td>
                         <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}</td>
-                        <td>${pr.ailment || '-'}</td>
-                        <td>${pr.treatment || '-'}</td>
-                        <td>${pr.prescription || '-'}</td>
+                        <td>${pr.ailment || 'N/A'}</td>
+                        <td>${pr.treatment || 'N/A'}</td>
+                        <td>${pr.prescription || 'N/A'}</td>
                         <td>
                             <button class="btn-sm btn-view" onclick="viewPrescription('${pr.id}')">View</button>
                             <button class="btn-sm btn-download" onclick="downloadPrescription('${pr.id}')">PDF</button>
@@ -457,10 +461,10 @@
                 .map(at => `
                     <tr>
                         <td>${formatDate(at.date || at.createdAt)}</td>
-                        <td>${at.ailment || '-'}</td>
-                        <td>${at.treatment || '-'}</td>
+                        <td>${at.ailment || 'N/A'}</td>
+                        <td>${at.treatment || 'N/A'}</td>
                         <td>${at.doctorName || at.doctor_name || 'Staff'}</td>
-                        <td>${at.specialization || '-'}</td>
+                        <td>${at.specialization || 'N/A'}</td>
                     </tr>
                 `).join('') || '<tr><td colspan="5" style="text-align:center; color:#666; padding:40px;">No ailments & treatments recorded</td></tr>';
         }
@@ -475,7 +479,7 @@
         window.viewAppointment = function(id) {
             const apt = allAppts.find(a => a.id === id);
             if (!apt) { showToast('Appointment not found', 'error'); return; }
-            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || 'N/A'}</span></div>`;
             showDetailModal('Appointment Details',
                 d('Date', formatDate(apt.date)) + d('Time', apt.time) +
                 d('Institution', apt.institution) +
@@ -488,7 +492,7 @@
         window.viewPrescription = function(id) {
             const pr = allPresc.find(p => p.id === id);
             if (!pr) { showToast('Prescription not found', 'error'); return; }
-            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || 'N/A'}</span></div>`;
             showDetailModal('Prescription Details',
                 d('Date', formatDate(pr.date)) +
                 d('Doctor', pr.doctorName || pr.doctor_name || pr.doctorSpecialist) +
@@ -503,7 +507,7 @@
             const pr = allPresc.find(p => p.id === id);
             if (!pr) { showToast('Prescription not found', 'error'); return; }
             try {
-                const doc = buildPrescriptionPdf({
+                const blob = await buildPrescriptionPdf({
                     patientName: pr.patientName || pr.patient_name,
                     patientSurname: pr.patientSurname || pr.patient_surname,
                     patientIdPassport: pr.patientIdPassport || pr.patient_id_passport,
@@ -513,11 +517,8 @@
                     prescription: pr.prescription, report: pr.report,
                     nextAvailableDate: pr.nextAvailableDate || pr.next_available_date
                 });
-                const url = URL.createObjectURL(doc.output('blob'));
-                const a = document.createElement('a');
-                a.href = url; a.download = `Prescription-${formatDate(pr.date)}.pdf`;
-                document.body.appendChild(a); a.click(); a.remove();
-                showToast('PDF downloaded', 'success');
+                await previewAndSavePdf(blob, `Prescription-${formatDate(pr.date)}.pdf`);
+                showToast('Prescription PDF opened in new tab', 'success');
             } catch (err) {
                 showToast('PDF failed: ' + err.message, 'error');
             }
@@ -532,8 +533,8 @@
                 if (r) rpt = { date: r.date, doctor: r.doctorName || r.doctor_name, text: r.description || r.report };
             }
             if (!rpt) { showToast('Report not found', 'error'); return; }
-            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
-            showDetailModal('Report', d('Date', formatDate(rpt.date)) + d('Doctor', rpt.doctor) + d('Report', `<span style="white-space:pre-wrap;">${rpt.text}</span>`));
+            const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || 'N/A'}</span></div>`;
+            showDetailModal('Report', d('Date', formatDate(rpt.date)) + d('Staff', rpt.doctor) + d('Report', `<span style="white-space:pre-wrap;">${rpt.text}</span>`));
         };
 
         let reschedId = null;

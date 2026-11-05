@@ -261,6 +261,8 @@
             getMyPrescriptions,
             getMyRefillRequests,
             buildPrescriptionPdf,
+            previewAndSavePdf,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -268,7 +270,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -381,9 +384,9 @@
                     <tr>
                         <td>${formatDate(pr.date)}</td>
                         <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}</td>
-                        <td>${pr.ailment || '-'}</td>
-                        <td>${pr.treatment || '-'}</td>
-                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pr.prescription || '-'}</td>
+                        <td>${pr.ailment || 'N/A'}</td>
+                        <td>${pr.treatment || 'N/A'}</td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pr.prescription || 'N/A'}</td>
                         <td>${pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : (pr.next_available_date ? formatDate(pr.next_available_date) : '-')}</td>
                         <td><span class="status-badge ${statusClass}">${prStatus}</span></td>
                         <td>
@@ -402,9 +405,10 @@
             document.getElementById('prescViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(pr.date)}</span></div>
                 <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${pr.doctorName || pr.doctor_name || 'Staff'}</span></div>
-                <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${pr.ailment || '-'}</span></div>
-                <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${pr.treatment || '-'}</span></div>
-                <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value" style="white-space:pre-wrap;">${pr.prescription || '-'}</span></div>
+                <div class="detail"><span class="detail-label">Institute</span><span class="detail-value">${pr.institute || 'N/A'}</span></div>
+                <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${pr.ailment || 'N/A'}</span></div>
+                <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${pr.treatment || 'N/A'}</span></div>
+                <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value" style="white-space:pre-wrap;">${pr.prescription || 'N/A'}</span></div>
                 ${pr.report ? `<div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${pr.report}</span></div>` : ''}
                 <div class="detail"><span class="detail-label">Status</span><span class="detail-value">${pr.status || 'active'}</span></div>
             `;
@@ -418,12 +422,8 @@
             try {
                 showToast('Preparing PDF...', 'info');
                 const blob = await buildPrescriptionPdf(pr);
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `Prescription-${(pr.patientName || 'Patient')}-${pr.date || ''}.pdf`.replace(/\s+/g, '-');
-                document.body.appendChild(a); a.click(); a.remove();
-                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-                showToast('Prescription PDF downloaded', 'success');
+                await previewAndSavePdf(blob, `Prescription-${(pr.patientName || 'Patient')}-${pr.date || ''}.pdf`.replace(/\s+/g, '-'));
+                showToast('Prescription PDF opened in new tab', 'success');
             } catch (error) {
                 showToast('PDF error: ' + error.message, 'error');
             }
@@ -445,8 +445,8 @@
                 return `<tr>
                     <td>${d ? formatDate(d) : '-'}</td>
                     <td>${r.prescriptionDate ? formatDate(r.prescriptionDate) : '-'}</td>
-                    <td>${at || '-'}</td>
-                    <td>${r.prescription || r.medicationName || r.medication || '-'}</td>
+                    <td>${at || 'N/A'}</td>
+                    <td>${r.prescription || r.medicationName || r.medication || 'N/A'}</td>
                     <td>${r.doctorName || r.doctor_name || 'Staff'}</td>
                     <td>${r.nextAvailableDate ? formatDate(r.nextAvailableDate) : '-'}</td>
                     <td><span class="status-badge status-${r.status === 'pending' ? 'pending' : (r.status === 'approved' ? 'active' : 'expired')}">${r.status || 'pending'}</span>${note}</td>

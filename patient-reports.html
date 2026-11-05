@@ -240,6 +240,8 @@
             getMyInsuranceVerifications,
             buildInsurancePdf,
             buildPrescriptionPdf,
+            previewAndSavePdf,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -247,7 +249,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -358,14 +361,11 @@
         }
 
         // Preview first in a new tab, then start the download from the same path
+        // Open the file in a new tab only - the current page must stay as it is.
         function previewAndDownload(url, filename) {
-            try { window.open(url, '_blank'); } catch (e) { /* popup blocked - download only */ }
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            let win = null;
+            try { win = window.open(url, '_blank'); } catch (e) { win = null; }
+            if (!win) showToast('Please allow pop-ups to open this file in a new tab', 'error');
         }
 
         window.downloadReport = async function(id) {
@@ -381,10 +381,8 @@
                 if (r._prescription) {
                     showToast('Preparing PDF...', 'info');
                     const blob = await buildPrescriptionPdf(r._prescription);
-                    const url = URL.createObjectURL(blob);
-                    previewAndDownload(url, `Report-${r._prescription.patientName || 'Patient'}-${r.date || ''}.pdf`.replace(/\s+/g, '-'));
-                    setTimeout(() => URL.revokeObjectURL(url), 5000);
-                    showToast('Report previewed - download started', 'success');
+                    await previewAndSavePdf(blob, `Report-${r._prescription.patientName || 'Patient'}-${r.date || ''}.pdf`.replace(/\s+/g, '-'));
+                    showToast('Report PDF opened in new tab', 'success');
                 } else {
                     showToast('No downloadable file for this report', 'error');
                 }
@@ -429,22 +427,20 @@
             tbody.innerHTML = myInsurance.map(v => `
                 <tr>
                     <td>${v.date ? formatDate(v.date) : '-'}</td>
-                    <td>${v.medicalAidNumber || '-'}</td>
-                    <td>${v.paymentStatus || '-'}</td>
-                    <td>${v.status || '-'}</td>
+                    <td>${v.medicalAidNumber || 'N/A'}</td>
+                    <td>${v.paymentStatus || 'N/A'}</td>
+                    <td>${v.status || 'N/A'}</td>
                     <td><button class="btn-sm btn-download" onclick="downloadInsurancePdf('${v.id}')">Download</button></td>
                 </tr>
             `).join('');
         }
-        window.downloadInsurancePdf = function(id) {
+        window.downloadInsurancePdf = async function(id) {
             const v = myInsurance.find(x => x.id === id);
             if (!v) { showToast('Not found', 'error'); return; }
             try {
-                const doc = buildInsurancePdf(v);
-                const url = URL.createObjectURL(doc.output('blob'));
-                previewAndDownload(url, `Insurance-Verification-${v.date || ''}.pdf`.replace(/\s+/g, '-'));
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast('Insurance verification previewed - download started', 'success');
+                const blob = await buildInsurancePdf(v);
+                await previewAndSavePdf(blob, `Insurance-Verification-${v.date || ''}.pdf`.replace(/\s+/g, '-'));
+                showToast('Insurance verification opened in new tab', 'success');
             } catch (err) {
                 showToast('PDF error: ' + err.message, 'error');
             }

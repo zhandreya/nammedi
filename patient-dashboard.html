@@ -132,6 +132,7 @@
         </div>
         <div class="header-actions">
             <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
+            <button class="btn btn-secondary" onclick="window.location.href='medical-institutes.html'"><span>🏥</span> Contact Institutes</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
     </div>
@@ -289,9 +290,9 @@
                                     ${appointments.slice(0, 5).map(apt => `
                                         <tr style="border-bottom: 1px solid #eee;">
                                             <td style="padding: 12px;">${formatDate(apt.date)}</td>
-                                            <td style="padding: 12px;">${apt.time || '-'}</td>
+                                            <td style="padding: 12px;">${apt.time || 'N/A'}</td>
                                             <td style="padding: 12px;">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
-                                            <td style="padding: 12px;">${apt.reason || '-'}</td>
+                                            <td style="padding: 12px;">${apt.reason || 'N/A'}</td>
                                             <td style="padding: 12px;"><span style="background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${apt.status || 'scheduled'}</span></td>
                                         </tr>
                                     `).join('')}

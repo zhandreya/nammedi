@@ -688,22 +688,9 @@ export async function createAppointment(appointmentData, maybeData) {
         created_at: nowIso(),
         updated_at: nowIso()
     });
-    // Record the institute visit (best-effort) so it appears on the patient's dashboard.
-    try {
-        if (institution) {
-            await insertRow(T.INSTITUTES_VISITED, {
-                patient_id: src.patientId || src.patient_id || null,
-                patient_name: src.patientName || src.fullName || null,
-                patient_surname: src.patientSurname || src.surname || null,
-                patient_id_passport: src.patientIdPassport || null,
-                institute: institution,
-                date: src.date,
-                time: src.time || null,
-                doctor_name: doctor,
-                created_at: nowIso()
-            });
-        }
-    } catch (e) { console.warn('institutes_visited record failed:', e); }
+    // Note: institutes_visited is NOT recorded when the appointment is made.
+    // A visit is only recorded (with full details) once staff confirm the
+    // patient's attendance - see confirmAppointmentAttendance().
     return { id: data.id, ...src, institution };
 }
 
@@ -793,6 +780,23 @@ export async function confirmAppointmentAttendance(appointmentId) {
         confirmed_by_email: user.email,
         confirmed_at: nowIso()
     }).eq('id', appointmentId);
+    // The visit now counts as real - record the institute visit with full
+    // details (name, ID/Passport, institute, date, doctor) so the patient's
+    // institutes-visited table only ever shows complete, real visits.
+    try {
+        await insertRow(T.INSTITUTES_VISITED, {
+            patient_id: row.patient_id || null,
+            patient_name: row.patient_name || null,
+            patient_surname: row.patient_surname || null,
+            patient_id_passport: row.patient_id_passport || null,
+            institute: row.institution || null,
+            date: row.date || null,
+            time: row.time || null,
+            doctor_name: row.doctor_specialist || null,
+            reason: row.reason || null,
+            created_at: nowIso()
+        });
+    } catch (e) { console.warn('institutes_visited record failed:', e); }
     return { id: appointmentId, attendanceConfirmed: true, confirmedBy: user.uid, confirmedAt: nowIso() };
 }
 
@@ -978,20 +982,40 @@ export async function recordMedicationAdministration(a, b) {
         administered_by_email: user.email,
         created_at: nowIso()
     });
-    // Deduct the administered quantity from the matching inventory item (best-effort).
+    // Keep the inventory in sync automatically: deduct the administered
+    // quantity from the matching stock item, and if no stock item exists yet,
+    // create one so "Left in Stock" always has data to show.
     try {
-        if (data.medicationName && data.quantity) {
+        if (data.medicationName) {
+            const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+            const name = norm(data.medicationName);
+            const qty = data.quantity ? Number(data.quantity) : 0;
             const { data: invRows } = await supabase.from(T.MEDICATION_INVENTORY)
-                .select('*').eq('medication_name', data.medicationName).limit(10);
-            const inv = (invRows || []).find(r => !r.strength || !data.strength || String(r.strength).toLowerCase() === String(data.strength).toLowerCase()) || (invRows || [])[0];
+                .select('*').limit(200);
+            const rows = invRows || [];
+            let inv = rows.find(r => norm(r.medication_name) === name &&
+                (!r.strength || !data.strength || norm(r.strength) === norm(data.strength))) ||
+                rows.find(r => { const n = norm(r.medication_name); return n && (n.includes(name) || name.includes(n)); });
             if (inv) {
-                await supabase.from(T.MEDICATION_INVENTORY).update({
-                    quantity: Math.max(0, (inv.quantity || 0) - (data.quantity || 0)),
-                    updated_by: user.uid, updated_at: nowIso()
-                }).eq('id', inv.id);
+                if (qty) {
+                    await supabase.from(T.MEDICATION_INVENTORY).update({
+                        quantity: Math.max(0, (Number(inv.quantity) || 0) - qty),
+                        updated_by: user.uid, updated_at: nowIso()
+                    }).eq('id', inv.id);
+                }
+            } else {
+                await insertRow(T.MEDICATION_INVENTORY, {
+                    medication_name: data.medicationName,
+                    strength: data.strength || null,
+                    quantity: 0,
+                    institute,
+                    updated_by: user.uid,
+                    updated_at: nowIso(),
+                    created_at: nowIso()
+                });
             }
         }
-    } catch (e) { console.warn('inventory deduction failed:', e); }
+    } catch (e) { console.warn('inventory sync failed:', e); }
     return { id: rec.id, ...data };
 }
 
@@ -1337,20 +1361,149 @@ export async function getMedicalInfo() {
     return data;
 }
 
+// ============ UNIFIED PDF STYLING ============
+// Every generated document (invoice, prescription, report, insurance,
+// payment receipt) follows the invoice look: brand-colour header band,
+// coloured table header, grid lines, N/A for missing values.
+const PDF_BRAND = [0, 102, 204];          // #0066cc
+const PDF_BRAND_DARK = [0, 60, 110];
+const PDF_HEADER_H = 28;                   // header band height (mm)
+const PDF_NA = v => (v === null || v === undefined || String(v).trim() === '') ? 'N/A' : String(v);
+
+let jspdfPromise = null;
+// Load the PDF library on demand (works even if the page's <script> tag
+// failed to load first, e.g. on a slow network).
+function ensureJsPdf() {
+    if (window.jspdf) return Promise.resolve(window.jspdf);
+    if (!jspdfPromise) {
+        jspdfPromise = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+            s.onload = () => (window.jspdf ? resolve(window.jspdf) : reject(new Error('PDF library failed to load')));
+            s.onerror = () => { jspdfPromise = null; reject(new Error('PDF library could not be loaded - check your internet connection and try again')); };
+            document.head.appendChild(s);
+        });
+    }
+    return jspdfPromise;
+}
+
+// Open the generated PDF in a NEW TAB first, then start the download from
+// that tab - the current page is never redirected or navigated away.
+export async function previewAndSavePdf(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const safe = String(filename || 'document.pdf').replace(/["<>\\]/g, '');
+    let win = null;
+    try { win = window.open('', '_blank'); } catch (e) { win = null; }
+    if (win) {
+        try {
+            const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${safe}</title></head>` +
+                `<body style="margin:0;height:100vh;">` +
+                `<iframe src="${url}" style="border:0;width:100%;height:100vh;" title="PDF preview"></iframe>` +
+                `<a id="autoDl" href="${url}" download="${safe}" style="display:none;"></a>` +
+                `<script>setTimeout(function(){try{document.getElementById('autoDl').click();}catch(e){}},800);<\/script>` +
+                `</body></html>`;
+            win.document.open();
+            win.document.write(html);
+            win.document.close();
+        } catch (e) {
+            try { win.location.href = url; } catch (e2) { /* preview unavailable */ }
+        }
+        setTimeout(() => URL.revokeObjectURL(url), 120000);
+        return url;
+    }
+    // Popup blocked (rare on a direct button click) - fall back to a plain
+    // download so the file is not lost.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safe;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return url;
+}
+
+function pdfHeader(doc, title, subtitle) {
+    doc.setFillColor(...PDF_BRAND);
+    doc.rect(0, 0, 210, PDF_HEADER_H, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
+    doc.text(title, 14, 12);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(subtitle || 'Namibia Health Services', 14, 20);
+    doc.text(new Date().toLocaleDateString('en-GB'), 196, 12, { align: 'right' });
+    doc.setTextColor(30, 30, 30);
+}
+function pdfField(doc, y, label, value) {
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(label + ':', 14, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(PDF_NA(value), 62, y);
+    return y + 8;
+}
+function pdfRule(doc, y, color = PDF_BRAND, width = 0.4) {
+    doc.setDrawColor(...color);
+    doc.setLineWidth(width);
+    doc.line(14, y, 196, y);
+    doc.setLineWidth(0.2);
+    return y;
+}
+// coloured header + zebra rows + grid lines; cols = [{ label, width, align, key }]
+function pdfGridTable(doc, startY, cols, rows, { rowH = 8 } = {}) {
+    let y = startY;
+    doc.setFillColor(227, 242, 253);
+    doc.rect(14, y, 182, rowH, 'F');
+    doc.setDrawColor(...PDF_BRAND); doc.setLineWidth(0.3);
+    doc.rect(14, y, 182, rowH);
+    let hx = 14;
+    cols.forEach(c => { hx += c.width; doc.line(hx, y, hx, y + rowH); });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...PDF_BRAND_DARK);
+    let x = 16;
+    cols.forEach(c => { doc.text(c.label, x, y + 5.5, c.align === 'right' ? { align: 'right' } : {}); x += c.width; });
+    y += rowH;
+    doc.setTextColor(30, 30, 30); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    rows.forEach((r, i) => {
+        const cells = cols.map(c => doc.splitTextToSize(PDF_NA(r[c.key]), c.width - 5));
+        const h = Math.max(rowH, Math.max(...cells.map(c => c.length)) * 5.2 + 5);
+        if (i % 2 === 1) { doc.setFillColor(245, 248, 252); doc.rect(14, y, 182, h, 'F'); }
+        doc.setDrawColor(150, 175, 200); doc.setLineWidth(0.2);
+        doc.rect(14, y, 182, h);
+        let vx = 14;
+        cols.forEach(c => { vx += c.width; doc.line(vx, y, vx, y + h); });
+        x = 16;
+        cells.forEach((lines, ci) => {
+            doc.text(lines, x, y + 6, cols[ci].align === 'right' ? { align: 'right' } : {});
+            x += cols[ci].width;
+        });
+        y += h;
+    });
+    doc.setDrawColor(...PDF_BRAND); doc.setLineWidth(0.5);
+    doc.rect(14, startY, 182, y - startY);
+    doc.setLineWidth(0.2);
+    return y;
+}
+function pdfFooter(doc, note) {
+    pdfRule(doc, 285, [150, 150, 150], 0.3);
+    doc.setFontSize(9); doc.setTextColor(120);
+    doc.text(note || 'Generated by Namibia Health Services', 14, 291);
+    doc.setTextColor(30, 30, 30);
+}
+
 async function buildReportPdf({ type, patientName, patientSurname, idPassport, date, description, doctorName, institute }) {
+    await ensureJsPdf();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.setFontSize(16); doc.text('Namibian Medical Records', 105, 18, { align: 'center' });
-    doc.setFontSize(12); doc.text((institute || 'Medical Institute') + ' - ' + (type || 'Report'), 105, 28, { align: 'center' });
-    doc.setDrawColor(80); doc.line(20, 33, 190, 33);
-    doc.setFontSize(11);
-    doc.text('Patient:', 20, 44); doc.text(`${patientName || ''} ${patientSurname || ''}`.trim() || '-', 60, 44);
-    doc.text('ID/Passport:', 20, 52); doc.text(idPassport || '-', 60, 52);
-    doc.text('Date:', 20, 60); doc.text(date || '-', 60, 60);
-    doc.text('Doctor:', 20, 68); doc.text(doctorName || 'Staff', 60, 68);
-    doc.setFontSize(11); doc.text('Report:', 20, 82);
-    const lines = doc.splitTextToSize(description || '-', 170);
-    doc.text(lines, 20, 90);
+    pdfHeader(doc, 'MEDICAL REPORT', (institute || 'Namibia Health Services') + (type ? ' - ' + type : ''));
+    let y = 40;
+    y = pdfField(doc, y, 'Patient', `${patientName || ''} ${patientSurname || ''}`.trim());
+    y = pdfField(doc, y, 'ID/Passport', idPassport);
+    y = pdfField(doc, y, 'Date', date);
+    y = pdfField(doc, y, 'Staff / Doctor', doctorName);
+    y += 4;
+    pdfRule(doc, y);
+    pdfGridTable(doc, y + 2, [{ label: 'Report', width: 182, key: 'text' }], [{ text: description }]);
+    pdfFooter(doc);
     return doc.output('blob');
 }
 
@@ -1434,8 +1587,10 @@ async function resolveDoctorSpecializations(rows) {
             const full = normDocName(`${u.full_name || ''} ${u.surname || ''}`);
             const sur = normDocName(u.surname);
             const first = normDocName(u.full_name);
-            const hit = (full.length >= 4 && dn.includes(full)) ||
-                (sur.length >= 4 && first.length >= 3 && dn.includes(sur) && dn.includes(first));
+            let hit = false;
+            if (full.length >= 4) hit = dn.includes(full) || (dn.length >= 4 && full.includes(dn));
+            if (!hit && sur.length >= 4 && first.length >= 3) hit = dn.includes(sur) && dn.includes(first);
+            if (!hit && sur.length >= 5) hit = dn.includes(sur) || (dn.length >= 4 && sur.includes(dn));
             if (hit) { r.specialization = u.profession || null; break; }
         }
     }
@@ -1715,32 +1870,35 @@ export async function deletePayment(paymentId) {
 
 // ============ PRESCRIPTION PDF (jsPDF, loaded via <script> on the pages) ============
 export async function buildPrescriptionPdf(pr) {
+    await ensureJsPdf();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const name = `${pr.patientName || ''} ${pr.patientSurname || ''}`.trim() || 'Patient';
-    doc.setFontSize(16); doc.text('Prescription', 105, 18, { align: 'center' });
-    doc.setFontSize(12); doc.text(pr.institute || 'Medical Institute', 105, 28, { align: 'center' });
-    doc.setDrawColor(80); doc.line(20, 33, 190, 33);
-    doc.setFontSize(11);
-    doc.text('Patient:', 20, 44); doc.text(name, 60, 44);
-    doc.text('ID/Passport:', 20, 52); doc.text(pr.patientIdPassport || '-', 60, 52);
-    doc.text('Date:', 20, 60); doc.text(pr.date || '-', 60, 60);
-    doc.text('Doctor:', 20, 68); doc.text(pr.doctorName || 'Staff', 60, 68);
-    let y = 84;
-    const field = (label, value) => {
-        if (!value) return;
-        doc.text(label + ':', 20, y);
-        const lines = doc.splitTextToSize(String(value), 120);
-        doc.text(lines, 60, y);
-        y += lines.length * 6 + 4;
-    };
-    field('Ailment', pr.ailment);
-    field('Treatment', pr.treatment);
-    field('Prescription', pr.prescription);
-    field('Report', pr.report);
-    field('Next Available', pr.nextAvailableDate || pr.next_available_date || '');
-    doc.setFontSize(9); doc.setTextColor(120);
-    doc.text('Generated by Namibian Medical Records', 20, 287);
+    pdfHeader(doc, 'PRESCRIPTION', pr.institute || 'Namibia Health Services');
+    let y = 40;
+    y = pdfField(doc, y, 'Patient', `${pr.patientName || ''} ${pr.patientSurname || ''}`.trim());
+    y = pdfField(doc, y, 'ID/Passport', pr.patientIdPassport);
+    y = pdfField(doc, y, 'Date', pr.date);
+    y = pdfField(doc, y, 'Doctor / Specialist', pr.doctorName || pr.doctor_name || pr.doctorSpecialist || 'Staff');
+    y += 4;
+    pdfRule(doc, y);
+    pdfGridTable(doc, y + 2, [
+        { label: 'Ailment', width: 60, key: 'ailment' },
+        { label: 'Treatment', width: 60, key: 'treatment' },
+        { label: 'Next Available', width: 62, key: 'next' }
+    ], [{
+        ailment: pr.ailment,
+        treatment: pr.treatment,
+        next: pr.nextAvailableDate || pr.next_available_date
+    }]);
+    y += 20;
+    pdfGridTable(doc, y, [
+        { label: 'Prescription', width: 182, key: 'text' }
+    ], [{ text: pr.prescription }]);
+    y += 20;
+    if (pr.report) {
+        pdfGridTable(doc, y, [{ label: 'Report', width: 182, key: 'text' }], [{ text: pr.report }]);
+    }
+    pdfFooter(doc, 'Generated by Namibia Health Services - prescription document');
     return doc.output('blob');
 }
 
@@ -1748,41 +1906,28 @@ export async function buildPrescriptionPdf(pr) {
 export function buildInvoicePdf(invoice) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const name = `${invoice.patientName || ''} ${invoice.patientSurname || ''}`.trim() || 'Patient';
-    doc.setFillColor(0, 102, 204);
-    doc.rect(0, 0, 210, 28, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-    doc.text('TAX INVOICE', 14, 12);
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Namibia Health Services', 14, 20);
+    pdfHeader(doc, 'TAX INVOICE', (invoice.institute || invoice.institution) || 'Namibia Health Services');
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-    doc.text(`Invoice No: ${invoice.invoiceNumber || '-'}`, 14, 42);
+    doc.text(`Invoice No: ${PDF_NA(invoice.invoiceNumber)}`, 14, 42);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
-    doc.text(`Date: ${invoice.date ? String(invoice.date).slice(0, 10) : '-'}`, 14, 50);
-    if (invoice.institute || invoice.institution) {
-        doc.text(`Institute: ${invoice.institute || invoice.institution}`, 14, 58);
-    }
-    if (invoice.doctorName || invoice.doctor_name) {
-        doc.text(`Prescribing Doctor: ${invoice.doctorName || invoice.doctor_name}`, 14, (invoice.institute || invoice.institution) ? 66 : 58);
-    }
+    doc.text(`Date: ${PDF_NA(invoice.date ? String(invoice.date).slice(0, 10) : null)}`, 14, 50);
+    doc.text(`Institute: ${PDF_NA(invoice.institute || invoice.institution)}`, 14, 58);
+    doc.text(`Prescribing Doctor: ${PDF_NA(invoice.doctorName || invoice.doctor_name)}`, 14, 66);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(invoice.paid ? 27 : 198, invoice.paid ? 94 : 40, invoice.paid ? 60 : 40);
     doc.text(`Status: ${invoice.paid ? 'PAID' : 'UNPAID'}`, 196, 42, { align: 'right' });
     doc.setTextColor(30, 30, 30);
     doc.setFont('helvetica', 'normal');
-    const extra = (invoice.institute || invoice.institution ? 8 : 0) + (invoice.doctorName || invoice.doctor_name ? 8 : 0);
-    doc.line(14, 58 + extra, 196, 58 + extra);
+    pdfRule(doc, 72);
     doc.setFont('helvetica', 'bold');
-    doc.text('Billed to:', 14, 68 + extra);
+    doc.text('Billed to:', 14, 80);
     doc.setFont('helvetica', 'normal');
-    doc.text(name, 14, 76 + extra);
-    let y = 84 + extra;
-    if (invoice.idPassport) { doc.text(`ID/Passport: ${invoice.idPassport}`, 14, y); y += 8; }
-    if (invoice.cellPhone) { doc.text(`Phone: ${invoice.cellPhone}`, 14, y); y += 8; }
+    doc.text(PDF_NA(`${invoice.patientName || ''} ${invoice.patientSurname || ''}`.trim()), 14, 88);
+    let y = 96;
+    doc.text(`ID/Passport: ${PDF_NA(invoice.idPassport)}    Phone: ${PDF_NA(invoice.cellPhone)}`, 14, y);
     y += 10;
-    doc.line(14, y - 8, 196, y - 8);
+    pdfRule(doc, y);
     doc.setFont('helvetica', 'bold');
     doc.text('Description', 16, y);
     doc.text('Amount (NAD)', 194, y, { align: 'right' });
@@ -1804,7 +1949,7 @@ export function buildInvoicePdf(invoice) {
     doc.text(`NAD ${Number(invoice.fee || 0).toFixed(2)}`, 194, y + 2, { align: 'right' });
     doc.setFontSize(10); doc.setFont('helvetica', 'normal');
     doc.text(invoice.paid ? 'Payment received. Thank you.' : 'Balance due. Please settle at the front desk.', 14, y + 14);
-    doc.text('Generated by Namibia Health Services - this is a computer-generated invoice.', 14, 287);
+    pdfFooter(doc, 'Generated by Namibia Health Services - this is a computer-generated invoice.');
     return doc;
 }
 
@@ -1949,15 +2094,21 @@ export async function getMyAilmentsTreatments() {
         ]);
         const merged = [];
         const seen = new Set();
+        const normKey = (a, t, d) => `${String(a || '').trim().toLowerCase()}|${String(t || '').trim().toLowerCase()}|${String(d || '').slice(0, 10)}`;
+        const ailmentDateKey = (a, d) => `${String(a || '').trim().toLowerCase()}|${String(d || '').slice(0, 10)}`;
+        const ailmentDates = new Set();
         for (const r of rows) {
             const a = camelAilment(r);
-            const key = `${String(a.ailment || '').toLowerCase()}|${String(a.treatment || '').toLowerCase()}|${a.date || ''}`;
+            const key = normKey(a.ailment, a.treatment, a.date);
             if (seen.has(key)) continue;
             seen.add(key);
+            if (a.ailment) ailmentDates.add(ailmentDateKey(a.ailment, a.date));
             merged.push(a);
         }
         for (const p of presc) {
             if (!p.ailment && !p.treatment) continue;
+            // skip when the same ailment on the same date was already recorded
+            if (p.ailment && ailmentDates.has(ailmentDateKey(p.ailment, p.date))) continue;
             const a = {
                 id: 'pr-' + p.id,
                 createdAt: p.created_at,
@@ -1971,7 +2122,7 @@ export async function getMyAilmentsTreatments() {
                 date: p.date || null,
                 source: 'prescription'
             };
-            const key = `${String(a.ailment || '').toLowerCase()}|${String(a.treatment || '').toLowerCase()}|${a.date || ''}`;
+            const key = normKey(a.ailment, a.treatment, a.date);
             if (seen.has(key)) continue;
             seen.add(key);
             merged.push(a);
@@ -2093,24 +2244,54 @@ export async function getMyInsuranceVerifications() {
     return [];
 }
 
-export function buildInsurancePdf(v) {
+export async function buildInsurancePdf(v) {
+    await ensureJsPdf();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const name = `${v.patientName || ''} ${v.patientSurname || ''}`.trim() || 'Patient';
-    doc.setFontSize(16); doc.text('Insurance Verification', 105, 24, { align: 'center' });
-    if (v.institute) { doc.setFontSize(12); doc.text(v.institute, 105, 34, { align: 'center' }); }
-    doc.setDrawColor(80); doc.line(20, 40, 190, 40);
-    doc.setFontSize(11);
-    const row = (label, value, y) => { doc.text(label + ':', 20, y); doc.text(String(value || '-'), 70, y); };
-    row('Patient', name, 52);
-    row('ID/Passport', v.idPassport, 62);
-    row('Medical Aid No.', v.medicalAidNumber, 72);
-    row('Verification Date', v.date, 82);
-    row('Payment Status', v.paymentStatus, 92);
-    row('Status', v.status, 102);
-    if (v.notes) { doc.text('Notes:', 20, 116); doc.text(String(v.notes).slice(0, 100), 20, 124); }
-    doc.setFontSize(9); doc.setTextColor(120);
-    doc.text('Generated by Namibian Medical Records', 20, 287);
+    pdfHeader(doc, 'INSURANCE VERIFICATION', v.institute || 'Namibia Health Services');
+    let y = 40;
+    y = pdfField(doc, y, 'Patient', `${v.patientName || ''} ${v.patientSurname || ''}`.trim());
+    y = pdfField(doc, y, 'ID/Passport', v.idPassport);
+    y = pdfField(doc, y, 'Medical Aid No.', v.medicalAidNumber);
+    y = pdfField(doc, y, 'Verification Date', v.date);
+    y = pdfField(doc, y, 'Payment Status', v.paymentStatus);
+    y = pdfField(doc, y, 'Status', v.status);
+    y += 4;
+    pdfRule(doc, y);
+    pdfGridTable(doc, y + 2, [
+        { label: 'Payment Status', width: 91, key: 'paymentStatus' },
+        { label: 'Verification Status', width: 91, key: 'status' }
+    ], [{ paymentStatus: v.paymentStatus, status: v.status }]);
+    if (v.notes) {
+        pdfGridTable(doc, y + 20, [{ label: 'Notes', width: 182, key: 'text' }], [{ text: v.notes }]);
+    }
+    pdfFooter(doc, 'Generated by Namibia Health Services - insurance verification document');
+    return doc;
+}
+
+// Payment receipt (same look as the invoice)
+export async function buildPaymentReceiptPdf(pay) {
+    await ensureJsPdf();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    pdfHeader(doc, 'PAYMENT RECEIPT', 'Namibia Health Services');
+    let y = 40;
+    y = pdfField(doc, y, 'Patient', `${pay.patientName || ''} ${pay.patientSurname || ''}`.trim());
+    y = pdfField(doc, y, 'ID/Passport', pay.idPassport);
+    y = pdfField(doc, y, 'Date', pay.date);
+    y = pdfField(doc, y, 'Reference', pay.reference || pay.idPassport);
+    y += 4;
+    pdfRule(doc, y);
+    y = pdfGridTable(doc, y + 2, [
+        { label: 'Description', width: 120, key: 'desc' },
+        { label: 'Amount (NAD)', width: 62, key: 'amount', align: 'right' }
+    ], [{ desc: pay.method ? `Payment (${pay.method})` : 'Payment received', amount: Number(pay.amount || 0).toFixed(2) }]);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+    doc.text('Total', 150, y + 10);
+    doc.text(`NAD ${Number(pay.amount || 0).toFixed(2)}`, 194, y + 10, { align: 'right' });
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Payment received. Thank you.', 14, y + 22);
+    pdfFooter(doc, 'Generated by Namibia Health Services - payment receipt');
     return doc;
 }
 
@@ -2168,15 +2349,34 @@ const DEFAULT_INACTIVITY_MS = 60 * 60 * 1000;
 
 export function initInactivityTimer(timeoutMs = DEFAULT_INACTIVITY_MS, onTimeout = () => signOut()) {
     const events = ['load', 'mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-    function resetTimer() {
+    let lastActivityAt = Date.now();
+    function resetTimer(markActivity = true) {
+        if (markActivity) lastActivityAt = Date.now();
         clearTimeout(inactivityTimeout);
         inactivityTimeout = setTimeout(onTimeout, timeoutMs);
     }
-    events.forEach(event => window.addEventListener(event, resetTimer, { passive: true }));
-    resetTimer();
+    const onEvent = () => resetTimer(true);
+    // Mobile browsers pause (throttle) timers while the screen is locked or the
+    // app is backgrounded, so the setTimeout alone may never fire. When the page
+    // becomes visible again, check how long it has been inactive and lock out
+    // immediately if the limit has been exceeded.
+    const onVisibility = () => {
+        if (document.visibilityState === 'visible') {
+            if (Date.now() - lastActivityAt > timeoutMs) {
+                clearTimeout(inactivityTimeout);
+                onTimeout();
+            } else {
+                resetTimer(false);
+            }
+        }
+    };
+    events.forEach(event => window.addEventListener(event, onEvent, { passive: true }));
+    document.addEventListener('visibilitychange', onVisibility);
+    resetTimer(false);
     return () => {
         clearTimeout(inactivityTimeout);
-        events.forEach(event => window.removeEventListener(event, resetTimer));
+        events.forEach(event => window.removeEventListener(event, onEvent));
+        document.removeEventListener('visibilitychange', onVisibility);
     };
 }
 
@@ -2243,7 +2443,7 @@ export default {
     addPatient, createPatient, getMyPatients, getSpecialists, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
     getPatient, getPatientById, updatePatient, getAppointmentsByStaff, getDocumentsByStaff,
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
-    getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, saveInvoicePdf, getMyPatientDocuments,
+    getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, buildPrescriptionPdf, buildReportPdf, buildInsurancePdf, buildPaymentReceiptPdf, previewAndSavePdf, saveInvoicePdf, getMyPatientDocuments,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
     getPrescriptionsForPatient, getPatientAilments, getPatientReports, getPatientRefills,
     getPatientInstitutes, getPatientInvoices, getPatientPayments,

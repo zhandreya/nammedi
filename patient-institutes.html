@@ -182,6 +182,7 @@
             getUserProfile,
             getMyAppointments,
             getMyInstitutesVisited,
+            signOut as signOutUser,
             initInactivityTimer,
             showToast,
             formatDate
@@ -189,7 +190,8 @@
 
         // Initialize inactivity timer
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
-            showToast('Session expired. Redirecting...', 'info');
+            showToast('Session expired due to inactivity. Redirecting...', 'info');
+            try { await signOutUser(); } catch (e) { /* session already gone */ }
             setTimeout(() => window.location.href = 'login.html', 2000);
         });
 
@@ -249,39 +251,40 @@
             }
         }
 
+        // Only real, complete visits are shown: a row needs every detail
+        // (institute, date, time, reason, doctor) AND the attendance must have
+        // been confirmed. Incomplete or unconfirmed entries are hidden.
         function combineVisitData(appointments, institutes) {
-            // Create a map of institute visits from appointments
             const visitMap = new Map();
-            
-            appointments.forEach(apt => {
-                const key = `${apt.institution || 'Unknown'}-${apt.date}`;
-                if (!visitMap.has(key)) {
-                    visitMap.set(key, {
-                        date: apt.date,
-                        institute: apt.institution || 'Unknown',
-                        time: apt.time || '-',
-                        reason: apt.reason || '-',
-                        doctor: apt.doctorSpecialist || apt.doctor_specialist || 'Staff',
-                        count: 1
-                    });
-                } else {
-                    visitMap.get(key).count++;
-                }
+            const addVisit = (date, institute, time, reason, doctor) => {
+                if (!date || !institute || !time || !reason || !doctor) return; // not complete -> hide
+                const key = `${institute.toLowerCase()}-${date}`;
+                if (!visitMap.has(key)) visitMap.set(key, { date, institute, time, reason, doctor, count: 1 });
+                else visitMap.get(key).count++;
+            };
+
+            // Visits recorded when attendance was confirmed (full details)
+            (institutes || []).forEach(inst => {
+                addVisit(
+                    inst.date,
+                    (inst.institute || '').trim(),
+                    (inst.time || '').trim(),
+                    (inst.reason || '').trim(),
+                    (inst.doctorName || inst.doctor_name || inst.doctor || '').trim()
+                );
             });
 
-            // Add manual institute visits
-            institutes.forEach(inst => {
-                const key = `${inst.institute}-${inst.date}`;
-                if (!visitMap.has(key)) {
-                    visitMap.set(key, {
-                        date: inst.date,
-                        institute: inst.institute,
-                        time: inst.time || '-',
-                        reason: inst.reason || 'Visit',
-                        doctor: inst.doctor || '-',
-                        count: 1
-                    });
-                }
+            // Confirmed appointments (fallback for confirmed visits not yet
+            // present in institutes_visited) - only with full details.
+            (appointments || []).forEach(apt => {
+                if (!apt.attendance_confirmed) return; // unconfirmed -> hide
+                addVisit(
+                    apt.date,
+                    (apt.institution || '').trim(),
+                    (apt.time || '').trim(),
+                    (apt.reason || '').trim(),
+                    (apt.doctorSpecialist || apt.doctor_specialist || '').trim()
+                );
             });
 
             return Array.from(visitMap.values())

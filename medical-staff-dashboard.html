@@ -181,6 +181,7 @@
             <button class="btn btn-secondary" onclick="openUploadModal()"><span>📄</span> Upload Document</button>
             <button class="btn btn-secondary" onclick="openInvoiceModal()"><span>🧾</span> Invoice</button>
             <button class="btn btn-secondary" onclick="window.location.href='edit-profile.html'">Edit Profile</button>
+            <button class="btn btn-secondary" onclick="window.location.href='medical-institutes.html'"><span>🏥</span> Contact Institutes</button>
             <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
         </div>
     </div>
@@ -894,6 +895,31 @@
         </div>
     </div>
 
+    <!-- Attendance confirmation: patient present (billing can continue) / absent (appointment deleted) -->
+    <div class="modal" id="attendanceModal" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3>Confirm Attendance</h3>
+                <button class="modal-close" onclick="closeAttendanceModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="attendanceInfo" style="padding: 4px 2px;"></div>
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button type="button" class="btn btn-danger" onclick="attendanceChooseAbsent()">Patient Absent</button>
+                <button type="button" class="btn btn-primary" onclick="attendanceConfirmPresent()">Patient Present</button>
+            </div>
+            <div id="attendanceAbsentPanel" style="display: none; padding: 12px 4px 4px; border-top: 1px solid #eee; margin-top: 4px;">
+                <p style="color:#333; font-size:14px; margin-bottom:10px;">The appointment will be <b>deleted from all dashboards</b>. Type <b>ABSENT</b> to confirm.</p>
+                <div class="form-group">
+                    <input type="text" id="attendanceAbsentCode" placeholder="ABSENT" autocomplete="off" style="width:100%; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:15px; box-sizing:border-box;">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAttendanceModal()">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="attendanceConfirmAbsent()">Delete Appointment (Absent)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { 
             onAuthChange, 
@@ -913,6 +939,7 @@
             markInvoicePaid,
             generateInvoicePdf,
             saveInvoicePdf,
+            previewAndSavePdf,
             updateAppointment,
             deleteAppointment,
             confirmAppointmentAttendance,
@@ -1088,7 +1115,7 @@
                     <td>${inv.invoiceNumber || ('INV-' + inv.id.slice(-8).toUpperCase())}</td>
                     <td>${(inv.patientName || '') + ' ' + (inv.patientSurname || '') || 'Unknown'}</td>
                     <td>${formatDate(inv.date)}</td>
-                    <td>${inv.reason || '-'}</td>
+                    <td>${inv.reason || 'N/A'}</td>
                     <td>NAD ${parseFloat(inv.fee || 0).toFixed(2)}</td>
                     <td><span class="status-badge status-${inv.paid ? 'completed' : 'pending'}">${inv.paid ? 'Paid' : 'Unpaid'}</span></td>
                     <td>
@@ -1164,12 +1191,8 @@
                 const inv = allInvoices.find(x => x.id === id);
                 if (!inv) { showToast('Invoice not found', 'error'); return; }
                 const blob = await generateInvoicePdf(inv);
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = `${inv.invoiceNumber || 'Invoice-' + id.slice(-8)}.pdf`;
-                document.body.appendChild(a); a.click(); a.remove();
-                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-                showToast('Invoice PDF downloaded', 'success');
+                await previewAndSavePdf(blob, `${inv.invoiceNumber || 'Invoice-' + id.slice(-8)}.pdf`);
+                showToast('Invoice PDF opened in new tab', 'success');
             } catch (error) {
                 showToast('PDF error: ' + error.message, 'error');
             }
@@ -1178,7 +1201,7 @@
         // ============ STANDARD VIEW MODAL (same-looking message for every View button) ============
         function vd(label, value) {
             const empty = (value === null || value === undefined || String(value).trim() === '');
-            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? '-' : value}</span></div>`;
+            return `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${empty ? 'N/A' : value}</span></div>`;
         }
         window.openGenericView = function(title, html, extraActions) {
             document.getElementById('genericViewTitle').textContent = title;
@@ -1190,6 +1213,13 @@
         window.closeGenericViewModal = function() { document.getElementById('genericViewModal').classList.remove('show'); };
         // ============ PATIENT FULL MEDICAL HISTORY (doctors/staff retrieval) ============
         let historySections = [];
+        let historyDocsCache = [];
+        window.historyOpenDoc = function(id) {
+            const d = (historyDocsCache || []).find(x => x.id === id);
+            const url = d && (d.fileUrl || d.file_url);
+            if (!url) { showToast('No file available', 'error'); return; }
+            window.open(url, '_blank');
+        };
         function safeHistCall(fn, arg) {
             return Promise.resolve().then(() => fn(arg)).catch(e => { console.warn('history section failed:', e); return []; });
         }
@@ -1198,7 +1228,7 @@
             const head = cols.map(c => `<th>${c[0]}</th>`).join('');
             const body = rows.slice().reverse().map(r => `<tr>${cols.map(c => {
                 const v = c[1](r);
-                return `<td>${v == null || v === '' ? '-' : v}</td>`;
+                return `<td>${v == null || v === '' ? 'N/A' : v}</td>`;
             }).join('')}</tr>`).join('');
             return `<div class="table-container"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
         }
@@ -1218,24 +1248,24 @@
             tabsEl.innerHTML = '';
             bodyEl.innerHTML = '<p style="color:#666; padding:8px 2px;">Loading full medical history\u2026</p>';
             modal.classList.add('show');
-            const [apts, prs, ails, rpts, rfs, docs, insts, invs, pays] = await Promise.all([
+            const [apts, prs, ails, rfs, docs, insts] = await Promise.all([
                 safeHistCall(getPatientAppointments, patientId),
                 safeHistCall(getPrescriptionsForPatient, patientId),
                 safeHistCall(getPatientAilments, patientId),
-                safeHistCall(getPatientReports, patientId),
                 safeHistCall(getPatientRefills, patientId),
                 safeHistCall(getPatientDocuments, patientId),
-                safeHistCall(getPatientInstitutes, patientId),
-                safeHistCall(getPatientInvoices, patientId),
-                safeHistCall(getPatientPayments, patientId)
+                safeHistCall(getPatientInstitutes, patientId)
             ]);
+            historyDocsCache = docs || [];
+            // Institutes tab: only complete, real visits (every detail present)
+            const instsComplete = (insts || []).filter(r => r.institute && r.date && (r.time || '') && (r.reason || '') && (r.doctorName || r.doctor_name));
             const age = patientAge(p.dob);
-            const det = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value == null || value === '' ? '-' : value}</span></div>`;
+            const det = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value == null || value === '' ? 'N/A' : value}</span></div>`;
             historySections = [
                 ['Details',
                     det('Name', [p.fullName, p.surname].filter(Boolean).join(' ')) +
                     det('ID/Passport', p.idPassport) +
-                    det('DOB', `${formatDate(p.dob) || '-'}${age ? ' (' + age + ')' : ''}`) +
+                    det('DOB', `${formatDate(p.dob) || 'N/A'}${age ? ' (' + age + ')' : ''}`) +
                     det('Gender', p.gender) +
                     det('Phone', p.cellphone || p.phone) +
                     det('Insurance', p.insurance) +
@@ -1245,12 +1275,14 @@
                 ['Appointments', histTable(apts, [
                     ['Date', a => `${formatDate(a.date)}${a.time ? ' ' + String(a.time).slice(0, 5) : ''}`],
                     ['Doctor', a => a.doctorSpecialist || a.doctor_specialist || 'Staff'],
+                    ['Institute', a => a.institution],
                     ['Reason', a => a.reason],
-                    ['Status', a => `${a.status || '-'}${a.attendance_confirmed ? ' (attended)' : ''}`]
+                    ['Status', a => `${a.status || 'N/A'}${a.attendance_confirmed ? ' (attended)' : ''}`]
                 ])],
                 ['Prescriptions', histTable(prs, [
                     ['Date', r => formatDate(r.date)],
                     ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
+                    ['Institute', r => r.institute],
                     ['Ailment', r => r.ailment],
                     ['Treatment', r => r.treatment],
                     ['Prescription', r => r.prescription]
@@ -1259,12 +1291,8 @@
                     ['Date', r => formatDate(r.date)],
                     ['Ailment', r => r.ailment],
                     ['Treatment', r => r.treatment],
-                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff']
-                ])],
-                ['Reports', histTable(rpts, [
-                    ['Date', r => formatDate(r.date)],
                     ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
-                    ['Report', r => { const t = r.description || r.report || ''; return t.length > 140 ? t.slice(0, 140) + '\u2026' : t; }]
+                    ['Specialization', r => r.specialization]
                 ])],
                 ['Refill Requests', histTable(rfs, [
                     ['Date', r => formatDate(r.date || (r.created_at ? String(r.created_at).slice(0, 10) : ''))],
@@ -1272,31 +1300,22 @@
                     ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
                     ['Status', r => r.status || 'pending']
                 ])],
-                ['Documents', histTable(docs, [
-                    ['Name', r => r.fileName || r.file_name],
-                    ['Category', r => r.category],
-                    ['Date', r => formatDate(r.uploadDate || r.upload_date || (r.createdAt ? String(r.createdAt).slice(0, 10) : ''))]
-                ])],
-                ['Institutes Visited', histTable(insts, [
+                ['Documents', (docs && docs.length)
+                    ? `<div class="table-container"><table><thead><tr><th>Name</th><th>Category</th><th>Date</th><th>PDF</th></tr></thead><tbody>` +
+                      docs.slice().reverse().map(d => `<tr>
+                        <td>${d.fileName || d.file_name || 'N/A'}</td>
+                        <td>${d.category || 'N/A'}</td>
+                        <td>${formatDate(d.uploadDate || d.upload_date || (d.createdAt ? String(d.createdAt).slice(0, 10) : '')) || 'N/A'}</td>
+                        <td>${(d.fileUrl || d.file_url) ? `<button class="btn-sm btn-download" onclick="historyOpenDoc('${d.id}')">PDF</button>` : 'N/A'}</td>
+                      </tr>`).join('') + `</tbody></table></div>`
+                    : '<p style="color:#666; padding:12px 4px; font-size:14px;">None recorded</p>'],
+                ['Institutes Visited', histTable(instsComplete, [
                     ['Institute', r => r.institute],
                     ['Date', r => formatDate(r.date)],
-                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff']
-                ])],
-                ['Invoices', histTable(invs, [
-                    ['No.', r => r.invoiceNumber || ('INV-' + String(r.id).slice(-8).toUpperCase())],
-                    ['Date', r => formatDate(r.date)],
-                    ['Reason', r => r.reason],
-                    ['Amount', r => 'NAD ' + parseFloat(r.fee || 0).toFixed(2)],
-                    ['Status', r => r.paid ? 'Paid' : 'Unpaid']
-                ])],
-                ['Payments', histTable(pays, [
-                    ['Date', r => formatDate(r.date)],
-                    ['Amount', r => 'NAD ' + parseFloat(r.amount || 0).toFixed(2)],
-                    ['Method', r => r.method],
-                    ['Reference', r => r.reference]
+                    ['Doctor', r => r.doctorName || r.doctor_name || 'Staff'],
+                    ['Reason', r => r.reason]
                 ])]
-            ];
-            const renderTab = i => {
+            ];            const renderTab = i => {
                 tabsEl.innerHTML = '';
                 historySections.forEach((s, j) => {
                     const b = document.createElement('button');
@@ -1428,12 +1447,12 @@
                 <tr>
                     <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
                     <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
-                    <td>${patient.gender || '-'}</td>
-                    <td>${patient.idPassport || '-'}</td>
-                    <td>${patient.cellphone || patient.phone || '-'}</td>
-                    <td>${patient.insurance || '-'}</td>
-                    <td>${patient.institution || '-'}</td>
-                    <td>${patient.reason || '-'}</td>
+                    <td>${patient.gender || 'N/A'}</td>
+                    <td>${patient.idPassport || 'N/A'}</td>
+                    <td>${patient.cellphone || patient.phone || 'N/A'}</td>
+                    <td>${patient.insurance || 'N/A'}</td>
+                    <td>${patient.institution || 'N/A'}</td>
+                    <td>${patient.reason || 'N/A'}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="showPatientHistory('${patient.id}')">History</button>
                         <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
@@ -1468,12 +1487,12 @@
                 <tr>
                     <td><strong>${patient.fullName || ''} ${patient.surname || ''}</strong></td>
                     <td>${formatDate(patient.dob)} ${patient.age ? `(${patient.age})` : ''}</td>
-                    <td>${patient.gender || '-'}</td>
-                    <td>${patient.idPassport || '-'}</td>
-                    <td>${patient.cellphone || patient.phone || '-'}</td>
-                    <td>${patient.insurance || '-'}</td>
-                    <td>${patient.institution || '-'}</td>
-                    <td>${patient.reason || '-'}</td>
+                    <td>${patient.gender || 'N/A'}</td>
+                    <td>${patient.idPassport || 'N/A'}</td>
+                    <td>${patient.cellphone || patient.phone || 'N/A'}</td>
+                    <td>${patient.insurance || 'N/A'}</td>
+                    <td>${patient.institution || 'N/A'}</td>
+                    <td>${patient.reason || 'N/A'}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewPatient('${patient.id}')">View</button>
                         <button class="btn-sm btn-edit" onclick="editPatient('${patient.id}')">Edit</button>
@@ -1727,10 +1746,10 @@
                 return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
-                    <td>${apt.time || '-'}</td>
+                    <td>${apt.time || 'N/A'}</td>
                     <td>${apt.patientName || ''} ${apt.patientSurname || ''}</td>
                     <td>${formatDate(apt.patientDob || '')}</td>
-                    <td>${apt.reason || '-'}</td>
+                    <td>${apt.reason || 'N/A'}</td>
                     <td><span class="status-badge status-${apt.status}">${apt.status}</span></td>
                     <td>
                         ${attendCell}
@@ -1741,16 +1760,54 @@
             }).join('');
         }
 
-        // Staff confirm the patient's attendance once the appointment is due -
-        // this is what allows the visit to be billed (invoices require it).
-        window.confirmAttendance = async function(id) {
-            if (!confirm('Confirm that the patient visited for this appointment? This allows the visit to be billed.')) return;
+        // ============ ATTENDANCE: PRESENT / ABSENT ============
+        let attendanceAptId = null;
+        window.confirmAttendance = function(id) {
+            const apt = (allAppointments || []).find(a => a.id === id);
+            if (!apt) { showToast('Appointment not found', 'error'); return; }
+            attendanceAptId = id;
+            const name = `${apt.patientName || ''} ${apt.patientSurname || ''}`.trim() || 'Patient';
+            document.getElementById('attendanceInfo').innerHTML =
+                `<div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name}</span></div>` +
+                `<div class="detail"><span class="detail-label">ID/Passport</span><span class="detail-value">${apt.patientIdPassport || apt.patient_id_passport || 'N/A'}</span></div>` +
+                `<div class="detail"><span class="detail-label">Date &amp; Time</span><span class="detail-value">${formatDate(apt.date)} ${apt.time || ''}</span></div>` +
+                `<div class="detail"><span class="detail-label">Doctor / Specialist</span><span class="detail-value">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</span></div>` +
+                `<p style="margin:12px 0 0; color:#333; font-size:14px;">Did the patient attend this appointment?</p>`;
+            document.getElementById('attendanceAbsentPanel').style.display = 'none';
+            document.getElementById('attendanceAbsentCode').value = '';
+            document.getElementById('attendanceModal').classList.add('show');
+        };
+        window.closeAttendanceModal = function() {
+            document.getElementById('attendanceModal').classList.remove('show');
+            attendanceAptId = null;
+        };
+        window.attendanceChooseAbsent = function() {
+            document.getElementById('attendanceAbsentPanel').style.display = 'block';
+        };
+        window.attendanceConfirmPresent = async function() {
+            const id = attendanceAptId;
+            closeAttendanceModal();
+            if (!id) return;
             try {
                 await confirmAppointmentAttendance(id);
                 showToast('Attendance confirmed - visit can now be billed', 'success');
                 await loadAppointments();
             } catch (error) {
                 showToast('Failed to confirm attendance: ' + error.message, 'error');
+            }
+        };
+        window.attendanceConfirmAbsent = async function() {
+            const code = (document.getElementById('attendanceAbsentCode').value || '').trim().toUpperCase();
+            if (code !== 'ABSENT') { showToast('Type ABSENT to confirm the absence', 'error'); return; }
+            const id = attendanceAptId;
+            closeAttendanceModal();
+            if (!id) return;
+            try {
+                await deleteAppointment(id);
+                showToast('Patient marked absent - appointment removed from all dashboards', 'success');
+                await loadAppointments();
+            } catch (error) {
+                showToast('Failed to delete appointment: ' + error.message, 'error');
             }
         };
 
@@ -2033,15 +2090,15 @@
             };
             tbody.innerHTML = allMedRecords.map(mr => {
                 const name = `${mr.patientName || ''} ${mr.patientSurname || ''}`.trim() || 'Unknown';
-                const med = [mr.medicationName, mr.strength].filter(Boolean).join(' ') || '-';
+                const med = [mr.medicationName, mr.strength].filter(Boolean).join(' ') || 'N/A';
                 const inv = findStock(mr);
                 const left = inv ? (inv.quantity ?? 0) : '-';
                 return `
                 <tr>
                     <td>${formatDate(mr.date)}</td>
                     <td>${name}</td>
-                    <td>${mr.patientIdPassport || '-'}</td>
-                    <td>${mr.prescription || '-'}</td>
+                    <td>${mr.patientIdPassport || 'N/A'}</td>
+                    <td>${mr.prescription || 'N/A'}</td>
                     <td>${med}</td>
                     <td>${mr.quantity ?? '-'}</td>
                     <td>${left}</td>
@@ -2057,7 +2114,7 @@
         window.viewMedRecord = function(id) {
             const mr = allMedRecords.find(m => m.id === id);
             if (!mr) { showToast('Record not found', 'error'); return; }
-            const wa = v => (v === null || v === undefined || String(v).trim() === '') ? '-' : v;
+            const wa = v => (v === null || v === undefined || String(v).trim() === '') ? 'N/A' : v;
             document.getElementById('medViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${wa(formatDate(mr.date))}</span></div>
                 <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${wa(`${mr.patientName || ''} ${mr.patientSurname || ''}`.trim())}</span></div>
@@ -2312,7 +2369,7 @@
             tbody.innerHTML = filtered.map(task => `
                 <tr style="${task.completed ? 'opacity: 0.6;' : ''}">
                     <td>${formatDate(task.date)}</td>
-                    <td>${task.time || '-'}</td>
+                    <td>${task.time || 'N/A'}</td>
                     <td style="${task.completed ? 'text-decoration: line-through;' : ''}">${task.text}</td>
                     <td><span class="status-badge status-${task.completed ? 'completed' : 'pending'}">${task.completed ? 'Completed' : 'Pending'}</span></td>
                     <td>
