@@ -247,6 +247,7 @@
                             <th>Patient</th>
                             <th>Prescription Date</th>
                             <th>Ailment / Treatment</th>
+                            <th>Doctor</th>
                             <th>Prescription</th>
                             <th>Next Available</th>
                             <th>Notes</th>
@@ -326,6 +327,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Time</th>
+                            <th>Doctor</th>
                             <th>Patient</th>
                             <th>DOB</th>
                             <th>Reason</th>
@@ -367,6 +369,8 @@
                             <th>Date</th>
                             <th>Patient</th>
                             <th>ID / Passport</th>
+                            <th>Doctor</th>
+                            <th>Institute</th>
                             <th>Ailment</th>
                             <th>Treatment</th>
                             <th>Prescription</th>
@@ -445,7 +449,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="required">First Name(s)</label>
-                        <input type="text" id="pFullName" name="fullName" required>
+                        <input type="text" id="pFullName" name="fullName" required list="patientNameList">
                         <div class="error-message" id="pFullNameError"></div>
                     </div>
                     <div class="form-group">
@@ -478,7 +482,7 @@
                     </div>
                     <div class="form-group">
                         <label class="required">ID / Passport</label>
-                        <input type="text" id="pIdPassport" name="idPassport" required placeholder="11-digit ID">
+                        <input type="text" id="pIdPassport" name="idPassport" required list="patientIdList" placeholder="ID (11 digits) or passport (e.g. A1234567)">
                         <div class="error-message" id="pIdPassportError"></div>
                     </div>
                 </div>
@@ -500,9 +504,12 @@
                 </div>
                 <div class="form-group">
                     <label class="required">Institution</label>
-                    <input type="text" id="pInstitution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <input type="text" id="pInstitution" name="institution" required list="patientInstituteList" placeholder="e.g., Windhoek Central Hospital">
                     <div class="error-message" id="pInstitutionError"></div>
                 </div>
+                <datalist id="patientNameList"></datalist>
+                <datalist id="patientIdList"></datalist>
+                <datalist id="patientInstituteList"></datalist>
                 <div class="form-group">
                     <label class="required">Reason for Visit</label>
                     <select id="pReason" name="reason" required>
@@ -623,14 +630,17 @@
                     </div>
                     <div class="form-group">
                         <label class="required">Ailment / Diagnosis</label>
-                        <input type="text" id="prAilment" name="ailment" required placeholder="e.g., Hypertension, Type 2 Diabetes">
+                        <input type="text" id="prAilment" name="ailment" required list="ailmentList" placeholder="e.g., Hypertension, Type 2 Diabetes">
                         <div class="error-message" id="prAilmentError"></div>
+                        <datalist id="ailmentList"></datalist>
+                        <datalist id="treatmentList"></datalist>
+                        <datalist id="prescriptionList"></datalist>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="required">Treatment</label>
-                        <input type="text" id="prTreatment" name="treatment" required placeholder="e.g., Antihypertensive therapy, Metformin 500mg BD">
+                        <input type="text" id="prTreatment" name="treatment" required list="treatmentList" placeholder="e.g., Antihypertensive therapy, Metformin 500mg BD">
                         <div class="error-message" id="prTreatmentError"></div>
                     </div>
                     <div class="form-group">
@@ -640,7 +650,7 @@
                 </div>
                 <div class="form-group">
                     <label class="required">Prescription Details</label>
-                    <textarea id="prPrescription" name="prescription" rows="4" required placeholder="Medication name, dosage, frequency, duration..."></textarea>
+                    <textarea id="prPrescription" name="prescription" rows="4" required list="prescriptionList" placeholder="Medication name, dosage, frequency, duration..."></textarea>
                     <div class="error-message" id="prPrescriptionError"></div>
                 </div>
                 <div class="form-group">
@@ -904,12 +914,20 @@
         // Initialize inactivity timer (1 hour)
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired due to inactivity. Redirecting...', 'info');
-            await signOut();
-            setTimeout(() => window.location.href = 'login.html', 2000);
+            // Sign out best-effort, but ALWAYS redirect - a slow or dead
+            // network must never keep the user on a locked page.
+            try { signOut().catch(() => {}); } catch (e) { /* redirect below */ }
+            setTimeout(() => window.location.href = 'login.html', 1500);
         });
 
         // State
         let currentUser = null;
+
+        // Doctor/staff name + their registered specialization, e.g. "Dr Nell (Cardiology)".
+        const doctorWithSpec = (name, spec) => {
+            const n = (name && String(name).trim()) ? name : 'N/A';
+            return spec ? `${n} (${spec})` : n;
+        };
         let currentProfile = null;
         let allPatients = [];
         let allAppointments = [];
@@ -1299,7 +1317,8 @@
                 vd('Reason', inv.reason) +
                 vd('Prescription', inv.prescription) +
                 vd('Treatment', inv.treatment) +
-                vd('Doctor', inv.doctorName) +
+                vd('Doctor', inv.doctorName || 'N/A') +
+                vd('Specialization', inv.specialization || 'N/A') +
                 vd('Amount', 'NAD ' + parseFloat(inv.fee || 0).toFixed(2)) +
                 vd('Status', inv.paid ? 'Paid' : 'Unpaid') +
                 vd('Institute', inv.institute),
@@ -1311,7 +1330,8 @@
                 const inv = allInvoices.find(x => x.id === id);
                 if (!inv) return;
                 const blob = await generateInvoicePdf(inv);
-                window.open(URL.createObjectURL(blob), '_blank');
+                await previewAndSavePdf(blob, `${inv.invoiceNumber || 'Invoice-' + id.slice(-8)}.pdf`);
+                showToast('Invoice PDF opened in new tab', 'success');
             } catch (error) {
                 showToast('Could not open invoice: ' + error.message, 'error');
             }
@@ -1566,10 +1586,36 @@
                 title.textContent = 'Add New Patient';
                 submitBtn.textContent = 'Save Patient';
                 document.getElementById('patientId').value = '';
+                // The institute fills itself from the logged-in staff member's
+                // profile - editable if the patient belongs elsewhere.
+                const _inst = (currentProfile && currentProfile.institute) || (currentUser && currentUser.institute) || '';
+                if (_inst) {
+                    document.getElementById('pInstitution').value = _inst;
+                }
             }
+            populatePatientDatalists();
 
             document.getElementById('patientModal').classList.add('show');
         };
+
+        function populatePatientDatalists() {
+            const names = new Set(); const ids = new Set(); const insts = new Set();
+            (allPatients || []).forEach(p => {
+                const n = `${p.fullName || ''} ${p.surname || ''}`.trim();
+                if (n) names.add(n);
+                if (p.idPassport || p.id_passport) ids.add(p.idPassport || p.id_passport);
+                if (p.institution || p.institute) insts.add(p.institution || p.institute);
+            });
+            const _myInst = (currentProfile && currentProfile.institute) || (currentUser && currentUser.institute) || '';
+            if (_myInst) insts.add(_myInst);
+            const fill = (id, vals) => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = [...vals].map(v => `<option value="${String(v).replace(/"/g, '&quot;')}">`).join('');
+            };
+            fill('patientNameList', names);
+            fill('patientIdList', ids);
+            fill('patientInstituteList', insts);
+        }
 
         window.closePatientModal = function() {
             document.getElementById('patientModal').classList.remove('show');
@@ -1696,19 +1742,18 @@
             }
 
             empty.style.display = 'none';
-            const todayStr = new Date().toISOString().split('T')[0];
             tbody.innerHTML = filtered.map(apt => {
                 const attended = apt.attendanceConfirmed === true || apt.attendance_confirmed === true;
-                const due = String(apt.date || '').slice(0, 10) <= todayStr;
+                // Both options (Present / Absent) are always available for an
+                // unconfirmed appointment - date and status no longer gate it.
                 const attendCell = attended
                     ? `<span class="status-badge status-completed" title="${apt.confirmedByEmail || apt.confirmed_by_email || 'Confirmed by staff'}">Attended &#10003;</span>`
-                    : (apt.status === 'scheduled' && due
-                        ? `<button class="btn-sm btn-attend" onclick="confirmAttendance('${apt.id}')">Confirm Attendance</button>`
-                        : '');
+                    : `<button class="btn-sm btn-attend" onclick="confirmAttendance('${apt.id}')">Confirm Attendance</button>`;
                 return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
                     <td>${apt.time || 'N/A'}</td>
+                    <td>${doctorWithSpec(apt.doctorSpecialist || apt.doctor_specialist, apt.specialization)}</td>
                     <td>${apt.patientName || ''} ${apt.patientSurname || ''}</td>
                     <td>${formatDate(apt.patientDob || '')}</td>
                     <td>${apt.reason || 'N/A'}</td>
@@ -1944,6 +1989,8 @@
                     <td>${formatDate(pr.date)}</td>
                     <td>${pr.patientName || 'Unknown'}</td>
                     <td>${pr.patientIdPassport || 'N/A'}</td>
+                    <td>${doctorWithSpec(pr.doctorName || pr.doctor_name, pr.specialization)}</td>
+                    <td>${pr.institute || 'N/A'}</td>
                     <td>${pr.ailment || 'N/A'}</td>
                     <td>${pr.treatment || 'N/A'}</td>
                     <td>${pr.prescription || 'N/A'}</td>
@@ -1965,6 +2012,7 @@
             form.reset();
             clearAllErrors('prescriptionForm');
             populatePatientDropdowns();
+            populatePrescDatalists();
             document.getElementById('prDate').max = new Date().toISOString().split('T')[0];
 
             if (prescription) {
@@ -1988,6 +2036,22 @@
         window.closePrescriptionModal = function() {
             document.getElementById('prescriptionModal').classList.remove('show');
         };
+
+        function populatePrescDatalists() {
+            const ails = new Set(); const trts = new Set(); const prs = new Set();
+            (allPrescriptions || []).forEach(pr => {
+                if (pr.ailment) ails.add(pr.ailment);
+                if (pr.treatment) trts.add(pr.treatment);
+                if (pr.prescription) prs.add(String(pr.prescription).trim().split('\n')[0].slice(0, 80));
+            });
+            const fill = (id, vals) => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = [...vals].map(v => `<option value="${String(v).replace(/"/g, '&quot;')}">`).join('');
+            };
+            fill('ailmentList', ails);
+            fill('treatmentList', trts);
+            fill('prescriptionList', prs);
+        }
 
         document.getElementById('prescriptionForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -2061,6 +2125,8 @@
                 vd('Prescription', pr.prescription) +
                 vd('Report', pr.report) +
                 vd('Doctor', pr.doctorName) +
+                vd('Specialization', pr.specialization) +
+                vd('Institute', pr.institute) +
                 vd('Next Available', pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : null) +
                 vd('Cell Phone', pr.cellPhone)
             );
@@ -2222,6 +2288,7 @@
                     <td>${name}</td>
                     <td>${rf.prescriptionDate ? formatDate(rf.prescriptionDate) : '-'}</td>
                     <td>${at || 'N/A'}</td>
+                    <td>${doctorWithSpec(rf.doctorName || rf.doctor_name, rf.specialization)}</td>
                     <td>${rf.prescription || rf.medicationName || rf.medication || 'N/A'}</td>
                     <td>${rf.nextAvailableDate ? formatDate(rf.nextAvailableDate) : '-'}</td>
                     <td>${rf.notes || 'N/A'}</td>

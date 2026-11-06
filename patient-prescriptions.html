@@ -199,6 +199,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Doctor / Specialist</th>
+                        <th>Institute</th>
                         <th>Ailment</th>
                         <th>Treatment</th>
                         <th>Prescription</th>
@@ -383,11 +384,12 @@
                 return `
                     <tr>
                         <td>${formatDate(pr.date)}</td>
-                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}</td>
+                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}${pr.specialization ? ' (' + pr.specialization + ')' : ''}</td>
+                        <td>${pr.institute || 'N/A'}</td>
                         <td>${pr.ailment || 'N/A'}</td>
                         <td>${pr.treatment || 'N/A'}</td>
                         <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pr.prescription || 'N/A'}</td>
-                        <td>${pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : (pr.next_available_date ? formatDate(pr.next_available_date) : '-')}</td>
+                        <td>${pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : (pr.next_available_date ? formatDate(pr.next_available_date) : 'N/A')}</td>
                         <td><span class="status-badge ${statusClass}">${prStatus}</span></td>
                         <td>
                             <button class="btn-sm btn-view" onclick="viewPrescription('${pr.id}')">View</button>
@@ -405,6 +407,7 @@
             document.getElementById('prescViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(pr.date)}</span></div>
                 <div class="detail"><span class="detail-label">Doctor</span><span class="detail-value">${pr.doctorName || pr.doctor_name || 'Staff'}</span></div>
+                <div class="detail"><span class="detail-label">Specialization</span><span class="detail-value">${pr.specialization || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Institute</span><span class="detail-value">${pr.institute || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Ailment</span><span class="detail-value">${pr.ailment || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${pr.treatment || 'N/A'}</span></div>
@@ -447,7 +450,7 @@
                     <td>${r.prescriptionDate ? formatDate(r.prescriptionDate) : '-'}</td>
                     <td>${at || 'N/A'}</td>
                     <td>${r.prescription || r.medicationName || r.medication || 'N/A'}</td>
-                    <td>${r.doctorName || r.doctor_name || 'Staff'}</td>
+                    <td>${r.doctorName || r.doctor_name || 'Staff'}${r.specialization ? ' (' + r.specialization + ')' : ''}</td>
                     <td>${r.nextAvailableDate ? formatDate(r.nextAvailableDate) : '-'}</td>
                     <td><span class="status-badge status-${r.status === 'pending' ? 'pending' : (r.status === 'approved' ? 'active' : 'expired')}">${r.status || 'pending'}</span>${note}</td>
                 </tr>`;

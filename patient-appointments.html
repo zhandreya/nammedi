@@ -339,10 +339,12 @@
                 <tr>
                     <td>${formatDate(apt.date)}</td>
                     <td>${apt.time || 'N/A'}</td>
-                    <td>${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</td>
+                    <td>${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}${apt.specialization ? ' (' + apt.specialization + ')' : ''}</td>
                     <td>${apt.institution || 'N/A'}</td>
                     <td>${apt.reason || 'N/A'}</td>
-                    <td><span class="status-badge status-${apt.status}">${apt.status}</span>${attended ? ' <span class="status-badge status-completed">Attended</span>' : ''}</td>
+                    <td>${attended
+                        ? '<span class="status-badge status-completed">Completed</span>'
+                        : `<span class="status-badge status-${apt.status}">${apt.status}</span>`}</td>
                     <td>
                         ${apt.status === 'scheduled' ? `
                             <button class="btn-sm btn-cancel" onclick="cancelAppointment('${apt.id}')">Cancel</button>
@@ -381,7 +383,7 @@
                 <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'You'}</span></div>
                 <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${apt.status}">${apt.status}</span></span></div>
-                <div class="detail"><span class="detail-label">Attendance</span><span class="detail-value">${apt.attendanceConfirmed === true || apt.attendance_confirmed === true ? 'Confirmed by the clinic' : '-'}</span></div>
+                <div class="detail"><span class="detail-label">Attendance</span><span class="detail-value">${apt.attendanceConfirmed === true || apt.attendance_confirmed === true ? 'Confirmed by the clinic' : 'N/A'}</span></div>
                 ${apt.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${apt.notes}</span></div>` : ''}
             `;
             aptViewModal.classList.add('show');

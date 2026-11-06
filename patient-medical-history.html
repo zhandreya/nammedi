@@ -130,6 +130,9 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
         .toast.error { background: #f44336; }
+        .inv-head { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: #fff; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+        .inv-head h4 { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+        .inv-head .sub { font-size: 12px; opacity: .92; }
         .toast.info { background: #2196F3; }
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
@@ -197,6 +200,7 @@
                     <tr>
                         <th>Date</th>
                         <th>Doctor / Specialist</th>
+                        <th>Institute</th>
                         <th>Ailment</th>
                         <th>Treatment</th>
                         <th>Prescription</th>
@@ -414,7 +418,8 @@
                 .map(pr => `
                     <tr>
                         <td>${formatDate(pr.date)}</td>
-                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}</td>
+                        <td>${pr.doctorName || pr.doctor_name || pr.doctorSpecialist || pr.doctor_specialist || 'Staff'}${pr.specialization ? ' (' + pr.specialization + ')' : ''}</td>
+                        <td>${pr.institute || 'N/A'}</td>
                         <td>${pr.ailment || 'N/A'}</td>
                         <td>${pr.treatment || 'N/A'}</td>
                         <td>${pr.prescription || 'N/A'}</td>
@@ -527,14 +532,22 @@
             let rpt = null;
             if (key.startsWith('pr-')) {
                 const pr = allPresc.find(p => 'pr-' + p.id === key);
-                if (pr) rpt = { date: pr.date, doctor: pr.doctorName || pr.doctor_name, text: pr.report };
+                if (pr) rpt = { date: pr.date, doctor: pr.doctorName || pr.doctor_name, text: pr.report,
+                                 institute: pr.institute, specialization: pr.specialization };
             } else {
                 const r = (allReportsRows || []).find(x => 'rpt-' + x.id === key);
-                if (r) rpt = { date: r.date, doctor: r.doctorName || r.doctor_name, text: r.description || r.report };
+                if (r) rpt = { date: r.date, doctor: r.doctorName || r.doctor_name, text: r.description || r.report,
+                               institute: r.institute, specialization: r.specialization };
             }
             if (!rpt) { showToast('Report not found', 'error'); return; }
             const d = (label, value) => `<div class="detail"><span class="detail-label">${label}</span><span class="detail-value">${value || 'N/A'}</span></div>`;
-            showDetailModal('Report', d('Date', formatDate(rpt.date)) + d('Staff', rpt.doctor) + d('Report', `<span style="white-space:pre-wrap;">${rpt.text}</span>`));
+            showDetailModal('Report',
+                `<div class="inv-head"><h4>Medical Report</h4><div class="sub">${rpt.institute || 'N/A'} &middot; ${formatDate(rpt.date) || 'N/A'}</div></div>` +
+                d('Date', formatDate(rpt.date)) +
+                d('Staff', rpt.doctor) +
+                d('Specialization', rpt.specialization) +
+                d('Institute', rpt.institute) +
+                d('Report', `<span style="white-space:pre-wrap;">${rpt.text}</span>`));
         };
 
         let reschedId = null;

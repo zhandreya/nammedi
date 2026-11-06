@@ -157,6 +157,9 @@
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #4CAF50; }
         .toast.error { background: #f44336; }
+        .inv-head { background: linear-gradient(135deg, #0066cc 0%, #004499 100%); color: #fff; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+        .inv-head h4 { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+        .inv-head .sub { font-size: 12px; opacity: .92; }
         .toast.info { background: #2196F3; }
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
@@ -269,6 +272,7 @@
                         <tr>
                             <th>Date</th>
                             <th>Time</th>
+                            <th>Doctor</th>
                             <th>Patient</th>
                             <th>DOB</th>
                             <th>Reason</th>
@@ -405,6 +409,7 @@
                             <th>ID / Passport</th>
                             <th>Date</th>
                             <th>Type</th>
+                            <th>Staff</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -430,7 +435,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="required">First Name(s)</label>
-                        <input type="text" id="pFullName" name="fullName" required>
+                        <input type="text" id="pFullName" name="fullName" required list="patientNameList">
                         <div class="error-message" id="pFullNameError"></div>
                     </div>
                     <div class="form-group">
@@ -463,7 +468,7 @@
                     </div>
                     <div class="form-group">
                         <label class="required">ID / Passport</label>
-                        <input type="text" id="pIdPassport" name="idPassport" required placeholder="11-digit ID">
+                        <input type="text" id="pIdPassport" name="idPassport" required list="patientIdList" placeholder="ID (11 digits) or passport (e.g. A1234567)">
                         <div class="error-message" id="pIdPassportError"></div>
                     </div>
                 </div>
@@ -485,9 +490,12 @@
                 </div>
                 <div class="form-group">
                     <label class="required">Institution</label>
-                    <input type="text" id="pInstitution" name="institution" required placeholder="e.g., Windhoek Central Hospital">
+                    <input type="text" id="pInstitution" name="institution" required list="patientInstituteList" placeholder="e.g., Windhoek Central Hospital">
                     <div class="error-message" id="pInstitutionError"></div>
                 </div>
+                <datalist id="patientNameList"></datalist>
+                <datalist id="patientIdList"></datalist>
+                <datalist id="patientInstituteList"></datalist>
                 <div class="form-group">
                     <label class="required">Reason for Visit</label>
                     <select id="pReason" name="reason" required>
@@ -822,7 +830,8 @@
                 <button class="modal-close" onclick="closeInsuranceViewModal()" aria-label="Close">&times;</button>
             </div>
             <div id="insuranceViewBody" style="padding: 4px 2px;"></div>
-            <div class="modal-actions">
+            <div class="modal-actions" style="justify-content: space-between;">
+                <button type="button" class="btn btn-primary" onclick="downloadInsurancePdf(currentInsuranceViewId)">PDF</button>
                 <button type="button" class="btn btn-secondary" onclick="closeInsuranceViewModal()">Close</button>
             </div>
         </div>
@@ -946,6 +955,7 @@
             saveInvoicePdf,
             previewAndSavePdf,
             buildPaymentReceiptPdf,
+            buildInsurancePdf,
             generateReport,
             getMyReports,
             updateReport,
@@ -962,12 +972,20 @@
         // Initialize inactivity timer (1 hour)
         const cleanupInactivity = initInactivityTimer(80 * 60 * 1000, async () => {
             showToast('Session expired due to inactivity. Redirecting...', 'info');
-            await signOut();
-            setTimeout(() => window.location.href = 'login.html', 2000);
+            // Sign out best-effort, but ALWAYS redirect - a slow or dead
+            // network must never keep the user on a locked page.
+            try { signOut().catch(() => {}); } catch (e) { /* redirect below */ }
+            setTimeout(() => window.location.href = 'login.html', 1500);
         });
 
         // State
         let currentUser = null;
+
+        // Doctor/staff name + their registered specialization, e.g. "Dr Nell (Cardiology)".
+        const doctorWithSpec = (name, spec) => {
+            const n = (name && String(name).trim()) ? name : 'N/A';
+            return spec ? `${n} (${spec})` : n;
+        };
         let currentProfile = null;
         let allPatients = [];
         let allAppointments = [];
@@ -1230,7 +1248,8 @@
                 vd('Reason', inv.reason) +
                 vd('Prescription', inv.prescription) +
                 vd('Treatment', inv.treatment) +
-                vd('Doctor', inv.doctorName) +
+                vd('Doctor', inv.doctorName || 'N/A') +
+                vd('Specialization', inv.specialization || 'N/A') +
                 vd('Amount', 'NAD ' + parseFloat(inv.fee || 0).toFixed(2)) +
                 vd('Status', inv.paid ? 'Paid' : 'Unpaid') +
                 vd('Institute', inv.institute),
@@ -1242,7 +1261,8 @@
                 const inv = allInvoices.find(x => x.id === id);
                 if (!inv) return;
                 const blob = await generateInvoicePdf(inv);
-                window.open(URL.createObjectURL(blob), '_blank');
+                await previewAndSavePdf(blob, `${inv.invoiceNumber || 'Invoice-' + id.slice(-8)}.pdf`);
+                showToast('Invoice PDF opened in new tab', 'success');
             } catch (error) {
                 showToast('Could not open invoice: ' + error.message, 'error');
             }
@@ -1516,10 +1536,36 @@
                 title.textContent = 'Add New Patient';
                 submitBtn.textContent = 'Save Patient';
                 document.getElementById('patientId').value = '';
+                // The institute fills itself from the logged-in staff member's
+                // profile - editable if the patient belongs elsewhere.
+                const _inst = (currentProfile && currentProfile.institute) || (currentUser && currentUser.institute) || '';
+                if (_inst) {
+                    document.getElementById('pInstitution').value = _inst;
+                }
             }
+            populatePatientDatalists();
 
             document.getElementById('patientModal').classList.add('show');
         };
+
+        function populatePatientDatalists() {
+            const names = new Set(); const ids = new Set(); const insts = new Set();
+            (allPatients || []).forEach(p => {
+                const n = `${p.fullName || ''} ${p.surname || ''}`.trim();
+                if (n) names.add(n);
+                if (p.idPassport || p.id_passport) ids.add(p.idPassport || p.id_passport);
+                if (p.institution || p.institute) insts.add(p.institution || p.institute);
+            });
+            const _myInst = (currentProfile && currentProfile.institute) || (currentUser && currentUser.institute) || '';
+            if (_myInst) insts.add(_myInst);
+            const fill = (id, vals) => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = [...vals].map(v => `<option value="${String(v).replace(/"/g, '&quot;')}">`).join('');
+            };
+            fill('patientNameList', names);
+            fill('patientIdList', ids);
+            fill('patientInstituteList', insts);
+        }
 
         window.closePatientModal = function() {
             document.getElementById('patientModal').classList.remove('show');
@@ -1646,19 +1692,18 @@
             }
 
             empty.style.display = 'none';
-            const todayStr = new Date().toISOString().split('T')[0];
             tbody.innerHTML = filtered.map(apt => {
                 const attended = apt.attendanceConfirmed === true || apt.attendance_confirmed === true;
-                const due = String(apt.date || '').slice(0, 10) <= todayStr;
+                // Both options (Present / Absent) are always available for an
+                // unconfirmed appointment - date and status no longer gate it.
                 const attendCell = attended
                     ? `<span class="status-badge status-completed" title="${apt.confirmedByEmail || apt.confirmed_by_email || 'Confirmed by staff'}">Attended &#10003;</span>`
-                    : (apt.status === 'scheduled' && due
-                        ? `<button class="btn-sm btn-attend" onclick="confirmAttendance('${apt.id}')">Confirm Attendance</button>`
-                        : '');
+                    : `<button class="btn-sm btn-attend" onclick="confirmAttendance('${apt.id}')">Confirm Attendance</button>`;
                 return `
                 <tr>
                     <td>${formatDate(apt.date)}</td>
                     <td>${apt.time || 'N/A'}</td>
+                    <td>${doctorWithSpec(apt.doctorSpecialist || apt.doctor_specialist, apt.specialization)}</td>
                     <td>${apt.patientName || ''} ${apt.patientSurname || ''}</td>
                     <td>${formatDate(apt.patientDob || '')}</td>
                     <td>${apt.reason || 'N/A'}</td>
@@ -1905,18 +1950,33 @@
 
         function filterInsurance() { renderInsurance(); }
 
+        window.currentInsuranceViewId = null;
         window.viewInsurance = function(id) {
             const ins = allInsurance.find(i => i.id === id);
             if (!ins) { showToast('Record not found', 'error'); return; }
+            window.currentInsuranceViewId = id;
             document.getElementById('insuranceViewBody').innerHTML =
                 vd('Date', formatDate(ins.date)) +
                 vd('Patient', `${ins.patientName || 'Unknown'} ${ins.patientSurname || ''}`.trim()) +
                 vd('ID/Passport', ins.idPassport || ins.patientIdPassport) +
                 vd('Medical Aid No.', ins.medicalAidNumber) +
+                vd('Provider', ins.provider) +
+                vd('Institute', ins.institute) +
                 vd('Payment', ins.paymentStatus) +
                 vd('Status', ins.status) +
                 vd('Notes', ins.notes);
             insuranceViewModal.classList.add('show');
+        };
+        window.downloadInsurancePdf = async function(id) {
+            const ins = allInsurance.find(i => i.id === id) || (allInsurance.length ? allInsurance[0] : null);
+            if (!ins) { showToast('Record not found', 'error'); return; }
+            try {
+                const blob = await buildInsurancePdf(ins);
+                await previewAndSavePdf(blob, `Insurance-Verification-${ins.date || ''}.pdf`.replace(/\s+/g, '-'));
+                showToast('Insurance verification opened in new tab', 'success');
+            } catch (err) {
+                showToast('PDF error: ' + err.message, 'error');
+            }
         };
         window.closeInsuranceViewModal = function() { insuranceViewModal.classList.remove('show'); };
 
@@ -2260,6 +2320,7 @@
                     <td>${reportIdPassport(rpt)}</td>
                     <td>${formatDate(rpt.date)}</td>
                     <td>${(rpt.type || '').replace('_', ' ')}</td>
+                    <td>${doctorWithSpec(rpt.doctorName, rpt.specialization)}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewReport('${rpt.id}')">View</button>
                         <button class="btn-sm btn-download" onclick="downloadReportPdf('${rpt.id}')">PDF</button>
@@ -2276,11 +2337,14 @@
             const rpt = allReports.find(r => r.id === id);
             if (!rpt) { showToast('Report not found', 'error'); return; }
             document.getElementById('reportViewBody').innerHTML =
+                `<div class="inv-head"><h4>Medical Report</h4><div class="sub">${rpt.institute || 'N/A'} &middot; ${formatDate(rpt.date) || 'N/A'}</div></div>` +
                 vd('Date', formatDate(rpt.date)) +
                 vd('Type', (rpt.type || '').replace('_', ' ')) +
                 vd('Patient', `${rpt.patientName || 'N/A'} ${rpt.patientSurname || ''}`.trim()) +
                 vd('ID/Passport', reportIdPassport(rpt)) +
-                vd('Staff', rpt.doctorName) +
+                vd('Staff', rpt.doctorName || 'N/A') +
+                vd('Specialization', rpt.specialization || 'N/A') +
+                vd('Institute', rpt.institute) +
                 `<div class="detail"><span class="detail-label">Report</span><span class="detail-value" style="white-space:pre-wrap;">${rpt.description || 'N/A'}</span></div>`;
             reportViewModal.classList.add('show');
         };

@@ -7,10 +7,23 @@ import { supabaseConfig } from './supabase-config.js';
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 // Each role's dashboard keeps its OWN login session in a dedicated
-// localStorage "slot" (keyed by page name). localStorage - unlike
-// sessionStorage - survives the mobile browser discarding/reloading
-// background tabs, so all four role tabs stay signed in side by side
-// in one window without ever stealing each other's session.
+// per-tab "slot" (keyed by page name + a per-tab id). Sessions live in
+// sessionStorage, so every browser tab is fully independent: logging in
+// as a second user with the same role in another tab never affects the
+// first tab (and vice versa).
+// A per-TAB identity. Each browser tab keeps its OWN login session:
+// logging in as a second doctor in a new tab never touches the first tab.
+function tabId() {
+    try {
+        let t = sessionStorage.getItem('nm-tab-id');
+        if (!t) {
+            t = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+            sessionStorage.setItem('nm-tab-id', t);
+        }
+        return t;
+    } catch (e) { return 'anon'; }
+}
+
 function slotFromPath() {
     const page = (location.pathname.split('/').pop() || '').toLowerCase();
     if (page.indexOf('patient') === 0) return 'patient';
@@ -29,21 +42,22 @@ function projectRef() {
 
 function slotStorage(slot) {
     const prefix = 'nm-auth-' + slot + '-';
-    // Each slot uses its OWN storageKey so the auth library's cross-tab
-    // BroadcastChannel (named by storageKey) is separate per role. Without
-    // this, a sign-in in one tab broadcast its session to every other tab.
-    const newKey = 'nm-slot-' + slot;
+    // Sessions live in sessionStorage (per tab) and each tab uses its own
+    // storageKey, so the auth library's cross-tab BroadcastChannel never
+    // carries one user's session into another tab. Two users with the same
+    // role stay logged in side by side, each in their own tab.
+    const newKey = 'nm-slot-' + slot + '-' + tabId();
     try {
         const oldKey = 'sb-' + projectRef() + '-auth-token';
-        if (!localStorage.getItem(prefix + newKey) && localStorage.getItem(prefix + oldKey)) {
-            localStorage.setItem(prefix + newKey, localStorage.getItem(prefix + oldKey));
-            localStorage.removeItem(prefix + oldKey);
+        if (!sessionStorage.getItem(prefix + newKey) && sessionStorage.getItem(prefix + oldKey)) {
+            sessionStorage.setItem(prefix + newKey, sessionStorage.getItem(prefix + oldKey));
+            sessionStorage.removeItem(prefix + oldKey);
         }
     } catch (e) { /* ignore */ }
     return {
-        getItem: (key) => { try { return localStorage.getItem(prefix + key); } catch (e) { return null; } },
-        setItem: (key, value) => { try { localStorage.setItem(prefix + key, value); } catch (e) { /* ignore */ } },
-        removeItem: (key) => { try { localStorage.removeItem(prefix + key); } catch (e) { /* ignore */ } }
+        getItem: (key) => { try { return sessionStorage.getItem(prefix + key); } catch (e) { return null; } },
+        setItem: (key, value) => { try { sessionStorage.setItem(prefix + key, value); } catch (e) { /* ignore */ } },
+        removeItem: (key) => { try { sessionStorage.removeItem(prefix + key); } catch (e) { /* ignore */ } }
     };
 }
 
@@ -52,7 +66,7 @@ export const CURRENT_SLOT = slotFromPath();
 export const supabase = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
     auth: {
         storage: slotStorage(CURRENT_SLOT),
-        storageKey: 'nm-slot-' + CURRENT_SLOT,
+        storageKey: 'nm-slot-' + CURRENT_SLOT + '-' + tabId(),
         persistSession: true, autoRefreshToken: true, detectSessionInUrl: true
     }
 });
@@ -95,7 +109,7 @@ export async function persistSessionForRole(role) {
         const session = data && data.session;
         if (!session) return;
         const tmp = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
-            auth: { storage: slotStorage(slot), storageKey: 'nm-slot-' + slot, persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
+            auth: { storage: slotStorage(slot), storageKey: 'nm-slot-' + slot + '-' + tabId(), persistSession: true, autoRefreshToken: false, detectSessionInUrl: false }
         });
         await tmp.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token });
     } catch (e) {
@@ -111,8 +125,8 @@ export function roleHasLiveSession(role) {
     if (!slot) return false;
     try {
         const prefix = 'nm-auth-' + slot + '-';
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
             if (k && k.indexOf(prefix) === 0) return true;
         }
     } catch (e) { /* ignore */ }
@@ -325,15 +339,15 @@ export async function signOut() {
         try {
             const prefix = 'nm-auth-default-';
             const remove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const k = sessionStorage.key(i);
                 if (!k || k.indexOf(prefix) !== 0) continue;
                 try {
-                    const parsed = JSON.parse(localStorage.getItem(k) || '');
+                    const parsed = JSON.parse(sessionStorage.getItem(k) || '');
                     if (parsed && parsed.user && parsed.user.id === uid) remove.push(k);
                 } catch (e2) { /* not session JSON - leave it */ }
             }
-            remove.forEach(k => localStorage.removeItem(k));
+            remove.forEach(k => sessionStorage.removeItem(k));
         } catch (e) { /* best effort */ }
     }
 
@@ -829,6 +843,12 @@ export async function getConfirmedAppointmentsForPatient(patientId) {
 export async function rescheduleAppointment(appointmentId, date, time) {
     const { data: row } = await supabase.from(T.APPOINTMENTS).select('*').eq('id', appointmentId).maybeSingle();
     if (!row) throw new Error('Appointment not found');
+    // Reschedules are only allowed BEFORE the appointment's due date.
+    const today = new Date().toISOString().split('T')[0];
+    const aptDate = String(row.date || '').slice(0, 10);
+    if (aptDate && aptDate <= today) {
+        throw new Error(`This appointment's date (${aptDate}) has already arrived - it can no longer be rescheduled.`);
+    }
     if (row.doctor_specialist && date && time) {
         const { data: clash } = await supabase.from(T.APPOINTMENTS)
             .select('id')
@@ -836,7 +856,7 @@ export async function rescheduleAppointment(appointmentId, date, time) {
             .eq('date', date)
             .eq('time', String(time).slice(0, 5))
             .in('status', ['scheduled', 'completed'])
-            .ne('id', appointmentId);
+            .neq('id', appointmentId);
         if (clash && clash.length) {
             throw new Error(`Double booking: ${row.doctor_specialist} already has an appointment on ${date} at ${String(time).slice(0, 5)}.`);
         }
@@ -963,7 +983,7 @@ export async function recordMedicationAdministration(a, b) {
     if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
     let prof = null;
     try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
-    const institute = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
+    const institute = (prof && prof.institute) || (patient && (patient.institution || patient.institute)) || null;
     const rec = await insertRow(T.MEDICATION_RECORDS, {
         patient_id: patientId,
         patient_name: patient ? (patient.fullName || null) : null,
@@ -997,12 +1017,9 @@ export async function recordMedicationAdministration(a, b) {
                 (!r.strength || !data.strength || norm(r.strength) === norm(data.strength))) ||
                 rows.find(r => { const n = norm(r.medication_name); return n && (n.includes(name) || name.includes(n)); });
             if (inv) {
-                if (qty) {
-                    await supabase.from(T.MEDICATION_INVENTORY).update({
-                        quantity: Math.max(0, (Number(inv.quantity) || 0) - qty),
-                        updated_by: user.uid, updated_at: nowIso()
-                    }).eq('id', inv.id);
-                }
+                // The stock quantity itself is NOT auto-subtracted: the
+                // medication table shows "Left in Stock" as a calculation
+                // (stock minus prescribed), which must not be double-counted.
             } else {
                 await insertRow(T.MEDICATION_INVENTORY, {
                     medication_name: data.medicationName,
@@ -1093,15 +1110,14 @@ export async function addPrescription(a, b) {
     if (patientId) {
         try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ }
     }
+    // The logged-in staff member's profile is used for the doctor name and
+    // the institute (a nurse at Windhoek Central never types the institute).
+    let prof = null;
+    try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
     // Doctor name: explicit, or the prescriber's own name when they are a specialist.
     let doctorName = data.doctorName || data.doctor_name || null;
-    if (!doctorName) {
-        try {
-            const prof = await getUserProfile(user.uid);
-            if (prof && prof.role === 'specialist') {
-                doctorName = [prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null;
-            }
-        } catch (e) { /* leave null */ }
+    if (!doctorName && prof && prof.role === 'specialist') {
+        doctorName = [prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null;
     }
     const base = {
         patient_id: patientId,
@@ -1111,7 +1127,7 @@ export async function addPrescription(a, b) {
         patient_phone: data.cellPhone || (patient && (patient.cellphone || patient.phone)) || null,
         patient_user_id: data.patientUserId || (patient && (patient.patientUserId || patient.patient_user_id)) || null,
         doctor_name: doctorName,
-        institute: (patient && (patient.institution || patient.institute)) || data.institute || null,
+        institute: data.institute || (prof && prof.institute) || (patient && (patient.institution || patient.institute)) || null,
         date: data.date,
         ailment: data.ailment,
         treatment: data.treatment,
@@ -1198,9 +1214,9 @@ export async function getMyPrescriptions() {
         const { data, error } = await supabase.from(T.PRESCRIPTIONS)
             .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
         if (error) throw error;
-        return (data || []).map(camelPrescription);
+        return resolveDoctorSpecializations((data || []).map(camelPrescription));
     }
-    return (await selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid)).map(camelPrescription);
+    return resolveDoctorSpecializations((await selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid)).map(camelPrescription));
 }
 
 export async function getPatientPrescriptions(patientUserId) {
@@ -1211,19 +1227,20 @@ export async function getPatientPrescriptions(patientUserId) {
 // All lookups are RLS-scoped: staff only see data of their own institute.
 export async function getPrescriptionsForPatient(patientId) {
     if (!patientId) return [];
-    return (await selectEq(T.PRESCRIPTIONS, 'patient_id', patientId)).map(camelPrescription);
+    return resolveDoctorSpecializations((await selectEq(T.PRESCRIPTIONS, 'patient_id', patientId)).map(camelPrescription));
 }
 export async function getPatientAilments(patientId) {
     if (!patientId) return [];
     const rows = (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', patientId)).map(camelAilment);
     // Older prescriptions recorded some ailments twice - drop exact duplicates.
     const seen = new Set();
-    return rows.filter(r => {
+    const out = rows.filter(r => {
         const key = `${String(r.ailment || '').toLowerCase()}|${String(r.treatment || '').toLowerCase()}|${r.date || ''}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
     });
+    return resolveDoctorSpecializations(out);
 }
 export async function getPatientReports(patientId) {
     if (!patientId) return [];
@@ -1231,11 +1248,11 @@ export async function getPatientReports(patientId) {
         .select('*').eq('patient_id', patientId)
         .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(camelReport);
+    return resolveDoctorSpecializations((data || []).map(camelReport));
 }
 export async function getPatientRefills(patientId) {
     if (!patientId) return [];
-    return backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', patientId));
+    return resolveDoctorSpecializations(await backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', patientId)));
 }
 export async function getPatientInstitutes(patientId) {
     if (!patientId) return [];
@@ -1247,14 +1264,14 @@ export async function getPatientInvoices(patientId) {
         .select('*').eq('patient_id', patientId)
         .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(i => ({
+    return resolveDoctorSpecializations((data || []).map(i => ({
         id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
         treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
         idPassport: i.id_passport, cellPhone: i.cell_phone,
         pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at,
         appointmentId: i.appointment_id, institute: i.institute, doctorName: i.doctor_name
-    }));
+    })));
 }
 export async function getPatientPayments(patientId) {
     if (!patientId) return [];
@@ -1522,7 +1539,7 @@ export async function generateReport(a, b) {
             ? ([prof.surname, prof.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || 'Staff')
             : (prof.role === 'receptionist' ? 'Receptionist' : 'Staff'))
         : 'Staff');
-    const institute = (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null;
+    const institute = (prof && prof.institute) || (patient && (patient.institution || patient.institute)) || null;
     let pdfUrl = null;
     try {
         const blob = await buildReportPdf({
@@ -1572,14 +1589,22 @@ function normDocName(s) {
 }
 // Best-effort: match the doctor name on each row against registered users so
 // we can show the doctor's specialization (e.g. "Doctor of Cardiology").
+let _usersCache = null;
+let _usersCacheAt = 0;
+async function getUsersCached() {
+    const now = Date.now();
+    if (_usersCache && now - _usersCacheAt < 5 * 60 * 1000) return _usersCache;
+    try {
+        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession');
+        _usersCache = data || [];
+        _usersCacheAt = now;
+    } catch (e) { /* cannot read users - degrade gracefully */ }
+    return _usersCache || [];
+}
 async function resolveDoctorSpecializations(rows) {
     rows.forEach(r => (r.specialization = null));
     if (!rows.length) return rows;
-    let users = [];
-    try {
-        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession');
-        users = data || [];
-    } catch (e) { /* caller may not be able to read users - degrade to '-' */ }
+    const users = await getUsersCached();
     for (const r of rows) {
         const dn = normDocName(r.doctorName);
         if (!dn) continue;
@@ -1633,12 +1658,12 @@ export async function getMyReports() {
         const { data, error } = await supabase.from(T.REPORTS)
             .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
         if (error) throw error;
-        return (await resolveReportDoctors(data || [])).map(camelReport);
+        return resolveDoctorSpecializations((await resolveReportDoctors(data || [])).map(camelReport));
     }
     const { data, error } = await supabase.from(T.REPORTS)
         .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
-    return (await resolveReportDoctors(data || [])).map(camelReport);
+    return resolveDoctorSpecializations((await resolveReportDoctors(data || [])).map(camelReport));
 }
 
 export async function updateReport(reportId, data) {
@@ -1682,7 +1707,7 @@ export async function verifyInsurance(a, b) {
         payment_status: data.paymentStatus || null,
         status: data.status || 'verified',
         notes: data.notes || null,
-        institute: (patient && (patient.institution || patient.institute)) || (prof && prof.institute) || null,
+        institute: (prof && prof.institute) || (patient && (patient.institution || patient.institute)) || null,
         verified_by: user.uid,
         verified_by_email: user.email,
         created_at: nowIso()
@@ -1745,6 +1770,8 @@ export async function createInvoice(uid, invoiceData) {
     if (invoiceData.patientId) {
         try { patient = await getPatient(invoiceData.patientId); } catch (e) { /* patient lookup is best-effort */ }
     }
+    let bookerProf = null;
+    try { bookerProf = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
     const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const invoiceNumber = invoiceData.invoiceNumber || `INV-${stamp}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
     const paid = invoiceData.paid === true || invoiceData.paid === 'true';
@@ -1761,7 +1788,7 @@ export async function createInvoice(uid, invoiceData) {
         cell_phone: patient ? (patient.cellphone || patient.phone || null) : null,
         fee: invoiceData.fee ?? 0,
         paid: paid,
-        institute: (patient && (patient.institution || patient.institute)) || invoiceData.institute || null,
+        institute: invoiceData.institute || (bookerProf && bookerProf.institute) || (patient && (patient.institution || patient.institute)) || null,
         doctor_name: invoiceData.doctorName || invoiceData.doctor_name || null,
         appointment_id: invoiceData.appointmentId || invoiceData.appointment_id || null,
         status: invoiceData.status || (paid ? 'paid' : 'pending'),
@@ -1822,14 +1849,14 @@ export async function getInvoices() {
     const { data, error } = await supabase.from(T.INVOICES)
         .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
     if (error) throw error;
-    return (data || []).map(i => ({
+    return resolveDoctorSpecializations((data || []).map(i => ({
         id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
         treatment: i.treatment, fee: i.fee, paid: i.paid, status: i.status,
         idPassport: i.id_passport, cellPhone: i.cell_phone,
         pdfUrl: i.pdf_url, createdBy: i.created_by, createdAt: i.created_at,
         appointmentId: i.appointment_id, institute: i.institute, doctorName: i.doctor_name
-    }));
+    })));
 }
 
 export async function getPayments() {
@@ -2130,7 +2157,7 @@ export async function getMyAilmentsTreatments() {
         merged.sort((x, y) => new Date(y.date || 0) - new Date(x.date || 0));
         return resolveDoctorSpecializations(merged);
     }
-    return (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid)).map(camelAilment);
+    return resolveDoctorSpecializations((await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', user.uid)).map(camelAilment));
 }
 
 export async function addInstituteVisited(instituteData) {
@@ -2233,8 +2260,8 @@ export async function getMyRefillRequests() {
     const user = requireUser();
     let profile = null;
     try { profile = await getUserProfile(user.uid); } catch (e) { /* ignore */ }
-    if (profile && profile.role === 'patient') return backfillRefillPrescData(await patientScopeSelect(T.REFILL_REQUESTS));
-    return backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid));
+    if (profile && profile.role === 'patient') return resolveDoctorSpecializations(await backfillRefillPrescData(await patientScopeSelect(T.REFILL_REQUESTS)));
+    return resolveDoctorSpecializations(await backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', user.uid)));
 }
 
 export async function getMyInsuranceVerifications() {
@@ -2266,7 +2293,7 @@ export async function buildInsurancePdf(v) {
         pdfGridTable(doc, y + 20, [{ label: 'Notes', width: 182, key: 'text' }], [{ text: v.notes }]);
     }
     pdfFooter(doc, 'Generated by Namibia Health Services - insurance verification document');
-    return doc;
+    return doc.output('blob');
 }
 
 // Payment receipt (same look as the invoice)
@@ -2292,7 +2319,7 @@ export async function buildPaymentReceiptPdf(pay) {
     doc.setFontSize(10); doc.setFont('helvetica', 'normal');
     doc.text('Payment received. Thank you.', 14, y + 22);
     pdfFooter(doc, 'Generated by Namibia Health Services - payment receipt');
-    return doc;
+    return doc.output('blob');
 }
 
 export async function checkInPatient(checkInData) {
@@ -2341,7 +2368,12 @@ export function isValidNamibianPhone(phone) {
 }
 
 export function isValidNamibianId(id) {
-    return /^\d{11}$/.test(id.replace(/\s/g, ''));
+    const v = String(id || '').replace(/[\s-]/g, '').toUpperCase();
+    if (!v) return false;
+    if (/^\d{11}$/.test(v)) return true;        // Namibian national ID (11 digits)
+    if (/^[A-Z]\d{7}$/.test(v)) return true;     // Namibian passport (letter + 7 digits, e.g. A1234567)
+    if (/^[A-Z0-9]{6,12}$/.test(v)) return true;  // other standard passport formats
+    return false;
 }
 
 let inactivityTimeout = null;
@@ -2417,7 +2449,7 @@ export async function getAppointmentsByStaff() {
     if (error) throw error;
     // The dashboards' tables read camelCase fields (patientName, patientDob,
     // doctorSpecialist, ...) but the DB rows are snake_case - expose both.
-    return (data || []).map(a => ({
+    const rows = (data || []).map(a => ({
         ...a,
         patientId: a.patient_id,
         patientUserId: a.patient_user_id,
@@ -2426,12 +2458,14 @@ export async function getAppointmentsByStaff() {
         patientDob: a.patient_dob,
         patientIdPassport: a.patient_id_passport,
         doctorSpecialist: a.doctor_specialist,
+        doctorName: a.doctor_specialist,
         createdBy: a.created_by,
         createdByEmail: a.created_by_email,
         attendanceConfirmed: a.attendance_confirmed,
         confirmedByEmail: a.confirmed_by_email,
         confirmedAt: a.confirmed_at
     }));
+    return resolveDoctorSpecializations(rows);
 }
 export const getPatientById = getPatient;
 export const getDocumentsByStaff = getMyDocuments;

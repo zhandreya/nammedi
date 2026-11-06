@@ -150,7 +150,7 @@
                     </div>
                     <div class="form-group">
                         <label for="idPassport">ID/Passport Number *</label>
-                        <input type="text" id="idPassport" name="idPassport" required placeholder="12345678901">
+                        <input type="text" id="idPassport" name="idPassport" required placeholder="ID (11 digits) or passport (e.g. A1234567)">
                         <div class="error-message" id="idPassportError"></div>
                     </div>
                 </div>
@@ -224,7 +224,7 @@
                     </div>
                     <div class="form-group">
                         <label for="pIdPassport">ID/Passport Number *</label>
-                        <input type="text" id="pIdPassport" name="pIdPassport" required placeholder="12345678901">
+                        <input type="text" id="pIdPassport" name="pIdPassport" required placeholder="ID (11 digits) or passport (e.g. A1234567)">
                         <div class="error-message" id="pIdPassportError"></div>
                     </div>
                 </div>
@@ -479,7 +479,7 @@
                 setError(idPassportInput, idPassportError, 'ID/Passport is required');
                 isValid = false;
             } else if (!isValidNamibianId(idPassportInput.value.trim())) {
-                setError(idPassportInput, idPassportError, 'Enter a valid Namibian ID (11 digits)');
+                setError(idPassportInput, idPassportError, 'Enter a valid Namibian ID (11 digits) or passport number (e.g. A1234567)');
                 isValid = false;
             }
 
@@ -556,7 +556,7 @@
                 setError(pIdPassportInput, pIdPassportError, 'ID/Passport is required');
                 isValid = false;
             } else if (!isValidNamibianId(pIdPassportInput.value.trim())) {
-                setError(pIdPassportInput, pIdPassportError, 'Enter a valid Namibian ID (11 digits)');
+                setError(pIdPassportInput, pIdPassportError, 'Enter a valid Namibian ID (11 digits) or passport number (e.g. A1234567)');
                 isValid = false;
             }
 
