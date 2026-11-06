@@ -291,6 +291,71 @@ async function selectEq(table, column, value, orderBy = 'created_at', ascending 
     return data || [];
 }
 
+
+// A patient can be registered at more than one institute (one row per
+// institute). Their FULL medical history carries over across institutes,
+// so history lookups match rows by patient_id OR by the patient's
+// ID/Passport number.
+async function patientPassportFor(patientId) {
+    if (!patientId) return null;
+    try {
+        const p = await getPatient(patientId);
+        return (p && (p.idPassport || p.id_passport)) || null;
+    } catch (e) { return null; }
+}
+async function collectPatientHistoryRows(table, passportCol, patientId) {
+    if (!patientId) return [];
+    let base = [];
+    try { base = await selectEq(table, 'patient_id', patientId, null); } catch (e) { base = []; }
+    const pass = await patientPassportFor(patientId);
+    if (!pass || !passportCol) return base || [];
+    let extra = [];
+    try {
+        const { data } = await supabase.from(table).select('*').eq(passportCol, pass);
+        extra = data || [];
+    } catch (e) { extra = []; }
+    const seen = new Set((base || []).map(r => r.id));
+    return [...(base || []), ...extra.filter(r => !seen.has(r.id))];
+}
+
+// Rows created before institute auto-fill (or with no institute) are shown
+// with the patient's registered institute - details entered at registration
+// are carried into every table at all times.
+async function backfillPatientDetails(rows, opts = {}) {
+    if (!rows || !rows.length) return rows;
+    const needs = [];
+    rows.forEach(r => {
+        const missingInst = !r.institute && !r.institution;
+        const missingDetails = opts.details && (!r.patient_name || !r.patient_surname || !r.patient_dob);
+        if (r.patient_id && (missingInst || missingDetails)) needs.push(r.patient_id);
+    });
+    if (!needs.length) return rows;
+    const ids = [...new Set(needs)];
+    let plist = [];
+    try {
+        const { data } = await supabase.from(T.PATIENTS)
+            .select('id, institute, institution, full_name, surname, dob, phone, cellphone')
+            .in('id', ids).limit(500);
+        plist = data || [];
+    } catch (e) { return rows; }
+    const pmap = new Map(plist.map(p => [p.id, p]));
+    rows.forEach(r => {
+        const p = pmap.get(r.patient_id);
+        if (!p) return;
+        const inst = p.institute || p.institution;
+        if (inst) {
+            if (!r.institute) r.institute = inst;
+            if (!r.institution) r.institution = inst;
+        }
+        if (opts.details) {
+            if (!r.patient_name && p.full_name) r.patient_name = p.full_name;
+            if (!r.patient_surname && p.surname) r.patient_surname = p.surname;
+            if (!r.patient_dob && p.dob) r.patient_dob = p.dob;
+            if (opts.phone && !r.patient_phone && (p.cellphone || p.phone)) r.patient_phone = p.cellphone || p.phone;
+        }
+    });
+    return rows;
+}
 export async function signUp(email, password, profileData = {}) {
     try {
         const { data, error } = await supabase.auth.signUp({
@@ -479,6 +544,9 @@ export async function updateUserProfile(uid, data) {
         mapped[map[k] || k] = data[k];
     });
     mapped.updated_at = nowIso();
+    // Profile data changed (e.g. specialization) - refresh the cached user
+    // list so every table picks the edit up on its next load.
+    _usersCache = null; _usersCacheAt = 0;
     const { error } = await supabase.from(T.USERS).update(mapped).eq('id', uid);
     if (error) throw error;
 }
@@ -523,6 +591,37 @@ export async function addPatient(uid, patientData) {
         updated_at: nowIso()
     };
     const data = await insertRow(T.PATIENTS, row);
+    // Registering the patient at an institute counts as a visit to it:
+    // the institutes-visited list updates automatically (only when this
+    // institute is not already recorded for the patient).
+    try {
+        const inst = row.institute || row.institution;
+        if (inst && data.id) {
+            const { data: existing } = await supabase.from(T.INSTITUTES_VISITED)
+                .select('id').eq('patient_id', data.id).ilike('institute', inst).limit(1);
+            if (!existing || !existing.length) {
+                let profName = null;
+                try {
+                    const up = await getUserProfile(user.uid);
+                    if (up) profName = [up.surname, up.fullName].filter(Boolean).map(s => String(s).trim()).join(' ') || null;
+                } catch (e) { /* best-effort */ }
+                const now = new Date();
+                const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+                await supabase.from(T.INSTITUTES_VISITED).insert({
+                    patient_id: data.id,
+                    patient_name: row.full_name,
+                    patient_surname: row.surname,
+                    patient_id_passport: row.id_passport || null,
+                    institute: inst,
+                    date: now.toISOString().split('T')[0],
+                    time: hhmm,
+                    doctor_name: profName || null,
+                    reason: 'Patient registered',
+                    created_at: nowIso()
+                });
+            }
+        }
+    } catch (e) { console.warn('institutes_visited registration record failed:', e); }
     return { id: data.id, ...patientData };
 }
 
@@ -734,10 +833,8 @@ export async function getMyAppointments() {
 }
 
 export async function getPatientAppointments(patientId) {
-    const { data, error } = await supabase.from(T.APPOINTMENTS)
-        .select('*').eq('patient_id', patientId).order('date', { ascending: true });
-    if (error) throw error;
-    return data || [];
+    const rows = await collectPatientHistoryRows(T.APPOINTMENTS, 'patient_id_passport', patientId);
+    return rows.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 }
 
 export async function getUpcomingAppointments(days = 30) {
@@ -783,10 +880,12 @@ export async function confirmAppointmentAttendance(appointmentId) {
         .select('*').eq('id', appointmentId).maybeSingle();
     if (error) throw error;
     if (!row) throw new Error('Appointment not found');
-    const today = new Date().toISOString().split('T')[0];
+    // Attendance may only be confirmed AFTER the appointment's date AND time.
     const aptDate = String(row.date || '').slice(0, 10);
-    if (aptDate && aptDate > today) {
-        throw new Error(`Attendance can be confirmed once the appointment date (${aptDate}) has arrived.`);
+    const aptTime = String(row.time || '00:00').slice(0, 5);
+    const aptDateTime = new Date(`${aptDate}T${aptTime}`);
+    if (aptDate && !isNaN(aptDateTime.getTime()) && aptDateTime.getTime() > Date.now()) {
+        throw new Error(`Attendance can only be confirmed after the appointment's date and time (${aptDate} ${aptTime}).`);
     }
     await supabase.from(T.APPOINTMENTS).update({
         attendance_confirmed: true,
@@ -924,7 +1023,7 @@ export async function uploadDocument(a, b, c, d) {
 }
 
 export async function getPatientDocuments(patientId) {
-    return selectEq(T.DOCUMENTS, 'patient_id', patientId);
+    return collectPatientHistoryRows(T.DOCUMENTS, 'id_passport', patientId);
 }
 
 export async function getMyDocuments() {
@@ -1017,9 +1116,15 @@ export async function recordMedicationAdministration(a, b) {
                 (!r.strength || !data.strength || norm(r.strength) === norm(data.strength))) ||
                 rows.find(r => { const n = norm(r.medication_name); return n && (n.includes(name) || name.includes(n)); });
             if (inv) {
-                // The stock quantity itself is NOT auto-subtracted: the
-                // medication table shows "Left in Stock" as a calculation
-                // (stock minus prescribed), which must not be double-counted.
+                // Stock is the source of truth: every administration reduces
+                // the Manage Inventory quantity (20 recorded, 3 given -> 17),
+                // and the "Left in Stock" column reflects the updated stock.
+                if (qty) {
+                    await supabase.from(T.MEDICATION_INVENTORY).update({
+                        quantity: Math.max(0, (Number(inv.quantity) || 0) - qty),
+                        updated_by: user.uid, updated_at: nowIso()
+                    }).eq('id', inv.id);
+                }
             } else {
                 await insertRow(T.MEDICATION_INVENTORY, {
                     medication_name: data.medicationName,
@@ -1042,6 +1147,7 @@ export async function getMyMedicationRecords() {
     const { data, error } = await supabase.from(T.MEDICATION_RECORDS)
         .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
+    await backfillPatientDetails(data || [], { details: true });
     return (data || []).map(camelMedRecord);
 }
 
@@ -1214,9 +1320,12 @@ export async function getMyPrescriptions() {
         const { data, error } = await supabase.from(T.PRESCRIPTIONS)
             .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
         if (error) throw error;
+        await backfillPatientDetails(data || [], { details: true, phone: true });
         return resolveDoctorSpecializations((data || []).map(camelPrescription));
     }
-    return resolveDoctorSpecializations((await selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid)).map(camelPrescription));
+    const rows = await selectEq(T.PRESCRIPTIONS, 'prescribed_by', user.uid);
+    await backfillPatientDetails(rows, { details: true, phone: true });
+    return resolveDoctorSpecializations(rows.map(camelPrescription));
 }
 
 export async function getPatientPrescriptions(patientUserId) {
@@ -1227,11 +1336,13 @@ export async function getPatientPrescriptions(patientUserId) {
 // All lookups are RLS-scoped: staff only see data of their own institute.
 export async function getPrescriptionsForPatient(patientId) {
     if (!patientId) return [];
-    return resolveDoctorSpecializations((await selectEq(T.PRESCRIPTIONS, 'patient_id', patientId)).map(camelPrescription));
+    const rows = await collectPatientHistoryRows(T.PRESCRIPTIONS, 'patient_id_passport', patientId);
+    await backfillPatientDetails(rows, { details: true, phone: true });
+    return resolveDoctorSpecializations(rows.map(camelPrescription));
 }
 export async function getPatientAilments(patientId) {
     if (!patientId) return [];
-    const rows = (await selectEq(T.AILMENTS_TREATMENTS, 'patient_id', patientId)).map(camelAilment);
+    const rows = (await collectPatientHistoryRows(T.AILMENTS_TREATMENTS, 'patient_id_passport', patientId)).map(camelAilment);
     // Older prescriptions recorded some ailments twice - drop exact duplicates.
     const seen = new Set();
     const out = rows.filter(r => {
@@ -1244,26 +1355,26 @@ export async function getPatientAilments(patientId) {
 }
 export async function getPatientReports(patientId) {
     if (!patientId) return [];
-    const { data, error } = await supabase.from(T.REPORTS)
-        .select('*').eq('patient_id', patientId)
-        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
-    if (error) throw error;
-    return resolveDoctorSpecializations((data || []).map(camelReport));
+    const rows = await collectPatientHistoryRows(T.REPORTS, 'patient_id_passport', patientId);
+    await backfillPatientDetails(rows);
+    rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    return resolveDoctorSpecializations((await resolveReportDoctors(rows)).map(camelReport));
 }
 export async function getPatientRefills(patientId) {
     if (!patientId) return [];
-    return resolveDoctorSpecializations(await backfillRefillPrescData(await selectEq(T.REFILL_REQUESTS, 'patient_id', patientId)));
+    const rows = await collectPatientHistoryRows(T.REFILL_REQUESTS, 'patient_id_passport', patientId);
+    return resolveDoctorSpecializations(await backfillRefillPrescData(rows));
 }
 export async function getPatientInstitutes(patientId) {
-    if (!patientId) return [];
-    return (await selectEq(T.INSTITUTES_VISITED, 'patient_id', patientId)).map(camelInstitute);
+    const rows = await collectPatientHistoryRows(T.INSTITUTES_VISITED, 'patient_id_passport', patientId);
+    return rows.map(camelInstitute).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
 }
 export async function getPatientInvoices(patientId) {
     if (!patientId) return [];
-    const { data, error } = await supabase.from(T.INVOICES)
-        .select('*').eq('patient_id', patientId)
-        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
-    if (error) throw error;
+    const rows = await collectPatientHistoryRows(T.INVOICES, 'id_passport', patientId);
+    await backfillPatientDetails(rows);
+    rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const data = rows; const error = null;
     return resolveDoctorSpecializations((data || []).map(i => ({
         id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
@@ -1275,10 +1386,9 @@ export async function getPatientInvoices(patientId) {
 }
 export async function getPatientPayments(patientId) {
     if (!patientId) return [];
-    const { data, error } = await supabase.from(T.PAYMENTS)
-        .select('*').eq('patient_id', patientId)
-        .order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
-    if (error) throw error;
+    const rows = await collectPatientHistoryRows(T.PAYMENTS, 'id_passport', patientId);
+    rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const data = rows; const error = null;
     return (data || []).map(p => ({
         id: p.id, date: p.date, patientName: p.patient_name, patientSurname: p.patient_surname,
         idPassport: p.id_passport, amount: p.amount, method: p.method, reference: p.reference,
@@ -1593,30 +1703,36 @@ let _usersCache = null;
 let _usersCacheAt = 0;
 async function getUsersCached() {
     const now = Date.now();
-    if (_usersCache && now - _usersCacheAt < 5 * 60 * 1000) return _usersCache;
+    if (_usersCache && now - _usersCacheAt < 2 * 60 * 1000) return _usersCache;
     try {
-        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession');
+        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession, speciality');
         _usersCache = data || [];
         _usersCacheAt = now;
     } catch (e) { /* cannot read users - degrade gracefully */ }
     return _usersCache || [];
+}
+function stripDoctorTitle(s) {
+    return String(s || '').replace(/\b(d\.)?r\.|\bdr\b|\b(d\.)?r\.|\bprof\b|\bprof\.\b|\bmr\b|\bms\b/gi, ' ');
 }
 async function resolveDoctorSpecializations(rows) {
     rows.forEach(r => (r.specialization = null));
     if (!rows.length) return rows;
     const users = await getUsersCached();
     for (const r of rows) {
-        const dn = normDocName(r.doctorName);
-        if (!dn) continue;
+        const dnRaw = normDocName(r.doctorName);
+        if (!dnRaw) continue;
+        const dn = normDocName(stripDoctorTitle(r.doctorName));
         for (const u of users) {
-            const full = normDocName(`${u.full_name || ''} ${u.surname || ''}`);
+            const full = normDocName(stripDoctorTitle(`${u.full_name || ''} ${u.surname || ''}`));
             const sur = normDocName(u.surname);
             const first = normDocName(u.full_name);
             let hit = false;
             if (full.length >= 4) hit = dn.includes(full) || (dn.length >= 4 && full.includes(dn));
+            if (!hit && dnRaw.length >= 4 && full.length >= 4) hit = dnRaw.includes(full) || full.includes(dnRaw);
             if (!hit && sur.length >= 4 && first.length >= 3) hit = dn.includes(sur) && dn.includes(first);
             if (!hit && sur.length >= 5) hit = dn.includes(sur) || (dn.length >= 4 && sur.includes(dn));
-            if (hit) { r.specialization = u.profession || null; break; }
+            if (!hit && first.length >= 5 && sur.length >= 3) hit = dn.includes(first) && dn.includes(sur);
+            if (hit) { r.specialization = u.profession || u.speciality || null; break; }
         }
     }
     return rows;
@@ -1658,11 +1774,13 @@ export async function getMyReports() {
         const { data, error } = await supabase.from(T.REPORTS)
             .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
         if (error) throw error;
+        await backfillPatientDetails(data || []);
         return resolveDoctorSpecializations((await resolveReportDoctors(data || [])).map(camelReport));
     }
     const { data, error } = await supabase.from(T.REPORTS)
         .select('*').order('date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
     if (error) throw error;
+    await backfillPatientDetails(data || []);
     return resolveDoctorSpecializations((await resolveReportDoctors(data || [])).map(camelReport));
 }
 
@@ -1697,6 +1815,7 @@ export async function verifyInsurance(a, b) {
     if (patientId) { try { patient = await getPatient(patientId); } catch (e) { /* best-effort */ } }
     let prof = null;
     try { prof = await getUserProfile(user.uid); } catch (e) { /* best-effort */ }
+    const status = data.status || 'verified';
     const rec = await insertRow(T.INSURANCE_VERIFICATIONS, {
         patient_id: patientId,
         patient_name: patient ? (patient.fullName || null) : null,
@@ -1705,13 +1824,20 @@ export async function verifyInsurance(a, b) {
         medical_aid_number: data.medicalAidNumber || data.medicalAid || null,
         date: data.date,
         payment_status: data.paymentStatus || null,
-        status: data.status || 'verified',
+        status,
         notes: data.notes || null,
         institute: (prof && prof.institute) || (patient && (patient.institution || patient.institute)) || null,
         verified_by: user.uid,
         verified_by_email: user.email,
         created_at: nowIso()
     });
+    // A verified insurance verification means the patient HAS medical
+    // insurance - update the patient record automatically.
+    try {
+        if (status === 'verified' && patientId) {
+            await supabase.from(T.PATIENTS).update({ insurance: 'Yes', updated_at: nowIso() }).eq('id', patientId);
+        }
+    } catch (e) { /* best-effort */ }
     return { id: rec.id, ...data, patientName: rec.patient_name, patientSurname: rec.patient_surname };
 }
 
@@ -1740,6 +1866,15 @@ export async function updateInsuranceVerification(id, data) {
     put('notes', data.notes);
     const { error } = await supabase.from(T.INSURANCE_VERIFICATIONS).update(row).eq('id', id);
     if (error) throw error;
+    // Verified on edit -> the patient's medical-insurance flag becomes Yes.
+    try {
+        if (data.status === 'verified') {
+            const { data: vrow } = await supabase.from(T.INSURANCE_VERIFICATIONS).select('patient_id').eq('id', id).maybeSingle();
+            if (vrow && vrow.patient_id) {
+                await supabase.from(T.PATIENTS).update({ insurance: 'Yes', updated_at: nowIso() }).eq('id', vrow.patient_id);
+            }
+        }
+    } catch (e) { /* best-effort */ }
     return { id, ...data };
 }
 
@@ -1849,6 +1984,7 @@ export async function getInvoices() {
     const { data, error } = await supabase.from(T.INVOICES)
         .select('*').order('date', { ascending: false }).order('created_at', { ascending: false });
     if (error) throw error;
+    await backfillPatientDetails(data || []);
     return resolveDoctorSpecializations((data || []).map(i => ({
         id: i.id, patientId: i.patient_id, patientName: i.patient_name, patientSurname: i.patient_surname,
         invoiceNumber: i.invoice_number, date: i.date, reason: i.reason, prescription: i.prescription,
@@ -2449,7 +2585,8 @@ export async function getAppointmentsByStaff() {
     if (error) throw error;
     // The dashboards' tables read camelCase fields (patientName, patientDob,
     // doctorSpecialist, ...) but the DB rows are snake_case - expose both.
-    const rows = (data || []).map(a => ({
+    await backfillPatientDetails(data || []);
+    const rows0 = (data || []).map(a => ({
         ...a,
         patientId: a.patient_id,
         patientUserId: a.patient_user_id,
@@ -2465,7 +2602,22 @@ export async function getAppointmentsByStaff() {
         confirmedByEmail: a.confirmed_by_email,
         confirmedAt: a.confirmed_at
     }));
-    return resolveDoctorSpecializations(rows);
+    // Institute scoping for staff (enforced in the database as well once
+    // nammedi-round30.sql has run): a staff member sees the appointments of
+    // the institute they are registered to, plus appointments they created.
+    // A brand-new doctor at a new institute therefore starts with an empty
+    // appointments list. Patients are unaffected (they match by ID/passport).
+    let out = rows0;
+    try {
+        const user = requireUser();
+        const prof = await getUserProfile(user.uid);
+        if (prof && prof.role && prof.role !== 'patient' && prof.institute) {
+            const inst = String(prof.institute).trim().toLowerCase();
+            out = rows0.filter(a => a.created_by === user.uid ||
+                (a.institution && String(a.institution).trim().toLowerCase() === inst));
+        }
+    } catch (e) { out = rows0; }
+    return resolveDoctorSpecializations(out);
 }
 export const getPatientById = getPatient;
 export const getDocumentsByStaff = getMyDocuments;

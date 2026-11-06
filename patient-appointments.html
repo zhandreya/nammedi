@@ -197,7 +197,7 @@
 
         <div class="empty-state" id="emptyState" style="display: none;">
             <h3>No appointments found</h3>
-            <p>Appointments are booked by the clinic. Your appointments will appear here once they are made for you.</p>
+            <p>Appointments are booked by the clinic and will appear here once they are made.</p>
         </div>
     </div>
 
@@ -288,6 +288,7 @@
                     const av = document.getElementById('headerAvatar');
                     if (av) av.src = profile.profilePictureUrl;
                 }
+                patientDisplayName = `${(profile && profile.fullName) || ''} ${(profile && profile.surname) || ''}`.trim();
                 await loadAppointments();
             } else {
                 window.location.href = 'login.html';
@@ -295,6 +296,7 @@
         });
 
         let allAppointments = [];
+        let patientDisplayName = '';
         async function loadAppointments() {
             try {
                 const appointments = await fetchWithRetry(() => getMyAppointments());
@@ -346,10 +348,10 @@
                         ? '<span class="status-badge status-completed">Completed</span>'
                         : `<span class="status-badge status-${apt.status}">${apt.status}</span>`}</td>
                     <td>
-                        ${apt.status === 'scheduled' ? `
+                        ${apt.status === 'scheduled' && !attended ? `
                             <button class="btn-sm btn-cancel" onclick="cancelAppointment('${apt.id}')">Cancel</button>
                         ` : ''}
-                        ${apt.status === 'scheduled' ? `
+                        ${apt.status === 'scheduled' && !attended ? `
                             <button class="btn-sm btn-resched" onclick="openReschedModal('${apt.id}')">Reschedule</button>
                         ` : ''}
                         <button class="btn-sm btn-view" onclick="viewAppointment('${apt.id}')">View</button>
@@ -374,15 +376,16 @@
         window.viewAppointment = function(id) {
             const apt = allAppointments.find(a => a.id === id);
             if (!apt) { showToast('Appointment not found', 'error'); return; }
-            const name = `${apt.patientName || apt.patient_name || ''} ${apt.patientSurname || apt.patient_surname || ''}`.trim();
+            const attended = apt.attendanceConfirmed === true || apt.attendance_confirmed === true;
+            const name = `${apt.patientName || apt.patient_name || ''} ${apt.patientSurname || apt.patient_surname || ''}`.trim() || patientDisplayName;
             document.getElementById('aptViewBody').innerHTML = `
                 <div class="detail"><span class="detail-label">Date</span><span class="detail-value">${formatDate(apt.date)}</span></div>
                 <div class="detail"><span class="detail-label">Time</span><span class="detail-value">${apt.time || 'N/A'}</span></div>
-                <div class="detail"><span class="detail-label">Doctor / Specialist</span><span class="detail-value">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}</span></div>
+                <div class="detail"><span class="detail-label">Doctor / Specialist</span><span class="detail-value">${apt.doctorSpecialist || apt.doctor_specialist || 'Staff'}${apt.specialization ? ' (' + apt.specialization + ')' : ''}</span></div>
                 <div class="detail"><span class="detail-label">Institution</span><span class="detail-value">${apt.institution || 'N/A'}</span></div>
                 <div class="detail"><span class="detail-label">Reason</span><span class="detail-value">${apt.reason || 'N/A'}</span></div>
-                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'You'}</span></div>
-                <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${apt.status}">${apt.status}</span></span></div>
+                <div class="detail"><span class="detail-label">Patient</span><span class="detail-value">${name || 'Patient'}</span></div>
+                <div class="detail"><span class="detail-label">Status</span><span class="detail-value"><span class="status-badge status-${attended ? 'completed' : apt.status}">${attended ? 'Completed' : apt.status}</span></span></div>
                 <div class="detail"><span class="detail-label">Attendance</span><span class="detail-value">${apt.attendanceConfirmed === true || apt.attendance_confirmed === true ? 'Confirmed by the clinic' : 'N/A'}</span></div>
                 ${apt.notes ? `<div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${apt.notes}</span></div>` : ''}
             `;

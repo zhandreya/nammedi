@@ -2143,10 +2143,11 @@
                 const name = `${mr.patientName || ''} ${mr.patientSurname || ''}`.trim() || 'Unknown';
                 const med = [mr.medicationName, mr.strength].filter(Boolean).join(' ') || 'N/A';
                 const inv = findStock(mr);
-                // Left in Stock = what is in stock minus what was prescribed.
-                const stock = inv ? (Number(inv.quantity) || 0) : 0;
-                const prescribedQty = Number(mr.quantity) || 0;
-                const left = Math.max(0, stock - prescribedQty);
+                // Left in Stock = the current Manage Inventory quantity. The
+                // inventory is reduced automatically when a medication is
+                // given (20 recorded, 3 given -> inventory becomes 17 and the
+                // column shows 17).
+                const left = inv ? (Number(inv.quantity) || 0) : 0;
                 return `
                 <tr>
                     <td>${formatDate(mr.date)}</td>
@@ -2177,9 +2178,9 @@
                 <div class="detail"><span class="detail-label">Treatment</span><span class="detail-value">${wa(mr.treatment)}</span></div>
                 <div class="detail"><span class="detail-label">Prescription</span><span class="detail-value">${wa(mr.prescription)}</span></div>
                 <div class="detail"><span class="detail-label">Medication</span><span class="detail-value">${wa([mr.medicationName, mr.strength].filter(Boolean).join(' '))}</span></div>
-                <div class="detail"><span class="detail-label">Quantity</span><span class="detail-value">${wa(mr.quantity)}</span></div>
-                <div class="detail"><span class="detail-label">Stock (on file)</span><span class="detail-value">${stockForMedication(mr) ? (Number(stockForMedication(mr).quantity) || 0) : 0}</span></div>
-                <div class="detail"><span class="detail-label">Left in Stock (Stock - Prescribed)</span><span class="detail-value">${Math.max(0, (stockForMedication(mr) ? (Number(stockForMedication(mr).quantity) || 0) : 0) - (Number(mr.quantity) || 0))}</span></div>
+                <div class="detail"><span class="detail-label">Quantity given</span><span class="detail-value">${wa(mr.quantity)}</span></div>
+                <div class="detail"><span class="detail-label">Manage Inventory (current)</span><span class="detail-value">${stockForMedication(mr) ? (Number(stockForMedication(mr).quantity) || 0) : 0}</span></div>
+                <div class="detail"><span class="detail-label">Left in Stock</span><span class="detail-value">${stockForMedication(mr) ? (Number(stockForMedication(mr).quantity) || 0) : 0}</span></div>
                 <div class="detail"><span class="detail-label">Institute</span><span class="detail-value">${wa(mr.institute)}</span></div>
                 <div class="detail"><span class="detail-label">Notes</span><span class="detail-value">${wa(mr.notes)}</span></div>
             `;
