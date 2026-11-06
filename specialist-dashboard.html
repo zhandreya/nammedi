@@ -909,6 +909,7 @@
             getRefillRequestsForDoctor,
             respondRefill,
             addPrescription,
+            updatePrescription,
             getMyPrescriptions,
             initInactivityTimer,
             showToast,
@@ -2043,6 +2044,7 @@
                     <td>${pr.nextAvailableDate ? formatDate(pr.nextAvailableDate) : (pr.next_available_date ? formatDate(pr.next_available_date) : '-')}</td>
                     <td>
                         <button class="btn-sm btn-view" onclick="viewPrescription('${pr.id}')">View</button>
+                        <button class="btn-sm btn-edit" onclick="editPrescription('${pr.id}')">Edit</button>
                         <button class="btn-sm btn-download" onclick="downloadPrescription('${pr.id}')">PDF</button>
                     </td>
                 </tr>
@@ -2064,12 +2066,16 @@
                 title.textContent = 'Edit Prescription';
                 document.getElementById('prescriptionId').value = prescription.id;
                 document.getElementById('prPatient').value = prescription.patientId || '';
+                // The dates are editable on purpose: a wrong prescription
+                // date or next-available date entered by mistake can be
+                // corrected here (it controls when the patient may refill).
                 document.getElementById('prDate').value = prescription.date || '';
                 document.getElementById('prAilment').value = prescription.ailment || '';
                 document.getElementById('prTreatment').value = prescription.treatment || '';
                 document.getElementById('prPrescription').value = prescription.prescription || '';
                 document.getElementById('prReport').value = prescription.report || '';
-                document.getElementById('prCellPhone').value = prescription.cellPhone || '';
+                document.getElementById('prNextDate').value = prescription.nextAvailableDate || prescription.next_available_date || '';
+                document.getElementById('prCellPhone').value = prescription.cellPhone || prescription.patientPhone || '';
             } else {
                 title.textContent = 'Add Prescription';
                 document.getElementById('prescriptionId').value = '';
@@ -2080,6 +2086,11 @@
 
         window.closePrescriptionModal = function() {
             document.getElementById('prescriptionModal').classList.remove('show');
+        };
+
+        window.editPrescription = function(id) {
+            const pr = (allPrescriptions || []).find(p => p.id === id);
+            if (pr) openPrescriptionModal(pr);
         };
 
         function populatePrescDatalists() {
@@ -2118,8 +2129,13 @@
                     cellPhone: document.getElementById('prCellPhone').value.trim()
                 };
 
-                await addPrescription(currentUser.uid, data);
-                showToast('Prescription saved', 'success');
+                const editingId = document.getElementById('prescriptionId').value;
+                if (editingId) {
+                    await updatePrescription(editingId, data);
+                } else {
+                    await addPrescription(currentUser.uid, data);
+                }
+                showToast(editingId ? 'Prescription updated' : 'Prescription saved', 'success');
                 closePrescriptionModal();
                 await loadPrescriptions();
                 updateStats();

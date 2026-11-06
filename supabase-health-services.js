@@ -634,7 +634,19 @@ export async function addPatient(uid, patientData) {
     // the institutes-visited list updates automatically (only when this
     // institute is not already recorded for the patient).
     try {
-        const inst = row.institute || row.institution;
+        let inst = row.institute || row.institution;
+        if (!inst) {
+            // Registered without an explicit institute: the patient is being
+            // added at the staff member's own institute - that still counts.
+            try {
+                const up = await getUserProfile(user.uid);
+                if (up && up.institute) {
+                    inst = up.institute;
+                    const { error: updErr } = await supabase.from(T.PATIENTS).update({ institute: inst, institution: inst }).eq('id', data.id);
+                    if (updErr) console.warn('patient institute fallback failed:', updErr.message);
+                }
+            } catch (e) { /* best-effort */ }
+        }
         if (inst && data.id) {
             const { data: existing } = await supabase.from(T.INSTITUTES_VISITED)
                 .select('id').eq('patient_id', data.id).ilike('institute', inst).limit(1);
@@ -1346,8 +1358,28 @@ function camelPrescription(p) {
         patientPhone: p.patient_phone,
         patientIdPassport: p.patient_id_passport,
         doctorName: p.doctor_name,
-        prescribedBy: p.prescribed_by
+        prescribedBy: p.prescribed_by,
+        nextAvailableDate: p.next_available_date,
+        cellPhone: p.patient_phone
     };
+}
+
+export async function updatePrescription(prescriptionId, data) {
+    requireUser();
+    if (!prescriptionId) throw new Error('Missing prescription id');
+    const row = {};
+    const put = (k, v) => { if (v !== undefined) row[k] = v; };
+    if (data.date !== undefined) row.date = data.date;
+    if (data.ailment !== undefined) row.ailment = data.ailment || null;
+    if (data.treatment !== undefined) row.treatment = data.treatment || null;
+    if (data.prescription !== undefined) row.prescription = data.prescription || null;
+    if (data.report !== undefined) row.report = data.report || null;
+    if (data.nextAvailableDate !== undefined) row.next_available_date = data.nextAvailableDate || null;
+    if (data.cellPhone !== undefined) row.patient_phone = data.cellPhone || null;
+    // The prescriptions table has no updated_at column - update directly.
+    const { error } = await supabase.from(T.PRESCRIPTIONS).update(row).eq('id', prescriptionId);
+    if (error) throw error;
+    return true;
 }
 
 export async function getMyPrescriptions() {
