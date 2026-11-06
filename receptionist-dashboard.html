@@ -955,6 +955,7 @@
             saveInvoicePdf,
             previewAndSavePdf,
             buildPaymentReceiptPdf,
+            confirmDeletion,
             buildInsurancePdf,
             generateReport,
             getMyReports,
@@ -1304,7 +1305,7 @@
         };
 
         window.deletePaymentRow = async function(id) {
-            if (!confirm('Delete this payment record? This cannot be undone.')) return;
+            if (!(await confirmDeletion('This payment record'))) return;
             try {
                 await deletePayment(id);
                 showToast('Payment deleted', 'success');
@@ -1316,7 +1317,7 @@
         };
 
         window.deleteInvoiceRow = async function(id) {
-            if (!confirm('Delete this invoice? This cannot be undone.')) return;
+            if (!(await confirmDeletion('This invoice'))) return;
             try {
                 await deleteInvoice(id);
                 showToast('Invoice deleted', 'success');
@@ -1487,8 +1488,8 @@
             openPatientModal(patient);
         };
 
-        window.confirmDeletePatient = function(id) {
-            if (confirm('Are you sure you want to delete this patient? This cannot be undone.')) {
+        window.confirmDeletePatient = async function(id) {
+            if (await confirmDeletion('This patient (and their records)')) {
                 deletePatient(id);
             }
         };
@@ -1775,8 +1776,8 @@
             if (apt) openAppointmentModal(apt);
         };
 
-        window.confirmDeleteAppointment = function(id) {
-            if (confirm('Delete this appointment?')) deleteAppointment(id);
+        window.confirmDeleteAppointment = async function(id) {
+            if (await confirmDeletion('This appointment')) deleteAppointment(id);
         };
 
         // Appointment Modal
@@ -2000,7 +2001,7 @@
         };
 
         window.deleteInsuranceRow = async function(id) {
-            if (!confirm('Delete this insurance verification? This cannot be undone.')) return;
+            if (!(await confirmDeletion('This insurance verification'))) return;
             try {
                 await deleteInsuranceVerification(id);
                 showToast('Verification deleted', 'success');
@@ -2376,7 +2377,7 @@
         };
 
         window.deleteReportRow = async function(id) {
-            if (!confirm('Delete this report? This cannot be undone.')) return;
+            if (!(await confirmDeletion('This report'))) return;
             try {
                 await deleteReport(id);
                 showToast('Report deleted', 'success');

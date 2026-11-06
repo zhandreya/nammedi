@@ -252,6 +252,7 @@
             rescheduleAppointment,
             updateAppointment,
             deleteAppointment,
+            confirmDeletion,
             signOut as signOutUser,
             initInactivityTimer,
             showToast,
@@ -423,7 +424,7 @@
             }
         });
         window.deleteApptRow = async function(id) {
-            if (!confirm('Delete this appointment? This cannot be undone.')) return;
+            if (!(await confirmDeletion('This appointment'))) return;
             try {
                 await deleteAppointment(id);
                 showToast('Appointment deleted', 'success');

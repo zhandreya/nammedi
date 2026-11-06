@@ -53,6 +53,13 @@ function slotStorage(slot) {
             sessionStorage.setItem(prefix + newKey, sessionStorage.getItem(prefix + oldKey));
             sessionStorage.removeItem(prefix + oldKey);
         }
+        // One-time migration from the pre-update shared localStorage slots,
+        // so a code update never forces users to sign in again.
+        const legacyKey = 'nm-slot-' + slot;
+        if (!sessionStorage.getItem(prefix + newKey) && !localStorage.getItem(prefix + newKey)) {
+            const legacy = localStorage.getItem(prefix + legacyKey);
+            if (legacy) sessionStorage.setItem(prefix + newKey, legacy);
+        }
     } catch (e) { /* ignore */ }
     return {
         getItem: (key) => { try { return sessionStorage.getItem(prefix + key); } catch (e) { return null; } },
@@ -2503,6 +2510,72 @@ export function isValidNamibianPhone(phone) {
     return /^(?:\+?0{0,2}264)\d{8,9}$/.test(cleaned);
 }
 
+// Deleting anything requires the DELETING user's own password. Shows a
+// self-contained confirmation dialog (works on every page) and verifies the
+// password by re-authenticating as the current user. Resolves true only when
+// the correct password was entered.
+export function confirmDeletion(label) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const done = (v) => {
+            if (settled) return;
+            settled = true;
+            overlay.remove();
+            resolve(v);
+        };
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:100000;';
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#fff; border-radius:12px; width:92%; max-width:420px; box-shadow:0 10px 40px rgba(0,0,0,.3); overflow:hidden; font-family:Lato, sans-serif;';
+        card.innerHTML =
+            '<div style="background:linear-gradient(135deg,#0066cc 0%,#004499 100%); color:#fff; padding:16px 20px;">' +
+                '<h3 style="margin:0; font-size:16px; font-weight:700;">Confirm deletion</h3>' +
+            '</div>' +
+            '<div style="padding:20px;">' +
+                '<p id="cdMsg" style="margin:0 0 6px; color:#1a1a1a; font-size:14px;">' + String(label || 'This item') + ' will be deleted from ALL dashboards. This cannot be undone.</p>' +
+                '<p style="margin:0 0 12px; color:#c62828; font-size:13px; font-weight:600;">Enter your password to confirm.</p>' +
+                '<input type="password" id="cdPass" placeholder="Your password" autocomplete="off" style="width:100%; box-sizing:border-box; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:15px; font-family:inherit;">' +
+                '<p id="cdErr" style="color:#c62828; font-size:13px; margin:8px 0 0; min-height:16px;"></p>' +
+            '</div>' +
+            '<div style="display:flex; justify-content:flex-end; gap:10px; padding:0 20px 18px;">' +
+                '<button id="cdCancel" style="padding:10px 18px; border:1px solid #ddd; background:#f5f5f5; color:#333; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Cancel</button>' +
+                '<button id="cdOk" style="padding:10px 18px; border:none; background:#c62828; color:#fff; border-radius:8px; font-family:inherit; font-size:14px; font-weight:600; cursor:pointer;">Delete</button>' +
+            '</div>';
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+        const pass = card.querySelector('#cdPass');
+        const err = card.querySelector('#cdErr');
+        pass.focus();
+        const submit = async () => {
+            const pwd = pass.value;
+            if (!pwd) { err.textContent = 'Please enter your password.'; return; }
+            err.textContent = 'Checking...';
+            card.querySelector('#cdOk').disabled = true;
+            try {
+                const { data } = await supabase.auth.getUser();
+                const email = data && data.user ? data.user.email : null;
+                if (!email) { done(false); return; }
+                const r = await supabase.auth.signInWithPassword({ email, password: pwd });
+                if (r.error) {
+                    err.textContent = 'Wrong password - please try again.';
+                    pass.value = '';
+                    pass.focus();
+                    card.querySelector('#cdOk').disabled = false;
+                    return;
+                }
+                done(true);
+            } catch (e) {
+                err.textContent = 'Could not verify - please try again.';
+                card.querySelector('#cdOk').disabled = false;
+            }
+        };
+        card.querySelector('#cdOk').addEventListener('click', submit);
+        pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
+        card.querySelector('#cdCancel').addEventListener('click', () => done(false));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+    });
+}
+
 export function isValidNamibianId(id) {
     const v = String(id || '').replace(/[\s-]/g, '').toUpperCase();
     if (!v) return false;
@@ -2629,7 +2702,7 @@ export default {
     addPatient, createPatient, getMyPatients, getSpecialists, getPatientsByStaff, getAssignedPatients, getInstitutePatients,
     getPatient, getPatientById, updatePatient, getAppointmentsByStaff, getDocumentsByStaff,
     deletePatient, searchPatients, assignPatientToDoctor, linkPatientToUser,
-    getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, buildPrescriptionPdf, buildReportPdf, buildInsurancePdf, buildPaymentReceiptPdf, previewAndSavePdf, saveInvoicePdf, getMyPatientDocuments,
+    getInvoices, getPayments, markInvoicePaid, generateInvoicePdf, buildInvoicePdf, buildPrescriptionPdf, buildReportPdf, buildInsurancePdf, buildPaymentReceiptPdf, previewAndSavePdf, saveInvoicePdf, confirmDeletion, getMyPatientDocuments,
     createAppointment, getMyAppointments, getPatientAppointments, getUpcomingAppointments,
     getPrescriptionsForPatient, getPatientAilments, getPatientReports, getPatientRefills,
     getPatientInstitutes, getPatientInvoices, getPatientPayments,

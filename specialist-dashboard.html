@@ -901,6 +901,7 @@
             uploadDocument,
             deleteDocument,
             buildPrescriptionPdf,
+            confirmDeletion,
             getRefillRequestsForDoctor,
             respondRefill,
             addPrescription,
@@ -1537,8 +1538,8 @@
             openPatientModal(patient);
         };
 
-        window.confirmDeletePatient = function(id) {
-            if (confirm('Are you sure you want to delete this patient? This cannot be undone.')) {
+        window.confirmDeletePatient = async function(id) {
+            if (await confirmDeletion('This patient (and their records)')) {
                 deletePatient(id);
             }
         };
@@ -1825,8 +1826,8 @@
             if (apt) openAppointmentModal(apt);
         };
 
-        window.confirmDeleteAppointment = function(id) {
-            if (confirm('Delete this appointment?')) deleteAppointment(id);
+        window.confirmDeleteAppointment = async function(id) {
+            if (await confirmDeletion('This appointment')) deleteAppointment(id);
         };
 
         // Appointment Modal
@@ -2186,11 +2187,17 @@
 
 
         let docSecId = null;
-        window.confirmDeleteDocument = function(id) {
+        window.confirmDeleteDocument = async function(id) {
             docSecId = id;
-            document.getElementById('docSecConfirm').value = '';
-            document.getElementById('docSecError').textContent = '';
-            document.getElementById('docSecModal').classList.add('show');
+            if (await confirmDeletion('This document')) {
+                try {
+                    await deleteDocument(docSecId);
+                    showToast('Document deleted', 'success');
+                    if (typeof loadDocuments === 'function') await loadDocuments();
+                } catch (e) {
+                    showToast('Delete failed: ' + e.message, 'error');
+                }
+            }
         };
         window.closeDocSecModal = function() { document.getElementById('docSecModal').classList.remove('show'); };
         window.submitDocSec = async function() {
