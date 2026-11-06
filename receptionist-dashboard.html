@@ -2164,6 +2164,42 @@
             document.getElementById('invoiceModal').classList.add('show');
         };
 
+        let invoiceApptCache = [];
+
+        // When a confirmed visit is selected, the rest of the invoice fills
+        // itself from the system: date, reason for visit, prescription,
+        // treatment and the prescribing doctor.
+        window.fillInvoiceFromVisit = async function() {
+            const sel = document.getElementById('invAppointment');
+            if (!sel || !sel.value) return;
+            const apt = (invoiceApptCache || []).find(a => a.id === sel.value);
+            if (!apt) return;
+            const setIf = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+            setIf('invDate', String(apt.date || '').slice(0, 10));
+            const rEl = document.getElementById('invReason');
+            if (rEl && apt.reason) {
+                if (rEl.tagName === 'SELECT') {
+                    const opt = Array.from(rEl.options).find(o => o.value === apt.reason);
+                    if (opt) rEl.value = opt.value;
+                } else {
+                    rEl.value = apt.reason;
+                }
+            }
+            setIf('invDoctor', apt.doctorSpecialist || apt.doctor_specialist);
+            try {
+                const pKey = apt.patientIdPassport || apt.patient_id_passport || (apt.patientId && String(apt.patientId).indexOf('-') === -1 ? apt.patientId : null);
+                const prs = (await getPrescriptionsForPatient(pKey)) || [];
+                const day = String(apt.date || '').slice(0, 10);
+                const sameDay = prs.filter(p => String(p.date || '').slice(0, 10) === day);
+                const prx = sameDay[0] || prs[0];
+                if (prx) {
+                    setIf('invPrescription', prx.prescription);
+                    setIf('invTreatment', prx.treatment);
+                    if (prx.doctorName || prx.doctor_name) setIf('invDoctor', prx.doctorName || prx.doctor_name);
+                }
+            } catch (e) { /* best-effort auto-fill */ }
+        };
+
         // Load the patient's confirmed-attendance visits into the invoice form.
         // Without a confirmed visit the invoice cannot be generated.
         window.loadInvoiceAppointments = async function() {
@@ -2177,6 +2213,7 @@
             sel.innerHTML = '<option value="">Loading visits...</option>';
             try {
                 const appts = await getConfirmedAppointmentsForPatient(patientId);
+                invoiceApptCache = appts || [];
                 if (!appts || appts.length === 0) {
                     sel.innerHTML = '<option value="">No confirmed attendance for this patient</option>';
                     return;
@@ -2194,8 +2231,10 @@
         };
         document.getElementById('invPatient').addEventListener('change', function() {
             document.getElementById('invAppointment').innerHTML = '<option value="">Loading visits...</option>';
+            invoiceApptCache = [];
             loadInvoiceAppointments();
         });
+        document.getElementById('invAppointment').addEventListener('change', function() { fillInvoiceFromVisit(); });
 
         window.closeInvoiceModal = function() {
             document.getElementById('invoiceModal').classList.remove('show');

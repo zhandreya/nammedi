@@ -53,13 +53,6 @@ function slotStorage(slot) {
             sessionStorage.setItem(prefix + newKey, sessionStorage.getItem(prefix + oldKey));
             sessionStorage.removeItem(prefix + oldKey);
         }
-        // One-time migration from the pre-update shared localStorage slots,
-        // so a code update never forces users to sign in again.
-        const legacyKey = 'nm-slot-' + slot;
-        if (!sessionStorage.getItem(prefix + newKey) && !localStorage.getItem(prefix + newKey)) {
-            const legacy = localStorage.getItem(prefix + legacyKey);
-            if (legacy) sessionStorage.setItem(prefix + newKey, legacy);
-        }
     } catch (e) { /* ignore */ }
     return {
         getItem: (key) => { try { return sessionStorage.getItem(prefix + key); } catch (e) { return null; } },
@@ -305,10 +298,21 @@ async function selectEq(table, column, value, orderBy = 'created_at', ascending 
 // ID/Passport number.
 async function patientPassportFor(patientId) {
     if (!patientId) return null;
+    const id = String(patientId).trim();
+    const looksUuid = id.length > 30;
     try {
-        const p = await getPatient(patientId);
-        return (p && (p.idPassport || p.id_passport)) || null;
-    } catch (e) { return null; }
+        const p = await getPatient(id);
+        if (p && (p.idPassport || p.id_passport)) return p.idPassport || p.id_passport;
+    } catch (e) { /* not found by UUID - may be a passport */ }
+    if (!looksUuid) {
+        // A passport/ID number was given directly. Confirm it belongs to a
+        // patient this account can see, then use it as the history key.
+        try {
+            const { data } = await supabase.from(T.PATIENTS).select('id_passport').eq('id_passport', id).maybeSingle();
+            if (data && data.id_passport) return data.id_passport;
+        } catch (e) { /* ignore */ }
+    }
+    return null;
 }
 async function collectPatientHistoryRows(table, passportCol, patientId) {
     if (!patientId) return [];
@@ -454,13 +458,41 @@ export function getCurrentUser() {
     return window.__SUPABASE_CURRENT_USER__ || null;
 }
 
+// Bumped on every code deploy. When the deployed code changes, every open
+// session (old code) signs out and the user signs in again on the new code -
+// so all users are always on the current version, all at the same time.
+export const APP_VERSION = 'r33-20261106';
+const VERSION_KEY = 'nm-app-version';
+
+function checkAppVersion(session) {
+    // Returns true if a forced sign-out was performed.
+    try {
+        const stored = sessionStorage.getItem(VERSION_KEY);
+        if (session) {
+            if (stored && stored !== APP_VERSION) {
+                // System was updated while this tab was open - sign out.
+                try { sessionStorage.setItem(VERSION_KEY, APP_VERSION); } catch (e) { /* ignore */ }
+                supabase.auth.signOut().catch(() => {});
+                if (!location.pathname.endsWith('login.html')) location.href = 'login.html';
+                return true;
+            }
+            if (!stored) { try { sessionStorage.setItem(VERSION_KEY, APP_VERSION); } catch (e) { /* ignore */ } }
+        } else {
+            if (!stored) { try { sessionStorage.setItem(VERSION_KEY, APP_VERSION); } catch (e) { /* ignore */ } }
+        }
+    } catch (e) { /* version check is best-effort */ }
+    return false;
+}
+
 export function onAuthChange(callback) {
     supabase.auth.getSession().then(({ data }) => {
+        if (checkAppVersion(data.session)) return;
         const mapped = mapUser(data.session?.user || null);
         window.__SUPABASE_CURRENT_USER__ = mapped;
         callback(mapped);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (checkAppVersion(session)) return;
         const mapped = mapUser(session?.user || null);
         window.__SUPABASE_CURRENT_USER__ = mapped;
         callback(mapped);
@@ -836,7 +868,8 @@ export async function getMyAppointments() {
         if (!nameError && byName) list = list.concat(byName);
     }
     const seen = new Set();
-    return list.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+    const unique = list.filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+    return resolveDoctorSpecializations(unique);
 }
 
 export async function getPatientAppointments(patientId) {
@@ -1712,7 +1745,7 @@ async function getUsersCached() {
     const now = Date.now();
     if (_usersCache && now - _usersCacheAt < 2 * 60 * 1000) return _usersCache;
     try {
-        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession, speciality');
+        const { data } = await supabase.from(T.USERS).select('full_name, surname, profession, speciality, institute');
         _usersCache = data || [];
         _usersCacheAt = now;
     } catch (e) { /* cannot read users - degrade gracefully */ }
@@ -1739,7 +1772,16 @@ async function resolveDoctorSpecializations(rows) {
             if (!hit && sur.length >= 4 && first.length >= 3) hit = dn.includes(sur) && dn.includes(first);
             if (!hit && sur.length >= 5) hit = dn.includes(sur) || (dn.length >= 4 && sur.includes(dn));
             if (!hit && first.length >= 5 && sur.length >= 3) hit = dn.includes(first) && dn.includes(sur);
-            if (hit) { r.specialization = u.profession || u.speciality || null; break; }
+            if (hit) {
+                r.specialization = u.profession || u.speciality || null;
+                // Entries that have no institute of their own take the
+                // registered institute of the doctor/staff who recorded them.
+                if (u.institute) {
+                    if (!r.institute) r.institute = u.institute;
+                    if (!r.institution) r.institution = u.institute;
+                }
+                break;
+            }
         }
     }
     return rows;
